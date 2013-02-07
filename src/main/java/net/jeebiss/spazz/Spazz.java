@@ -1,7 +1,5 @@
 package net.jeebiss.spazz;
 
-import java.util.Map;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
@@ -13,6 +11,9 @@ import org.pircbotx.hooks.events.MessageEvent;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.TextPage;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
 @SuppressWarnings("rawtypes")
 public class Spazz extends ListenerAdapter implements Listener {
@@ -23,7 +24,8 @@ public class Spazz extends ListenerAdapter implements Listener {
     static HtmlUnitDriver GHRR = new HtmlUnitDriver();
     static HtmlUnitDriver YAML = new HtmlUnitDriver();
     static HtmlUnitDriver PASTEBIN = new HtmlUnitDriver();
-    static HtmlUnitDriver PASTIE = new HtmlUnitDriver();
+    static WebClient HASTEBIN = new WebClient();
+    static WebClient PASTIE = new WebClient();
     
 	public static void main(String[] args) throws Exception {
 		PircBotX bot = new PircBotX();
@@ -62,37 +64,39 @@ public class Spazz extends ListenerAdapter implements Listener {
 			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Craftbukkit" + Colors.NORMAL +  "- http://bit.ly/A5I50a");
 		} else if (event.getMessage().equalsIgnoreCase(".help")) {
 			event.getBot().sendMessage("#denizen-dev", "So you're trying to to use 0.8 for first time?");
-			event.getBot().sendMessage("#denizen-dev", "Its recommened that you read the current documentation.");
+			event.getBot().sendMessage("#denizen-dev", "It's recommened that you read the current documentation.");
 			event.getBot().sendMessage("#denizen-dev", "Denizen 0.8 Handbook - http://goo.gl/4CSK8");
 			event.getBot().sendMessage("#denizen-dev", "Please keep in mind the handbook its a work in progress. It does not contain everything.");
 			
 		}
 		
-		else if (event.getMessage().startsWith(".yaml")) {
+		else if (event.getMessage().startsWith(".yaml") || event.getMessage().startsWith(".yml")) {
 			PircBotX bot = event.getBot();
 			
 			String[] args = event.getMessage().split(" ");
 			String rawYaml = null;
-			if (args[1].contains("pastebin")) {
+			if (args[1].contains("hastebin")) {
+				String url[] = args[1].split("/");
+				TextPage txt = HASTEBIN.getPage("http://hastebin.com/raw/"+url[3]);
+				rawYaml = txt.getContent();
+				HASTEBIN.closeAllWindows();	
+			} else if (args[1].contains("pastebin")) {
 				PASTEBIN.get(args[1]);
 				WebElement pastedYaml = PASTEBIN.findElement(By.id("paste_code"));
 				rawYaml = pastedYaml.getAttribute("value");
 			} else if (args[1].contains("pastie")) {
 				String url[] = args[1].split("/");
-				PASTIE.get("http://pastie.org/pastes/" + url[3] + "/text");
-				WebElement pastedYaml = PASTIE.findElement(By.xpath("/html/body/pre"));
-				rawYaml = pastedYaml.getText();
-				//rawYaml = pastedYaml.getAttribute("value");
-			} else if (args[1].contains("pastebin")) {
-				
+				HtmlPage page = PASTIE.getPage("http://pastie.org/pastes/" + url[3] + "/text");
+				rawYaml = page.asText();
+				PASTIE.closeAllWindows();				
 			} else {
 				bot.sendMessage("#denizen-dev", "I cant get your script from that website :(");
 			}
 			
 			Yaml yaml = new Yaml();
 			try {
-			Map<String, Object> loadedYaml = (Map<String, Object>) yaml.load(rawYaml);
-			bot.sendMessage("#denizen-dev", "Your YAML is valid.");
+				yaml.load(rawYaml);
+				bot.sendMessage("#denizen-dev", "Your YAML is valid.");
 			} catch (YAMLException e) {
 				String fullStack =  getCustomStackTrace(e);
 				String[] stackList = fullStack.split("\\n");
@@ -125,7 +129,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 				} catch (Exception e) { done = true; System.out.println("done."); }
 			}
 			
-			bot.sendMessage("#denizen-dev", "The command '" + command + "' does not exist. If you feel it should, feel free to suggest it to a developer.");
+			bot.sendMessage("#denizen-dev", "The command '" + command + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
 		} else if (event.getMessage().startsWith(".requirement") || event.getMessage().startsWith(".req")) {
@@ -150,7 +154,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 				} catch (Exception e) { done = true; System.out.println("done."); }
 			}
 			
-			bot.sendMessage("#denizen-dev", "The requirement '" + requirement + "' does not exist. If you feel it should, feel free to suggest it to a developer.");
+			bot.sendMessage("#denizen-dev", "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
 		} else if (event.getMessage().equalsIgnoreCase(".hb") || event.getMessage().equalsIgnoreCase(".handbook")) {

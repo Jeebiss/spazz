@@ -51,23 +51,38 @@ public class Spazz extends ListenerAdapter implements Listener {
 	
 	@Override
     public void onMessage(MessageEvent event) throws Exception {
+		
+		String address = "";
+		
+		if(event.getMessage().endsWith("@@")) {
+			String args[] = event.getMessage().split(" ");
+			System.out.println(args.length);
+			for(int x=0; x<args.length; x++) {
+				if(!args[x].contains("@@"))
+					continue;
+				else {
+					address=args[x];
+					address=address.substring(0,address.length()-2);
+					address=address + ": ";
+				}
+			}
+		}
 		if (event.getMessage().equalsIgnoreCase(".hello")) {
 			event.respond("Hello World");
 		} else if (event.getMessage().equalsIgnoreCase(".reload")) {
 			reloadSites();
 			event.getBot().sendMessage("#denizen-dev", "Reloaded websites.");
-		} else if (event.getMessage().equalsIgnoreCase(".update")) {
-			event.getBot().sendMessage("#denizen-dev", "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + Colors.NORMAL +  " builds of Craftbukkit and Citizens.");
+		} else if (event.getMessage().startsWith(".update")) {
+			event.getBot().sendMessage("#denizen-dev", address + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + Colors.NORMAL +  " builds of Craftbukkit and Citizens.");
 			event.getBot().sendMessage("#denizen-dev", "Most errors can be fixed by updating all 3.");
 			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Denizen" + Colors.NORMAL +  "- http://bit.ly/Wvvg8N");
 			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Citizens" + Colors.NORMAL +  "- http://bit.ly/Xe8YWZ");
 			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Craftbukkit" + Colors.NORMAL +  "- http://bit.ly/A5I50a");
-		} else if (event.getMessage().equalsIgnoreCase(".help")) {
-			event.getBot().sendMessage("#denizen-dev", "So you're trying to to use 0.8 for first time?");
+		} else if (event.getMessage().startsWith(".help")) {
+			event.getBot().sendMessage("#denizen-dev", address + "So you're trying to to use 0.8 for first time?");
 			event.getBot().sendMessage("#denizen-dev", "It's recommened that you read the current documentation.");
 			event.getBot().sendMessage("#denizen-dev", "Denizen 0.8 Handbook - http://goo.gl/4CSK8");
 			event.getBot().sendMessage("#denizen-dev", "Please keep in mind the handbook its a work in progress. It does not contain everything.");
-			
 		}
 		
 		else if (event.getMessage().startsWith(".yaml") || event.getMessage().startsWith(".yml")) {
@@ -96,7 +111,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			Yaml yaml = new Yaml();
 			try {
 				yaml.load(rawYaml);
-				bot.sendMessage("#denizen-dev", "Your YAML is valid.");
+				bot.sendMessage("#denizen-dev", address + "Your YAML is valid.");
 			} catch (YAMLException e) {
 				String fullStack =  getCustomStackTrace(e);
 				String[] stackList = fullStack.split("\\n");
@@ -112,7 +127,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			String [] args = event.getMessage().split(" ");
 			String command = args[1].toLowerCase();
 				
-			int x = 50;
+			int x = 51;
 			boolean done = false;
 			while (!done) {
 				try {
@@ -122,7 +137,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 						if (commandname.substring(1, commandname.length()-1).equalsIgnoreCase(command.toUpperCase())) {
 							usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
 							String message = usage.getText();
-							bot.sendMessage("#denizen-dev", "Usage: - " + message.substring(1, message.length() - 1));
+							bot.sendMessage("#denizen-dev", address + "Usage: - " + message.substring(1, message.length() - 1));
 							return;
 						}
 					x = x + 3;
@@ -147,7 +162,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 					if (requirementname.substring(1, requirementname.length()-1).equalsIgnoreCase(requirement.toUpperCase())) {
 						usage = GHRR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
 						String message = usage.getText();
-						bot.sendMessage("#denizen-dev", "Usage: - " + message.substring(1, message.length() - 1));
+						bot.sendMessage("#denizen-dev", address + "Usage: - " + message.substring(1, message.length() - 1));
 						return;
 					}
 					x = x + 3;
@@ -158,10 +173,10 @@ public class Spazz extends ListenerAdapter implements Listener {
 			return;
 			
 		} else if (event.getMessage().equalsIgnoreCase(".hb") || event.getMessage().equalsIgnoreCase(".handbook")) {
-			event.getBot().sendMessage("#denizen-dev", "Current 0.8 Documentation - http://bit.ly/XaWBLN");
+			event.getBot().sendMessage("#denizen-dev", address + "Current 0.8 Documentation - http://bit.ly/XaWBLN");
 			
 		} else if (event.getMessage().equalsIgnoreCase(".getstarted") || event.getMessage().equalsIgnoreCase(".gs")) {
-			event.getBot().sendMessage("#denizen-dev", "Add info for newbies");
+			event.getBot().sendMessage("#denizen-dev", address + "Add info for newbies");
 			
 		} else if (event.getMessage().equalsIgnoreCase(".bye")) {
 			event.getBot().disconnect();

@@ -22,7 +22,6 @@ public class Spazz extends ListenerAdapter implements Listener {
 
     static HtmlUnitDriver GHCR = new HtmlUnitDriver();
     static HtmlUnitDriver GHRR = new HtmlUnitDriver();
-    static HtmlUnitDriver YAML = new HtmlUnitDriver();
     static HtmlUnitDriver PASTEBIN = new HtmlUnitDriver();
     static WebClient HASTEBIN = new WebClient();
     static WebClient PASTIE = new WebClient();
@@ -45,8 +44,6 @@ public class Spazz extends ListenerAdapter implements Listener {
         
     	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");   
     	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");   
-    	YAML.setJavascriptEnabled(true);
-    	YAML.get("http://yaml-online-parser.appspot.com/");
     }
 	
 	@Override
@@ -185,8 +182,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 	
 	private void reloadSites() {
 		GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");   
-    	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");
-    	YAML.get("http://yaml-online-parser.appspot.com/");		
+    	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");	
 	}
 
 	public static String getCustomStackTrace(Throwable aThrowable) {

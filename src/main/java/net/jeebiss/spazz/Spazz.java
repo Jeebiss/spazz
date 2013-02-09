@@ -29,7 +29,6 @@ public class Spazz extends ListenerAdapter implements Listener {
 	public static void main(String[] args) throws Exception {
 		PircBotX bot = new PircBotX();
 		bot.getListenerManager().addListener(new Spazz());
-		
 		/*
 		 * Connect to #denizen-dev on start up
 		 */
@@ -70,20 +69,20 @@ public class Spazz extends ListenerAdapter implements Listener {
 			reloadSites();
 			event.getBot().sendMessage("#denizen-dev", "Reloaded websites.");
 		} else if (event.getMessage().toLowerCase().startsWith(".update")) {
-			event.getBot().sendMessage("#denizen-dev", address + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + Colors.NORMAL +  " builds of Craftbukkit and Citizens.");
-			event.getBot().sendMessage("#denizen-dev", "Most errors can be fixed by updating all 3.");
-			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Denizen" + Colors.NORMAL +  "- http://bit.ly/Wvvg8N");
-			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Citizens" + Colors.NORMAL +  "- http://bit.ly/Xe8YWZ");
-			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Craftbukkit" + Colors.NORMAL +  "- http://bit.ly/A5I50a");
+			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + Colors.NORMAL +  " builds of Craftbukkit and Citizens.");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Most errors can be fixed by updating all 3.");
+			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Denizen" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/Wvvg8N");
+			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Citizens" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/Xe8YWZ");
+			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Craftbukkit" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/A5I50a");
 		} else if (event.getMessage().toLowerCase().startsWith(".help")) {
-			event.getBot().sendMessage("#denizen-dev", address + "So you're trying to to use 0.8 for first time?");
-			event.getBot().sendMessage("#denizen-dev", "It's recommened that you read the current documentation.");
-			event.getBot().sendMessage("#denizen-dev", "Denizen 0.8 Handbook - http://goo.gl/4CSK8");
-			event.getBot().sendMessage("#denizen-dev", "Please keep in mind the handbook its a work in progress. It does not contain everything.");
+			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "So you're trying to to use 0.8 for first time?");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "It's recommened that you read the current documentation.");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Denizen 0.8 Handbook - http://goo.gl/4CSK8");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Please keep in mind the handbook its a work in progress. It does not contain everything.");
 		} else if (event.getMessage().toLowerCase().startsWith(".paste") || event.getMessage().toLowerCase().startsWith(".pastie") || event.getMessage().toLowerCase().startsWith(".hastebin") || event.getMessage().toLowerCase().startsWith(".pastebin")) {
-			event.getBot().sendMessage("#denizen-dev", address + "Need help with a script issue or server error?");
-			event.getBot().sendMessage("#denizen-dev", "Help us help you by pasting your script or server log to hastebin.com");
-			event.getBot().sendMessage("#denizen-dev", "From there, save the page and paste the link back in this channel.");
+			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Need help with a script issue or server error?");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Help us help you by pasting your script or server log to " + Colors.BLUE + "http://hastebin.com");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "From there, save the page and paste the link back in this channel.");
 		}
 		
 		else if (event.getMessage().toLowerCase().startsWith(".yaml") || event.getMessage().toLowerCase().startsWith(".yml")) {
@@ -106,7 +105,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 				rawYaml = page.asText();
 				PASTIE.closeAllWindows();				
 			} else {
-				bot.sendMessage("#denizen-dev", "I cant get your script from that website :(");
+				bot.sendMessage("#denizen-dev", Colors.RED + "I cant get your script from that website :(");
 			}
 			
 			Yaml yaml = new Yaml();
@@ -138,14 +137,14 @@ public class Spazz extends ListenerAdapter implements Listener {
 						if (commandname.substring(1, commandname.length()-1).equalsIgnoreCase(command.toUpperCase())) {
 							usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
 							String message = usage.getText();
-							bot.sendMessage("#denizen-dev", address + "Usage: - " + message.substring(1, message.length() - 1));
+							bot.sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Usage: - " + message.substring(1, message.length() - 1));
 							return;
 						}
 					x = x + 3;
 				} catch (Exception e) { done = true; System.out.println("done."); }
 			}
 			
-			bot.sendMessage("#denizen-dev", "The command '" + command + "' does not exist. If you think it should, feel free to suggest it to a developer.");
+			bot.sendMessage("#denizen-dev", Colors.DARK_GREEN + "The command '" + command + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
 		} else if (event.getMessage().toLowerCase().startsWith(".requirement") || event.getMessage().toLowerCase().startsWith(".req")) {
@@ -163,27 +162,27 @@ public class Spazz extends ListenerAdapter implements Listener {
 					if (requirementname.substring(1, requirementname.length()-1).equalsIgnoreCase(requirement.toUpperCase())) {
 						usage = GHRR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
 						String message = usage.getText();
-						bot.sendMessage("#denizen-dev", address + "Usage: - " + message.substring(1, message.length() - 1));
+						bot.sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Usage: - " + message.substring(1, message.length() - 1));
 						return;
 					}
 					x = x + 3;
 				} catch (Exception e) { done = true; System.out.println("done."); }
 			}
 			
-			bot.sendMessage("#denizen-dev", "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
+			bot.sendMessage("#denizen-dev", Colors.DARK_GREEN + "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
 		} else if (event.getMessage().toLowerCase().startsWith(".cb") || event.getMessage().toLowerCase().startsWith(".coolbeans")) {
-			event.getBot().sendMessage("#denizen-dev", address + "That's cool beans.");
+			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "That's cool beans.");
 			
 		} else if (event.getMessage().toLowerCase().startsWith(".hb") || event.getMessage().toLowerCase().startsWith(".handbook")) {
-			event.getBot().sendMessage("#denizen-dev", address + "Current 0.8 Documentation - http://bit.ly/XaWBLN");
+			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Current 0.8 Documentation - "+ Colors.BLUE + "http://bit.ly/XaWBLN");
 			
 		} else if (event.getMessage().toLowerCase().startsWith(".getstarted") || event.getMessage().toLowerCase().startsWith(".gs")) {
-			event.getBot().sendMessage("#denizen-dev", address + "Add info for newbies");
+			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Add info for newbies");
 			
 		} else if (event.getMessage().equalsIgnoreCase(".bye")) {
-			event.getBot().sendMessage("#denizen-dev", "Goodbye cruel world!");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Goodbye cruel world!");
 			event.getBot().disconnect();
 		}
 	}

@@ -69,7 +69,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			reloadSites();
 			event.getBot().sendMessage("#denizen-dev", "Reloaded websites.");
 		} else if (event.getMessage().toLowerCase().startsWith(".update")) {
-			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + Colors.NORMAL +  " builds of Craftbukkit and Citizens.");
+			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + Colors.DARK_GREEN +  " builds of Craftbukkit and Citizens.");
 			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Most errors can be fixed by updating all 3.");
 			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Denizen" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/Wvvg8N");
 			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Citizens" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/Xe8YWZ");

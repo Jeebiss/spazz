@@ -111,7 +111,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			Yaml yaml = new Yaml();
 			try {
 				yaml.load(rawYaml);
-				bot.sendMessage("#denizen-dev", address + "Your YAML is valid.");
+				bot.sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Your YAML is valid.");
 			} catch (YAMLException e) {
 				String fullStack =  getCustomStackTrace(e);
 				String[] stackList = fullStack.split("\\n");

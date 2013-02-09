@@ -33,7 +33,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		/*
 		 * Connect to #denizen-dev on start up
 		 */
-        bot.setName("spazzmatic2");
+        bot.setName("spazzmatic");
         bot.setLogin("spazz");
         bot.setVerbose(true);
         bot.setAutoNickChange(true);

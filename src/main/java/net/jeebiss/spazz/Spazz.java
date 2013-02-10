@@ -68,12 +68,14 @@ public class Spazz extends ListenerAdapter implements Listener {
 		} else if (event.getMessage().equalsIgnoreCase(".reload")) {
 			reloadSites();
 			event.getBot().sendMessage("#denizen-dev", "Reloaded websites.");
-		} else if (event.getMessage().toLowerCase().startsWith(".update")) {
-			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + Colors.DARK_GREEN +  " builds of Craftbukkit and Citizens.");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Most errors can be fixed by updating all 3.");
-			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Denizen" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/Wvvg8N");
-			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Citizens" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/Xe8YWZ");
-			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Craftbukkit" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/A5I50a");
+		} else if (event.getMessage().toLowerCase().startsWith(".anchors") || event.getMessage().toLowerCase().startsWith(".anchor")) {
+			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "As of 0.8, locations can be referenced from scripts by using anchors linked to NPCs");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Psst, this should be expanded upon by someone better-acquainted with it.");
+		} else if (event.getMessage().toLowerCase().startsWith(".assignments") || event.getMessage().toLowerCase().startsWith(".assignment")) {
+			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "As of Denizen 0.8, the assignments.yml file is " + Colors.BOLD + "not " + Colors.NORMAL + Colors.DARK_GREEN + "necessary.");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Instead, new assignment scripts are to be used for in-game linking of scripts to NPCs.");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Just create an assignment script alongside interact scripts and assign it with /npc assign --set <assignment_script_name>");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Check out an example of this new script at " + Colors.BLUE + "http://bit.ly/YiQ0hs");
 		} else if (event.getMessage().toLowerCase().startsWith(".help")) {
 			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "So you're trying to to use 0.8 for first time?");
 			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "It's recommened that you read the current documentation.");
@@ -81,8 +83,14 @@ public class Spazz extends ListenerAdapter implements Listener {
 			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Please keep in mind the handbook its a work in progress. It does not contain everything.");
 		} else if (event.getMessage().toLowerCase().startsWith(".paste") || event.getMessage().toLowerCase().startsWith(".pastie") || event.getMessage().toLowerCase().startsWith(".hastebin") || event.getMessage().toLowerCase().startsWith(".pastebin")) {
 			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Need help with a script issue or server error?");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Help us help you by pasting your script or server log to " + Colors.BLUE + "http://hastebin.com");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + Colors.DARK_GREEN + "server log to " + Colors.BLUE + "http://hastebin.com");
 			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "From there, save the page and paste the link back in this channel.");
+		} else if (event.getMessage().toLowerCase().startsWith(".update")) {
+			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + Colors.DARK_GREEN +  " builds of Craftbukkit and Citizens.");
+			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Most errors can be fixed by updating all 3.");
+			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Denizen" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/Wvvg8N");
+			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Citizens" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/Xe8YWZ");
+			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Craftbukkit" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/A5I50a");
 		}
 		
 		else if (event.getMessage().toLowerCase().startsWith(".yaml") || event.getMessage().toLowerCase().startsWith(".yml")) {

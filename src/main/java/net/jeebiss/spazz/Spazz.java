@@ -27,6 +27,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 	long chargeInitiateTime;
 	long chargeFullTime = 30000;
 	User charger;
+	Integer botsnack = 0;
 
     static HtmlUnitDriver GHCR = new HtmlUnitDriver();
     static HtmlUnitDriver GHRR = new HtmlUnitDriver();
@@ -87,6 +88,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		}
 		if (event.getMessage().equalsIgnoreCase(".hello")) {
 			event.respond("Hello World"); 
+		
 		} else if (event.getMessage().toLowerCase().startsWith(".color")) {
 			
 			if(!hasOp(event.getUser(), event.getChannel()) && !hasVoice(event.getUser(), event.getChannel())) {
@@ -106,26 +108,46 @@ public class Spazz extends ListenerAdapter implements Listener {
 			}
 			chatColor=tempColor;
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Photon colorization beam reconfigured.");
+		
+		} else if (event.getMessage().equalsIgnoreCase(".botsnack")) {
+			String args[] = event.getMessage().split(" ");
+			
+			if (args.length == 2) {
+				event.getBot().sendMessage("#denizen-dev", chatColor +  args[1].toUpperCase() + " SNACKS! My favorite! OM NOM NOM.");
+				botsnack++;
+				return;
+				
+			} else {
+				event.getBot().sendMessage("#denizen-dev", chatColor +  "OM NOM NOM! I love botsnacks!");
+				botsnack++;
+				return;
+			}
+		
 		} else if (event.getMessage().equalsIgnoreCase(".reload")) {
 			reloadSites();
 			event.getBot().sendMessage("#denizen-dev", "Reloaded websites.");
+		
 		} else if (event.getMessage().toLowerCase().startsWith(".anchors") || event.getMessage().toLowerCase().startsWith(".anchor")) {
 			event.getBot().sendMessage("#denizen-dev", address + chatColor + "As of 0.8, locations can be referenced from scripts by using anchors linked to NPCs.");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Psst, this should be expanded upon by someone better-acquainted with it.");
+		
 		} else if (event.getMessage().toLowerCase().startsWith(".assignments") || event.getMessage().toLowerCase().startsWith(".assignment") || event.getMessage().toLowerCase().startsWith(".assign")) {
 			event.getBot().sendMessage("#denizen-dev", address + chatColor + "As of Denizen 0.8, the assignments.yml file is " + Colors.BOLD + "not " + Colors.NORMAL + chatColor + "necessary.");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Instead, create the assignment script alongside interact scripts and assign it with:");
 			event.getBot().sendMessage("#denizen-dev", chatColor + Colors.BOLD + "- /npc assign --set 'assignment_script_name'");			
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Check out an example of this new script's implementation at " + Colors.BLUE + "http://bit.ly/YiQ0hs");
+		
 		} else if (event.getMessage().toLowerCase().startsWith(".help")) {
 			event.getBot().sendMessage("#denizen-dev", address + chatColor + "Greetings. I am an interactive Denizen guide. I am a scripting guru. I am spazz.");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "For help with script commands, type " + Colors.BOLD + ".cmd command_name");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "For help with script requirements, type " + Colors.BOLD + ".req requirement_name");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "For everything else, ask in the channel or visit "+Colors.BLUE + "http://goo.gl/4CSK8"+ chatColor);
+		
 		} else if (event.getMessage().toLowerCase().startsWith(".paste") || event.getMessage().toLowerCase().startsWith(".pastie") || event.getMessage().toLowerCase().startsWith(".hastebin") || event.getMessage().toLowerCase().startsWith(".pastebin")) {
 			event.getBot().sendMessage("#denizen-dev", address + chatColor + "Need help with a script issue or server error?");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + chatColor + "server log to " + Colors.BLUE + "http://hastebin.com");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "From there, save the page and paste the link back in this channel.");
+		
 		} else if (event.getMessage().toLowerCase().startsWith(".update")) {
 			event.getBot().sendMessage("#denizen-dev", address + chatColor + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + chatColor +  " builds of Craftbukkit and Citizens.");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Most errors can be fixed by updating all 3.");
@@ -269,8 +291,14 @@ public class Spazz extends ListenerAdapter implements Listener {
 			
 			event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Whoa there, you can't touch that button.");
 			return;
+		
 		} else if (event.getMessage().toLowerCase().startsWith(".lzrbms") || event.getMessage().toLowerCase().startsWith(".lzrbmz")) {
 			if(hasOp(event.getUser(), event.getChannel()) || hasVoice(event.getUser(), event.getChannel())) {
+				if (botsnack == 0) { 
+					event.getBot().sendMessage("#denizen-dev", chatColor + event.getUser().getNick()+ ": Botsnack levels too low. Cant charge lazers...");
+					return;
+				}
+				
 				if(charging) {
 					event.getBot().sendMessage("#denizen-dev", chatColor + event.getUser().getNick()+ ": I'm already a bit occupied here!");
 					return;
@@ -280,11 +308,13 @@ public class Spazz extends ListenerAdapter implements Listener {
 				charging=true;
 				charger=event.getUser();
 				event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Imma chargin' up meh lazerbeamz...");
+				botsnack--;
 				return;
 			}
 			
 			event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Umm, that's not for you.");
 			return;
+		
 		} else if (event.getMessage().equalsIgnoreCase(".bye")) {
 			if(hasOp(event.getUser(), event.getChannel()) || hasVoice(event.getUser(), event.getChannel())) {
 				event.getBot().sendMessage("#denizen-dev", chatColor + "Goodbye cruel world!");

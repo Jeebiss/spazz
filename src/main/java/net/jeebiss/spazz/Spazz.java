@@ -10,6 +10,7 @@ import org.pircbotx.User;
 import org.pircbotx.hooks.Listener;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.MessageEvent;
+import org.pircbotx.hooks.events.PingEvent;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
@@ -51,6 +52,11 @@ public class Spazz extends ListenerAdapter implements Listener {
     	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");   
     	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");   
     }
+	
+	@Override
+	public void onPing(PingEvent event) throws Exception {
+		// ???
+	}
 	
 	@Override
     public void onMessage(MessageEvent event) throws Exception {

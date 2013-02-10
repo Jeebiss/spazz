@@ -3,8 +3,10 @@ package net.jeebiss.spazz;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import org.pircbotx.Channel;
 import org.pircbotx.Colors;
 import org.pircbotx.PircBotX;
+import org.pircbotx.User;
 import org.pircbotx.hooks.Listener;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.MessageEvent;
@@ -19,6 +21,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 public class Spazz extends ListenerAdapter implements Listener {
 	
     String[] temp;
+	String chatColor = Colors.DARK_GREEN;
 
     static HtmlUnitDriver GHCR = new HtmlUnitDriver();
     static HtmlUnitDriver GHRR = new HtmlUnitDriver();
@@ -64,30 +67,49 @@ public class Spazz extends ListenerAdapter implements Listener {
 			}
 		}
 		if (event.getMessage().equalsIgnoreCase(".hello")) {
-			event.respond("Hello World");
+			event.respond("Hello World"); 
+		} else if (event.getMessage().toLowerCase().startsWith(".color")) {
+			
+			if(!hasOp(event.getUser(), event.getChannel()) && !hasVoice(event.getUser(), event.getChannel())) {
+				event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "I'm sorry, but you do not have clearance to alter my photon colorization beam.");
+				return;
+			}
+			
+			String[] args = event.getMessage().split(" ");
+			if(args.length != 2) {
+				event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "I cannot read minds... yet. Hit me up with a bot-friendly color.");
+				return;
+			}
+			String tempColor = parseColor(args[1]);
+			if(tempColor == null) {
+				event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "I eat " + args[1] + " for breakfast. That's not a color.");
+				return;
+			}
+			chatColor=tempColor;
+			event.getBot().sendMessage("#denizen-dev", chatColor + "Photon colorization beam reconfigured.");
 		} else if (event.getMessage().equalsIgnoreCase(".reload")) {
 			reloadSites();
 			event.getBot().sendMessage("#denizen-dev", "Reloaded websites.");
 		} else if (event.getMessage().toLowerCase().startsWith(".anchors") || event.getMessage().toLowerCase().startsWith(".anchor")) {
-			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "As of 0.8, locations can be referenced from scripts by using anchors linked to NPCs");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Psst, this should be expanded upon by someone better-acquainted with it.");
-		} else if (event.getMessage().toLowerCase().startsWith(".assignments") || event.getMessage().toLowerCase().startsWith(".assignment")) {
-			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "As of Denizen 0.8, the assignments.yml file is " + Colors.BOLD + "not " + Colors.NORMAL + Colors.DARK_GREEN + "necessary.");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Instead, new assignment scripts are to be used for in-game linking of scripts to NPCs.");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Just create an assignment script alongside interact scripts and assign it with /npc assign --set <assignment_script_name>");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Check out an example of this new script at " + Colors.BLUE + "http://bit.ly/YiQ0hs");
+			event.getBot().sendMessage("#denizen-dev", address + chatColor + "As of 0.8, locations can be referenced from scripts by using anchors linked to NPCs.");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "Psst, this should be expanded upon by someone better-acquainted with it.");
+		} else if (event.getMessage().toLowerCase().startsWith(".assignments") || event.getMessage().toLowerCase().startsWith(".assignment") || event.getMessage().toLowerCase().startsWith(".assign")) {
+			event.getBot().sendMessage("#denizen-dev", address + chatColor + "As of Denizen 0.8, the assignments.yml file is " + Colors.BOLD + "not " + Colors.NORMAL + chatColor + "necessary.");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "Instead, create the assignment script alongside interact scripts and assign it with:");
+			event.getBot().sendMessage("#denizen-dev", chatColor + Colors.BOLD + "- /npc assign --set 'assignment_script_name'");			
+			event.getBot().sendMessage("#denizen-dev", chatColor + "Check out an example of this new script's implementation at " + Colors.BLUE + "http://bit.ly/YiQ0hs");
 		} else if (event.getMessage().toLowerCase().startsWith(".help")) {
-			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "So you're trying to to use 0.8 for first time?");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "It's recommened that you read the current documentation.");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Denizen 0.8 Handbook - http://goo.gl/4CSK8");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Please keep in mind the handbook its a work in progress. It does not contain everything.");
+			event.getBot().sendMessage("#denizen-dev", address + chatColor + "Greetings. I am an interactive Denizen guide. I am a scripting guru. I am spazz.");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "For help with script commands, type " + Colors.BOLD + ".cmd command_name");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "For help with script requirements, type " + Colors.BOLD + ".req requirement_name");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "For everything else, ask in the channel or visit "+Colors.BLUE + "http://goo.gl/4CSK8"+ chatColor);
 		} else if (event.getMessage().toLowerCase().startsWith(".paste") || event.getMessage().toLowerCase().startsWith(".pastie") || event.getMessage().toLowerCase().startsWith(".hastebin") || event.getMessage().toLowerCase().startsWith(".pastebin")) {
-			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Need help with a script issue or server error?");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + Colors.DARK_GREEN + "server log to " + Colors.BLUE + "http://hastebin.com");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "From there, save the page and paste the link back in this channel.");
+			event.getBot().sendMessage("#denizen-dev", address + chatColor + "Need help with a script issue or server error?");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + chatColor + "server log to " + Colors.BLUE + "http://hastebin.com");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "From there, save the page and paste the link back in this channel.");
 		} else if (event.getMessage().toLowerCase().startsWith(".update")) {
-			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + Colors.DARK_GREEN +  " builds of Craftbukkit and Citizens.");
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Most errors can be fixed by updating all 3.");
+			event.getBot().sendMessage("#denizen-dev", address + chatColor + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + chatColor +  " builds of Craftbukkit and Citizens.");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "Most errors can be fixed by updating all 3.");
 			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Denizen" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/Wvvg8N");
 			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Citizens" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/Xe8YWZ");
 			event.getBot().sendMessage("#denizen-dev", Colors.BOLD + "Craftbukkit" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/A5I50a");
@@ -119,7 +141,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			Yaml yaml = new Yaml();
 			try {
 				yaml.load(rawYaml);
-				bot.sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Your YAML is valid.");
+				bot.sendMessage("#denizen-dev", address + chatColor + "Your YAML is valid.");
 			} catch (YAMLException e) {
 				String fullStack =  getCustomStackTrace(e);
 				String[] stackList = fullStack.split("\\n");
@@ -145,14 +167,14 @@ public class Spazz extends ListenerAdapter implements Listener {
 						if (commandname.substring(1, commandname.length()-1).equalsIgnoreCase(command.toUpperCase())) {
 							usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
 							String message = usage.getText();
-							bot.sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Usage: - " + message.substring(1, message.length() - 1));
+							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + message.substring(1, message.length() - 1));
 							return;
 						}
 					x = x + 3;
 				} catch (Exception e) { done = true; System.out.println("done."); }
 			}
 			
-			bot.sendMessage("#denizen-dev", Colors.DARK_GREEN + "The command '" + command + "' does not exist. If you think it should, feel free to suggest it to a developer.");
+			bot.sendMessage("#denizen-dev", chatColor + "The command '" + command + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
 		} else if (event.getMessage().toLowerCase().startsWith(".requirement") || event.getMessage().toLowerCase().startsWith(".req")) {
@@ -170,34 +192,134 @@ public class Spazz extends ListenerAdapter implements Listener {
 					if (requirementname.substring(1, requirementname.length()-1).equalsIgnoreCase(requirement.toUpperCase())) {
 						usage = GHRR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
 						String message = usage.getText();
-						bot.sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Usage: - " + message.substring(1, message.length() - 1));
+						bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + message.substring(1, message.length() - 1));
 						return;
 					}
 					x = x + 3;
 				} catch (Exception e) { done = true; System.out.println("done."); }
 			}
 			
-			bot.sendMessage("#denizen-dev", Colors.DARK_GREEN + "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
+			bot.sendMessage("#denizen-dev", chatColor + "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
 		} else if (event.getMessage().toLowerCase().startsWith(".cb") || event.getMessage().toLowerCase().startsWith(".coolbeans")) {
-			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "That's cool beans.");
+			event.getBot().sendMessage("#denizen-dev", address + chatColor + "That's cool beans.");
 			
 		} else if (event.getMessage().toLowerCase().startsWith(".hb") || event.getMessage().toLowerCase().startsWith(".handbook")) {
-			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Current 0.8 Documentation - "+ Colors.BLUE + "http://bit.ly/XaWBLN");
+			event.getBot().sendMessage("#denizen-dev", address + chatColor + "Current 0.8 Documentation - "+ Colors.BLUE + "http://bit.ly/XaWBLN");
 			
 		} else if (event.getMessage().toLowerCase().startsWith(".getstarted") || event.getMessage().toLowerCase().startsWith(".gs")) {
-			event.getBot().sendMessage("#denizen-dev", address + Colors.DARK_GREEN + "Add info for newbies");
+			event.getBot().sendMessage("#denizen-dev", address + chatColor + "So you're trying to to use 0.8 for first time?");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "It's recommened that you read the current documentation.");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "Denizen 0.8 Handbook - http://goo.gl/4CSK8");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "Please keep in mind the handbook its a work in progress. It does not contain everything.");
 			
 		} else if (event.getMessage().equalsIgnoreCase(".bye")) {
-			event.getBot().sendMessage("#denizen-dev", Colors.DARK_GREEN + "Goodbye cruel world!");
-			event.getBot().disconnect();
+			if(hasOp(event.getUser(), event.getChannel()) || hasVoice(event.getUser(), event.getChannel())) {
+				event.getBot().sendMessage("#denizen-dev", chatColor + "Goodbye cruel world!");
+				event.getBot().disconnect();
+			}
+			
+			event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Hah! You'll never kill me...");
+			return;
 		}
 	}
 	
 	private void reloadSites() {
 		GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");   
     	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");	
+	}
+	
+	private boolean hasVoice(User chatter, Channel channel) {
+		if(channel.hasVoice(chatter))
+			return true;
+		return false;
+	}
+	
+	private boolean hasOp(User chatter, Channel channel) {
+		if(channel.isOp(chatter))
+			return true;
+		return false;
+	}
+	
+	private String parseColor(String colorName) {
+		
+		if(colorName.contains("&")) {
+			String args[] = colorName.split("&");
+			switch(args[args.length]){
+			case "0":
+				return Colors.BLACK;
+			case "1":
+				return Colors.DARK_BLUE;
+			case "2":
+				return Colors.DARK_GREEN;
+			case "3":
+				return Colors.TEAL;
+			case "4":
+				return Colors.RED;
+			case "5":
+				return Colors.PURPLE;
+			case "6":
+				return Colors.YELLOW;
+			case "7":
+				return Colors.LIGHT_GRAY;
+			case "8":
+				return Colors.DARK_GRAY;
+			case "9":
+				return Colors.BLUE;
+			case "a":
+				return Colors.GREEN;
+			case "b":
+				return Colors.CYAN;
+			case "c":
+				return Colors.RED;
+			case "d":
+				return Colors.MAGENTA;
+			case "e":
+				return Colors.YELLOW;
+			case "f":
+				return Colors.WHITE;
+			default:
+				return null;
+			}
+		}
+		
+		if(colorName.equalsIgnoreCase("black"))
+			return Colors.BLACK;
+		if(colorName.equalsIgnoreCase("blue") || colorName.equalsIgnoreCase("lightblue"))
+			return Colors.BLUE;
+		if(colorName.equalsIgnoreCase("brown") || colorName.equalsIgnoreCase("poop"))
+			return Colors.BROWN;
+		if(colorName.equalsIgnoreCase("cyan"))
+			return Colors.CYAN;
+		if(colorName.equalsIgnoreCase("darkblue"))
+			return Colors.DARK_BLUE;
+		if(colorName.equalsIgnoreCase("darkgray"))
+			return Colors.DARK_GRAY;
+		if(colorName.equalsIgnoreCase("green") || colorName.equalsIgnoreCase("darkgreen"))
+			return Colors.DARK_GREEN;
+		if(colorName.equalsIgnoreCase("lime") || colorName.equalsIgnoreCase("brightgreen") || colorName.equalsIgnoreCase("lightgreen") || colorName.equalsIgnoreCase("&a"))
+			return Colors.GREEN;
+		if(colorName.equalsIgnoreCase("lightgray"))
+			return Colors.LIGHT_GRAY;
+		if(colorName.equalsIgnoreCase("magenta"))
+			return Colors.MAGENTA;
+		if(colorName.equalsIgnoreCase("olive") || colorName.equalsIgnoreCase("orange"))
+			return Colors.OLIVE;
+		if(colorName.equalsIgnoreCase("purple"))
+			return Colors.PURPLE;
+		if(colorName.equalsIgnoreCase("red") || colorName.equalsIgnoreCase("warning"))
+			return Colors.RED;
+		if(colorName.equalsIgnoreCase("reverse") || colorName.equalsIgnoreCase("contrast"))
+			return Colors.REVERSE;
+		if(colorName.equalsIgnoreCase("teal"))
+			return Colors.TEAL;
+		if(colorName.equalsIgnoreCase("white"))
+			return Colors.WHITE;
+		if(colorName.equalsIgnoreCase("yellow"))
+			return Colors.YELLOW;
+		
+		return null;
 	}
 
 	public static String getCustomStackTrace(Throwable aThrowable) {

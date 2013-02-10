@@ -22,6 +22,10 @@ public class Spazz extends ListenerAdapter implements Listener {
 	
     String[] temp;
 	String chatColor = Colors.DARK_GREEN;
+	boolean charging=false;
+	long chargeInitiateTime;
+	long chargeFullTime = 30000;
+	User charger;
 
     static HtmlUnitDriver GHCR = new HtmlUnitDriver();
     static HtmlUnitDriver GHRR = new HtmlUnitDriver();
@@ -52,6 +56,15 @@ public class Spazz extends ListenerAdapter implements Listener {
     public void onMessage(MessageEvent event) throws Exception {
 		
 		String address = "";
+		if(charging) {
+			if(System.currentTimeMillis() > (chargeInitiateTime + chargeFullTime + chargeFullTime/2)) {
+				event.getBot().sendAction("#denizen-dev", "loses control of his beams, accidentally making pew pew noises towards "+charger.getNick()+"!");
+				charging=false;
+				chargeInitiateTime=0;
+				charger=null;
+			}
+				
+		}
 		
 		if(event.getMessage().endsWith("@@")) {
 			String args[] = event.getMessage().split(" ");
@@ -214,6 +227,58 @@ public class Spazz extends ListenerAdapter implements Listener {
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Denizen 0.8 Handbook - http://goo.gl/4CSK8");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Please keep in mind the handbook its a work in progress. It does not contain everything.");
 			
+		} else if (event.getMessage().toLowerCase().startsWith(".fire")) {
+			if(hasOp(event.getUser(), event.getChannel()) || hasVoice(event.getUser(), event.getChannel())) {
+				String args[] = event.getMessage().split(" ");
+				if(!charging) {
+					event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Erm... was I supposed to be charging? D:");
+					return;
+				}
+				if(event.getUser() != charger) {
+					event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Sorry, but my firing sequence has already been started by "+charger.getNick()+".");
+					return;
+				}
+				if(args.length != 2) {
+					event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "I can't just fire into thin air :(");
+					return;
+				}
+				if(event.getChannel().getUsers().toString().contains(args[1])) {
+					double chance = (Math.random() *99 + 1) * ((System.currentTimeMillis()-chargeInitiateTime)/chargeFullTime);
+					if(chance > 50) {
+						event.getBot().sendAction("#denizen-dev", chatColor + "makes pew pew noises towards "+ args[1] + "... successfully!");
+						event.getBot().sendMessage("#denizen-dev", chatColor + "Take that " + args[1] + "!");
+					} else {
+						event.getBot().sendAction("#denizen-dev", chatColor + "makes pew pew noises towards "+ args[1] + "... and misses D:");
+						event.getBot().sendMessage("#denizen-dev", chatColor + "You've bested me this time " + args[1] + "...");
+					}
+					charging=false;
+					chargeInitiateTime=0;
+					charger=null;
+					return;
+				} else {
+					event.getBot().sendMessage("#denizen-dev", event.getUser().getNick() + ": "+ chatColor + args[1] + ", really? I need a legitimate target. This is serious business.");
+					return;
+				}
+			}
+			
+			event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Whoa there, you can't touch that button.");
+			return;
+		} else if (event.getMessage().toLowerCase().startsWith(".lzrbms") || event.getMessage().toLowerCase().startsWith(".lzrbmz")) {
+			if(hasOp(event.getUser(), event.getChannel()) || hasVoice(event.getUser(), event.getChannel())) {
+				if(charging) {
+					event.getBot().sendMessage("#denizen-dev", chatColor + event.getUser().getNick()+ ": I'm already a bit occupied here!");
+					return;
+				}
+				
+				chargeInitiateTime=System.currentTimeMillis();
+				charging=true;
+				charger=event.getUser();
+				event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Imma chargin' up meh lazerbeamz...");
+				return;
+			}
+			
+			event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Umm, that's not for you.");
+			return;
 		} else if (event.getMessage().equalsIgnoreCase(".bye")) {
 			if(hasOp(event.getUser(), event.getChannel()) || hasVoice(event.getUser(), event.getChannel())) {
 				event.getBot().sendMessage("#denizen-dev", chatColor + "Goodbye cruel world!");

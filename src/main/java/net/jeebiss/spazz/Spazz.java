@@ -103,7 +103,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			}
 			
 			String[] args = event.getMessage().split(" ");
-			if(args.length != 2) {
+			if(args.length > 3) {
 				event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "I cannot read minds... yet. Hit me up with a bot-friendly color.");
 				return;
 			}
@@ -112,8 +112,20 @@ public class Spazz extends ListenerAdapter implements Listener {
 				event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "I eat " + args[1] + " for breakfast. That's not a color.");
 				return;
 			}
-			chatColor=tempColor;
-			event.getBot().sendMessage("#denizen-dev", chatColor + "Photon colorization beam reconfigured.");
+			
+			if(args.length == 3) {
+				if(args[2].equalsIgnoreCase("default"))
+					defaultColor=tempColor;
+				else
+					if(args[2].equalsIgnoreCase("optional"))
+						optionalColor=tempColor;
+					else
+						if(args[2].equalsIgnoreCase("chat"))
+							chatColor=tempColor;
+			}
+			else 
+				chatColor=tempColor;
+			event.getBot().sendMessage("#denizen-dev", chatColor  + "Photon colorization beam reconfigured "+ "[] " + optionalColor + "() " + defaultColor + "{}");
 		
 		} else if (event.getMessage().toLowerCase().startsWith(".botsnack")) {
 			String args[] = event.getMessage().split(" ");

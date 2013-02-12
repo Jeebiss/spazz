@@ -1,5 +1,8 @@
 package net.jeebiss.spazz;
 
+import java.util.ArrayList;
+import java.util.Random;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
@@ -23,11 +26,14 @@ public class Spazz extends ListenerAdapter implements Listener {
 	
     String[] temp;
 	String chatColor = Colors.DARK_GREEN;
+	String optionalColor = Colors.DARK_BLUE;
+	String defaultColor = Colors.OLIVE;
 	boolean charging=false;
 	long chargeInitiateTime;
 	long chargeFullTime = 30000;
 	User charger;
-	Integer botsnack = 0;
+	int botsnack = 0;
+	ArrayList<User> feeders = new ArrayList<User>();
 
     static HtmlUnitDriver GHCR = new HtmlUnitDriver();
     static HtmlUnitDriver GHRR = new HtmlUnitDriver();
@@ -109,16 +115,30 @@ public class Spazz extends ListenerAdapter implements Listener {
 			chatColor=tempColor;
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Photon colorization beam reconfigured.");
 		
-		} else if (event.getMessage().equalsIgnoreCase(".botsnack")) {
+		} else if (event.getMessage().toLowerCase().startsWith(".botsnack")) {
 			String args[] = event.getMessage().split(" ");
 			
+			if (feeders.toString().contains(event.getUser().toString())) {
+				event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Thanks, but I can't have you controlling too much of my diet.");
+				return;
+			}
+			
 			if (args.length == 2) {
-				event.getBot().sendMessage("#denizen-dev", chatColor +  args[1].toUpperCase() + " SNACKS! My favorite! OM NOM NOM.");
+				if(event.getChannel().getUsers().toString().contains(args[1])) 
+					event.getBot().sendMessage("#denizen-dev", chatColor + "Gluttony mode activated. Beginning " + args[1] + " consumption sequence.");
+				else {
+					ArrayList<User> users = new ArrayList<User>(event.getChannel().getUsers());
+					Random rand = new Random();
+					User random = users.get(rand.nextInt(users.size()));
+					event.getBot().sendMessage("#denizen-dev", chatColor + "Oh no! " + args[1] + " not found, nomming "+random.getNick() + " instead.");
+				}
+				feeders.add(event.getUser());
 				botsnack++;
 				return;
 				
 			} else {
 				event.getBot().sendMessage("#denizen-dev", chatColor +  "OM NOM NOM! I love botsnacks!");
+				feeders.add(event.getUser());
 				botsnack++;
 				return;
 			}
@@ -193,7 +213,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 				}
 			}
 			
-		} else if (event.getMessage().toLowerCase().startsWith(".command") || event.getMessage().toLowerCase().startsWith(".cmd")) {
+		} else if (event.getMessage().toLowerCase().startsWith(".cmd") || event.getMessage().toLowerCase().startsWith(".command")) {
 			PircBotX bot = event.getBot();
 			String [] args = event.getMessage().split(" ");
 			String command = args[1].toLowerCase();
@@ -207,18 +227,19 @@ public class Spazz extends ListenerAdapter implements Listener {
 					System.out.println(commandname);
 						if (commandname.substring(1, commandname.length()-1).equalsIgnoreCase(command.toUpperCase())) {
 							usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
-							String message = usage.getText();
-							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + message.substring(1, message.length() - 1));
+							String unparsed = usage.getText();
+							String formatted = parseUsage(unparsed.substring(1, unparsed.length() - 1));
+							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + formatted);
 							return;
 						}
 					x = x + 3;
-				} catch (Exception e) { done = true; System.out.println("done."); }
+				} catch (Exception e) { e.printStackTrace(); done = true; System.out.println("done."); }
 			}
 			
 			bot.sendMessage("#denizen-dev", chatColor + "The command '" + command + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
-		} else if (event.getMessage().toLowerCase().startsWith(".requirement") || event.getMessage().toLowerCase().startsWith(".req")) {
+		} else if (event.getMessage().toLowerCase().startsWith(".req") || event.getMessage().toLowerCase().startsWith(".requirement")) {
 			PircBotX bot = event.getBot();
 			String [] args = event.getMessage().split(" ");
 			String requirement = args[1].toLowerCase();
@@ -232,8 +253,9 @@ public class Spazz extends ListenerAdapter implements Listener {
 					System.out.println(requirementname);
 					if (requirementname.substring(1, requirementname.length()-1).equalsIgnoreCase(requirement.toUpperCase())) {
 						usage = GHRR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
-						String message = usage.getText();
-						bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + message.substring(1, message.length() - 1));
+						String unparsed = usage.getText();
+						String formatted = parseUsage(unparsed.substring(1, unparsed.length() - 1));
+						bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + formatted);
 						return;
 					}
 					x = x + 3;
@@ -282,6 +304,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 					charging=false;
 					chargeInitiateTime=0;
 					charger=null;
+					feeders.clear();
 					return;
 				} else {
 					event.getBot().sendMessage("#denizen-dev", event.getUser().getNick() + ": "+ chatColor + args[1] + ", really? I need a legitimate target. This is serious business.");
@@ -294,13 +317,13 @@ public class Spazz extends ListenerAdapter implements Listener {
 		
 		} else if (event.getMessage().toLowerCase().startsWith(".lzrbms") || event.getMessage().toLowerCase().startsWith(".lzrbmz")) {
 			if(hasOp(event.getUser(), event.getChannel()) || hasVoice(event.getUser(), event.getChannel())) {
-				if (botsnack == 0) { 
-					event.getBot().sendMessage("#denizen-dev", chatColor + event.getUser().getNick()+ ": Botsnack levels too low. Cant charge lazers...");
+				if (botsnack < 3) { 
+					event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ chatColor +": Botsnack levels too low. Can't charge lazers...");
 					return;
 				}
 				
 				if(charging) {
-					event.getBot().sendMessage("#denizen-dev", chatColor + event.getUser().getNick()+ ": I'm already a bit occupied here!");
+					event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ chatColor +": I'm already a bit occupied here!");
 					return;
 				}
 				
@@ -308,7 +331,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 				charging=true;
 				charger=event.getUser();
 				event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Imma chargin' up meh lazerbeamz...");
-				botsnack--;
+				botsnack-=5;
 				return;
 			}
 			
@@ -319,6 +342,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			if(hasOp(event.getUser(), event.getChannel()) || hasVoice(event.getUser(), event.getChannel())) {
 				event.getBot().sendMessage("#denizen-dev", chatColor + "Goodbye cruel world!");
 				event.getBot().disconnect();
+				return;
 			}
 			
 			event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Hah! You'll never kill me...");
@@ -343,11 +367,120 @@ public class Spazz extends ListenerAdapter implements Listener {
 		return false;
 	}
 	
+	private String parseUsage(String unparsed) {
+		String formatted = unparsed;	
+		String beforeColor = chatColor;
+		
+		int requiredIndex = formatted.indexOf("]");
+		System.out.println("First required index: " + requiredIndex);
+		
+		formatted = formatted.replace("[", chatColor + "[");
+		formatted = formatted.replace("(", optionalColor + "(");
+		formatted = formatted.replace("{", defaultColor + "{");
+		formatted = formatted.replace("]", chatColor + "]");
+		formatted = formatted.replace(")", optionalColor + ")");
+		formatted = formatted.replace("}", defaultColor + "}");
+		while (requiredIndex != -1) {
+			
+			System.out.println("Req index: " + requiredIndex);
+			
+			int lastOptional = formatted.indexOf(")", requiredIndex);
+			System.out.println("Opt index: " + lastOptional);
+
+			int lastDefault = formatted.indexOf("}", requiredIndex);
+			System.out.println("Def index: " + lastDefault);
+
+			int lastSpace = formatted.indexOf(" ", requiredIndex);
+			System.out.println("Space index: " + lastSpace);
+
+			
+			if(lastSpace > lastDefault || lastSpace > lastOptional) {
+				if(lastOptional != -1 && lastSpace > lastOptional) {
+					if(lastOptional < lastDefault);
+						beforeColor = optionalColor;
+				}
+				
+				else {
+					if(lastDefault != -1 && lastSpace > lastDefault)
+						beforeColor = defaultColor;
+				}
+			}
+			
+			formatted = formatted.substring(0, requiredIndex + 1) + beforeColor + formatted.substring(requiredIndex + 1);
+			requiredIndex = formatted.indexOf("]",requiredIndex + 1);
+
+		}
+		
+		int optionalIndex = formatted.indexOf(")");
+		System.out.println("First optional index: " + optionalIndex);
+		
+		while (optionalIndex != -1) {
+			System.out.println("Opt index: " + optionalIndex);
+
+			int lastRequired = formatted.indexOf("]", optionalIndex);
+			System.out.println("Req index: " + lastRequired);
+			int lastDefault = formatted.indexOf("}", optionalIndex);
+			System.out.println("Def index: " + lastDefault);
+			int lastSpace = formatted.indexOf(" ", optionalIndex);
+			System.out.println("Space index: " + lastSpace);
+			
+			if(lastSpace > lastDefault || lastSpace > lastRequired) {
+				if(lastRequired != -1 && lastSpace > lastRequired) {
+					if(lastRequired < lastDefault);
+						beforeColor = chatColor;
+				}
+				
+				else {
+					if(lastDefault != -1 && lastSpace > lastDefault)
+						beforeColor = defaultColor;
+				}
+			}
+			
+			formatted = formatted.substring(0, optionalIndex + 1) + beforeColor + formatted.substring(optionalIndex + 1);
+			optionalIndex = formatted.indexOf(")",optionalIndex + 1);
+
+		}
+		
+		int defaultIndex = formatted.indexOf("}");
+		System.out.println("First optional index: " + defaultIndex);
+		
+		while (defaultIndex != -1) {
+			System.out.println("Opt index: " + defaultIndex);
+
+			int lastRequired = formatted.indexOf("]", defaultIndex);
+			System.out.println("Req index: " + lastRequired);
+			int lastOptional = formatted.indexOf(")", defaultIndex);
+			System.out.println("Def index: " + lastOptional);
+			int lastSpace = formatted.indexOf(" ", defaultIndex);
+			System.out.println("Space index: " + lastSpace);
+			
+			if(lastSpace > lastOptional || lastSpace > lastRequired) {
+				if(lastRequired != -1 && lastSpace > lastRequired) {
+					if(lastRequired < lastOptional);
+						beforeColor = chatColor;
+				}
+				
+				else {
+					if(lastOptional != -1 && lastSpace > lastOptional)
+						beforeColor = optionalColor;
+				}
+			}
+			
+			formatted = formatted.substring(0, defaultIndex + 1) + beforeColor + formatted.substring(defaultIndex + 1);
+			defaultIndex = formatted.indexOf("}",defaultIndex + 1);
+
+		}
+	
+		return formatted;
+	}
+	
 	private String parseColor(String colorName) {
 		
 		if(colorName.contains("&")) {
-			String args[] = colorName.split("&");
-			switch(args[args.length]){
+			if(colorName.length() < 2)
+				return null;
+			String symbol = colorName.substring(1, colorName.length());
+			switch(symbol){
 			case "0":
 				return Colors.BLACK;
 			case "1":

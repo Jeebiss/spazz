@@ -288,7 +288,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			event.getBot().sendMessage("#denizen-dev", address + chatColor + "So you're trying to to use 0.8 for first time?");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "To see how I can help you, type " + Colors.BOLD + ".help");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "It's also recommened that you read the current documentation.");
-			event.getBot().sendMessage("#denizen-dev", chatColor + "Denizen 0.8 Handbook - http://goo.gl/4CSK8");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "Denizen 0.8 Handbook - " + Colors.BLUE + "http://goo.gl/4CSK8");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Please keep in mind the handbook its a work in progress. It does not contain everything.");
 			
 		} else if (event.getMessage().toLowerCase().startsWith(".fire")) {

@@ -368,109 +368,122 @@ public class Spazz extends ListenerAdapter implements Listener {
 	}
 	
 	private String parseUsage(String unparsed) {
+		
+		// Keeping debugging code for use with future commands
+		
 		String formatted = unparsed;	
 		String beforeColor = chatColor;
 		
-		int requiredIndex = formatted.indexOf("]");
-		System.out.println("First required index: " + requiredIndex);
+		if(formatted.contains("chat")) {
+			return "chat " + chatColor + "['message to chat'] " + optionalColor + "(npcid:#) (target(s):npc.#|player.player_name"+defaultColor+"{attached player}" + optionalColor + ")";
+		}
 		
 		formatted = formatted.replace("[", chatColor + "[");
 		formatted = formatted.replace("(", optionalColor + "(");
 		formatted = formatted.replace("{", defaultColor + "{");
 		formatted = formatted.replace("]", chatColor + "]");
 		formatted = formatted.replace(")", optionalColor + ")");
-		formatted = formatted.replace("}", defaultColor + "}");
+		formatted = formatted.replace("}", defaultColor + "}");		
+		int requiredIndex = formatted.indexOf("]");
+		//System.out.println("Beginning " +formatted);
+
 		while (requiredIndex != -1) {
 			
-			System.out.println("Req index: " + requiredIndex);
-			
+			int lastRequired = formatted.indexOf("]", requiredIndex+1);
 			int lastOptional = formatted.indexOf(")", requiredIndex);
-			System.out.println("Opt index: " + lastOptional);
-
 			int lastDefault = formatted.indexOf("}", requiredIndex);
-			System.out.println("Def index: " + lastDefault);
-
 			int lastSpace = formatted.indexOf(" ", requiredIndex);
-			System.out.println("Space index: " + lastSpace);
 
-			
-			if(lastSpace > lastDefault || lastSpace > lastOptional) {
-				if(lastOptional != -1 && lastSpace > lastOptional) {
-					if(lastOptional < lastDefault);
-						beforeColor = optionalColor;
+			if(lastSpace == -1 || lastSpace > lastDefault || lastSpace > lastOptional || lastSpace > lastRequired) {
+				if(lastRequired != -1 && (lastSpace > lastRequired || lastSpace == -1)) {
+					if((lastDefault == -1 || lastOptional == -1) || lastRequired < lastDefault && lastRequired < lastOptional);
+						beforeColor = chatColor;
 				}
+				else
+					if(lastOptional != -1 && (lastSpace > lastOptional || lastSpace == -1)) {
+						if(lastDefault == -1 || lastOptional < lastDefault);
+							beforeColor = optionalColor;
+					}
 				
-				else {
-					if(lastDefault != -1 && lastSpace > lastDefault)
-						beforeColor = defaultColor;
+					else {
+						if(lastDefault != -1 && (lastSpace > lastDefault || lastSpace == -1))
+							beforeColor = defaultColor;
 				}
 			}
-			
+			//System.out.println("Required Loop before change " +formatted);
+			//System.out.println("First half " + formatted.substring(0, requiredIndex + 1));
+			//System.out.println("Second half " + formatted.substring(requiredIndex + 1));
+
 			formatted = formatted.substring(0, requiredIndex + 1) + beforeColor + formatted.substring(requiredIndex + 1);
 			requiredIndex = formatted.indexOf("]",requiredIndex + 1);
+			//System.out.println("Required Loop after change " +formatted);
 
 		}
-		
+		//System.out.println("After Req Loop " + formatted);
+
 		int optionalIndex = formatted.indexOf(")");
-		System.out.println("First optional index: " + optionalIndex);
 		
 		while (optionalIndex != -1) {
-			System.out.println("Opt index: " + optionalIndex);
 
+			int lastOptional = formatted.indexOf(")", optionalIndex+1);
 			int lastRequired = formatted.indexOf("]", optionalIndex);
-			System.out.println("Req index: " + lastRequired);
 			int lastDefault = formatted.indexOf("}", optionalIndex);
-			System.out.println("Def index: " + lastDefault);
 			int lastSpace = formatted.indexOf(" ", optionalIndex);
-			System.out.println("Space index: " + lastSpace);
 			
-			if(lastSpace > lastDefault || lastSpace > lastRequired) {
-				if(lastRequired != -1 && lastSpace > lastRequired) {
-					if(lastRequired < lastDefault);
-						beforeColor = chatColor;
+			if(lastSpace == -1 || lastSpace > lastDefault || lastSpace > lastRequired || lastSpace > lastOptional) {
+				if(lastOptional != -1 && (lastSpace > lastOptional || lastSpace == -1)) {
+					if((lastDefault == -1 && lastRequired == -1) || (lastOptional < lastDefault && lastOptional < lastRequired))
+						beforeColor = optionalColor;
 				}
-				
-				else {
-					if(lastDefault != -1 && lastSpace > lastDefault)
-						beforeColor = defaultColor;
-				}
+				else
+					if(lastRequired != -1 && (lastSpace > lastRequired || lastSpace == -1)) {
+						if(lastDefault == -1 || lastRequired < lastDefault);
+							beforeColor = chatColor;
+					}
+					
+					else {
+						if(lastDefault != -1 && (lastSpace > lastDefault || lastSpace == -1))
+							beforeColor = defaultColor;
+					}
 			}
-			
+			//System.out.println("Optional Loop before change " + formatted);
+
 			formatted = formatted.substring(0, optionalIndex + 1) + beforeColor + formatted.substring(optionalIndex + 1);
 			optionalIndex = formatted.indexOf(")",optionalIndex + 1);
+			//System.out.println("Optional Loop after change " + formatted);
 
 		}
-		
+		//System.out.println("After OL " + formatted);
+
 		int defaultIndex = formatted.indexOf("}");
-		System.out.println("First optional index: " + defaultIndex);
 		
 		while (defaultIndex != -1) {
-			System.out.println("Opt index: " + defaultIndex);
-
+		
 			int lastRequired = formatted.indexOf("]", defaultIndex);
-			System.out.println("Req index: " + lastRequired);
 			int lastOptional = formatted.indexOf(")", defaultIndex);
-			System.out.println("Def index: " + lastOptional);
 			int lastSpace = formatted.indexOf(" ", defaultIndex);
-			System.out.println("Space index: " + lastSpace);
 			
-			if(lastSpace > lastOptional || lastSpace > lastRequired) {
-				if(lastRequired != -1 && lastSpace > lastRequired) {
-					if(lastRequired < lastOptional);
+			if(lastSpace == -1 || lastSpace > lastOptional || lastSpace > lastRequired) {
+				if(lastRequired != -1 && (lastSpace > lastRequired || lastSpace == -1)) {
+					if(lastOptional == -1 || lastRequired < lastOptional);
 						beforeColor = chatColor;
 				}
 				
 				else {
-					if(lastOptional != -1 && lastSpace > lastOptional)
+					if(lastOptional != -1 && (lastSpace > lastOptional || lastSpace == -1))
 						beforeColor = optionalColor;
 				}
 			}
-			
+			//System.out.println("DL before change " + formatted);
+
 			formatted = formatted.substring(0, defaultIndex + 1) + beforeColor + formatted.substring(defaultIndex + 1);
 			defaultIndex = formatted.indexOf("}",defaultIndex + 1);
+			//System.out.println("DL after change " + formatted);
 
 		}
-	
+		
+
+		//System.out.println("Final " + formatted);
 		return formatted;
 	}
 	

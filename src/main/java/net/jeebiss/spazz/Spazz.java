@@ -171,6 +171,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		
 		} else if (event.getMessage().toLowerCase().startsWith(".help")) {
 			event.getBot().sendMessage("#denizen-dev", address + chatColor + "Greetings. I am an interactive Denizen guide. I am a scripting guru. I am spazz.");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "If you're a newbie to Denizen, type " + Colors.BOLD + ".getstarted");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "For help with script commands, type " + Colors.BOLD + ".cmd command_name");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "For help with script requirements, type " + Colors.BOLD + ".req requirement_name");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "For everything else, ask in the channel or visit "+Colors.BLUE + "http://goo.gl/4CSK8"+ chatColor);
@@ -285,7 +286,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 			
 		} else if (event.getMessage().toLowerCase().startsWith(".getstarted") || event.getMessage().toLowerCase().startsWith(".gs")) {
 			event.getBot().sendMessage("#denizen-dev", address + chatColor + "So you're trying to to use 0.8 for first time?");
-			event.getBot().sendMessage("#denizen-dev", chatColor + "It's recommened that you read the current documentation.");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "To see how I can help you, type " + Colors.BOLD + ".help");
+			event.getBot().sendMessage("#denizen-dev", chatColor + "It's also recommened that you read the current documentation.");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Denizen 0.8 Handbook - http://goo.gl/4CSK8");
 			event.getBot().sendMessage("#denizen-dev", chatColor + "Please keep in mind the handbook its a work in progress. It does not contain everything.");
 			

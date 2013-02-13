@@ -75,6 +75,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 				charging=false;
 				chargeInitiateTime=0;
 				charger=null;
+				botsnack=0;
+				feeders.clear();
 			}
 				
 		}
@@ -345,7 +347,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 				charging=true;
 				charger=event.getUser();
 				event.getBot().sendMessage("#denizen-dev", event.getUser().getNick()+ ": " + chatColor + "Imma chargin' up meh lazerbeamz...");
-				botsnack-=5;
+				botsnack-=3;
 				return;
 			}
 			

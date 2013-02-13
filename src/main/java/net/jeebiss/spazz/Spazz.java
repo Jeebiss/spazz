@@ -12,6 +12,7 @@ import org.pircbotx.PircBotX;
 import org.pircbotx.User;
 import org.pircbotx.hooks.Listener;
 import org.pircbotx.hooks.ListenerAdapter;
+import org.pircbotx.hooks.events.JoinEvent;
 import org.pircbotx.hooks.events.MessageEvent;
 import org.pircbotx.hooks.events.PingEvent;
 import org.yaml.snakeyaml.Yaml;
@@ -59,6 +60,11 @@ public class Spazz extends ListenerAdapter implements Listener {
     	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");   
     	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");   
     }
+	
+	@Override
+	public void onJoin(JoinEvent event) throws Exception {
+		event.getBot().sendNotice(event.getUser(), "Welcome to #denizen-dev, home of the Denizen project. If you'd like help with anything, type " + Colors.BOLD + Colors.BLUE + ".help");
+	}
 	
 	@Override
 	public void onPing(PingEvent event) throws Exception {

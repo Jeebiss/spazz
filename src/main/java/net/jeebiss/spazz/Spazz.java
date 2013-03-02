@@ -205,7 +205,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			return;
 		} else if (msgLwr.startsWith(".newconfig") || msgLwr.startsWith(".nc")) {
 			bot.sendMessage("#denizen-dev", address + chatColor +  "If you are having issues with triggers nto firing, you may be using the old config file.");
-			bot.sendMessage("#denizen-dev", address + chatColor +  "You can easily generate a new one by deleteing your current config.yml file in the Denizen folder");
+			bot.sendMessage("#denizen-dev", chatColor +  "You can easily generate a new one by deleteing your current config.yml file in the Denizen folder");
 			return;
 		}
 		

@@ -248,7 +248,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			String [] args = msg.split(" ");
 			String command = args[1].toLowerCase();
 				
-			int x = 51;
+			int x = 50;
 			boolean done = false;
 			while (!done) {
 				try {

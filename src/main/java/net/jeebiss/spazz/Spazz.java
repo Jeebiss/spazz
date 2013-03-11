@@ -35,6 +35,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 	User charger;
 	int botsnack = 0;
 	ArrayList<User> feeders = new ArrayList<User>();
+	ArrayList<User> help = new ArrayList<User>();
 
     static HtmlUnitDriver GHCR = new HtmlUnitDriver();
     static HtmlUnitDriver GHRR = new HtmlUnitDriver();
@@ -377,10 +378,12 @@ public class Spazz extends ListenerAdapter implements Listener {
 			
 			bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "Hah! You'll never kill me...");
 			return;
-		} else if ((msg.contains("hastebin.") || msg.contains("pastebin.") || msg.contains("pastie.")) && !(chnl.hasVoice(usr) || chnl.isOp(usr))) {
-			bot.sendNotice(usr, "If you want to whether a Denizen script will compile, type " + Colors.BOLD + ".yml link_to_the_script");
+		} else if ((msg.contains("hastebin.") || msg.contains("pastebin.") || msg.contains("pastie.")) && !(help.contains(usr) || chnl.hasVoice(usr) || chnl.isOp(usr))) {
+	        help.add(usr);
+		    bot.sendNotice(usr, "If you want to whether a Denizen script will compile, type " + Colors.BOLD + ".yml link_to_the_script");
 			return;
-		} else if ((msgLwr.contains("help") || msgLwr.contains("halp") || msgLwr.contains("hlp")) && !(chnl.hasVoice(usr) || chnl.isOp(usr))) {
+		} else if ((msgLwr.contains("help") || msgLwr.contains("halp") || msgLwr.contains("hlp")) && !(help.contains(usr) || chnl.hasVoice(usr) || chnl.isOp(usr))) {
+		    help.add(usr);
 			bot.sendNotice(usr, "If you need help with a Denizen issue, type " + Colors.BOLD + ".help");
 			return;
 		}

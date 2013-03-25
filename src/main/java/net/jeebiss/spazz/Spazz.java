@@ -176,7 +176,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			bot.sendMessage("#denizen-dev", "Reloaded websites.");
 			return;
 		} else if (msgLwr.startsWith(".materials") || msgLwr.startsWith(".mats")) {
-			bot.sendMessage("#denizen-dev", address + chatColor + "Here is the list of all valid bukkit materials - http://bit.ly/ZnLlKN");
+			bot.sendMessage("#denizen-dev", address + chatColor + "Here is the list of all valid bukkit materials - http://bit.ly/X5smJK");
 			bot.sendMessage("#denizen-dev", chatColor + "All Denizen 'item:' arguments will accept a bukkit material name. Additionally you can add the data value to the name. (i.e. SANDSTONE:1)");
 			return;
 		} else if (msgLwr.startsWith(".enchantments") || msgLwr.startsWith(".enchants")) {

@@ -181,7 +181,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			return;
 		} else if (msgLwr.startsWith(".enchantments") || msgLwr.startsWith(".enchants")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "Here is the list of all valid bukkit enchantments - http://bit.ly/YQ25ud");
-			bot.sendMessage("#denizen-dev", chatColor + "They do not follow the same naming ocnventions as they do in game, so be carefull.");
+			bot.sendMessage("#denizen-dev", chatColor + "They do not follow the same naming conventions as they do in game, so be carefull.");
 			return;
 		} else if (msgLwr.startsWith(".anchors") || msgLwr.startsWith(".anchor")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "As of 0.8, locations can be referenced from scripts by using anchors linked to NPCs.");

@@ -18,8 +18,8 @@ import org.pircbotx.hooks.events.PingEvent;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
-import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.TextPage;
+import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
 @SuppressWarnings("rawtypes")
@@ -175,6 +175,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 			reloadSites();
 			bot.sendMessage("#denizen-dev", "Reloaded websites.");
 			return;
+		} else if (msgLwr.startsWith(".repo")) {
+			bot.sendMessage("#denizen-dev", address + chatColor + "Check out scripts made by other users! - http://bit.ly/16nRFvJ");
 		} else if (msgLwr.startsWith(".materials") || msgLwr.startsWith(".mats")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "Here is the list of all valid bukkit materials - http://bit.ly/X5smJK");
 			bot.sendMessage("#denizen-dev", chatColor + "All Denizen 'item:' arguments will accept a bukkit material name. Additionally you can add the data value to the name. (i.e. SANDSTONE:1)");
@@ -236,6 +238,11 @@ public class Spazz extends ListenerAdapter implements Listener {
 				HtmlPage page = PASTIE.getPage("http://pastie.org/pastes/" + url[3] + "/text");
 				rawYaml = page.asText();
 				PASTIE.closeAllWindows();				
+			} else if (args[1].contains("ult-gaming")) {
+				String url[] = args[1].split("/");
+				HtmlPage page = PASTIE.getPage("http://paste.ult-gaming.com/" + url[3] + "?raw");
+				rawYaml = page.asText();
+				PASTIE.closeAllWindows();			
 			} else {
 				bot.sendMessage("#denizen-dev", Colors.RED + "I cant get your script from that website :(");
 			}
@@ -257,7 +264,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			String [] args = msg.split(" ");
 			String command = args[1].toLowerCase();
 				
-			int x = 50;
+			int x = 59;
 			boolean done = false;
 			while (!done) {
 				try {
@@ -306,8 +313,11 @@ public class Spazz extends ListenerAdapter implements Listener {
 		} else if (msgLwr.startsWith(".cb") || msgLwr.startsWith(".coolbeans")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "That's cool beans.");
 			return;	
+		} else if (msgLwr.equals(".sound") || msgLwr.equals(".sounds")) {
+			bot.sendMessage("#denizen-dev", address + chatColor + "Here is the list of all valid bukkit sounds - "+ Colors.BLUE + "http://bit.ly/14NYbvi");
 		} else if (msgLwr.startsWith(".hb") || msgLwr.startsWith(".handbook")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "Current 0.8 Documentation - "+ Colors.BLUE + "http://bit.ly/XaWBLN");
+			bot.sendMessage("#denizen-dev", address + chatColor + "PDF download (always current) - "+ Colors.BLUE + "http://bit.ly/159JBgM");
 			return;	
 		} else if (msgLwr.startsWith(".getstarted") || msgLwr.startsWith(".gs")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "So you're trying to to use 0.8 for first time?");

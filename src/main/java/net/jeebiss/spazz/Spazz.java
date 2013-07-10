@@ -26,8 +26,8 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 public class Spazz extends ListenerAdapter implements Listener {
 	
     String[] temp;
-	String chatColor = Colors.DARK_GREEN;
-	String optionalColor = Colors.DARK_BLUE;
+	String chatColor = Colors.BLUE;
+	String optionalColor = Colors.DARK_GREEN;
 	String defaultColor = Colors.OLIVE;
 	boolean charging=false;
 	long chargeInitiateTime;
@@ -210,7 +210,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 		} else if (msgLwr.startsWith(".update")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + chatColor +  " builds of Craftbukkit and Citizens.");
 			bot.sendMessage("#denizen-dev", chatColor + "Most errors can be fixed by updating all 3.");
-			bot.sendMessage("#denizen-dev", Colors.BOLD + "Denizen" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/Wvvg8N");
+			bot.sendMessage("#denizen-dev", Colors.BOLD + "Denizen 0.8" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/Wvvg8N");
+			bot.sendMessage("#denizen-dev", Colors.BOLD + "Denizen 0.9" + Colors.NORMAL + Colors.BLUE +  "- http://goo.gl/lR4En");
 			bot.sendMessage("#denizen-dev", Colors.BOLD + "Citizens" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/Xe8YWZ");
 			bot.sendMessage("#denizen-dev", Colors.BOLD + "Craftbukkit" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/A5I50a");
 			return;
@@ -218,6 +219,12 @@ public class Spazz extends ListenerAdapter implements Listener {
 			bot.sendMessage("#denizen-dev", address + chatColor +  "If you are having issues with triggers not firing, you may be using the old config file.");
 			bot.sendMessage("#denizen-dev", chatColor +  "You can easily generate a new one by deleteing your current config.yml file in the Denizen folder");
 			return;
+		} else if (msgLwr.startsWith(".wiki")) {
+			bot.sendMessage("#denizen-dev", address + chatColor +  "The Denizen wiki is currently getting a makeover. This means that it doesn't currently have a lot of things.");
+			bot.sendMessage("#denizen-dev", chatColor +  "Feel free to look at it anyway, though! http://bit.ly/13BwnUp");
+			return;
+		} else if (msgLwr.startsWith(".tags")) {
+			bot.sendMessage("#denizen-dev", address + chatColor +  "Here's the current list of replaceable tags. (Incomplete)- http://bit.ly/11AQ4kr");
 		}
 		
 		else if (msgLwr.startsWith(".yaml") || msgLwr.startsWith(".yml")) {
@@ -310,6 +317,18 @@ public class Spazz extends ListenerAdapter implements Listener {
 			bot.sendMessage("#denizen-dev", chatColor + "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
+		} else if (msgLwr.startsWith(".party") || msgLwr.startsWith(".celebrate")) {
+			if (msgLwr.contains("reason:")) {
+				String[] split = msg.split("reason:");
+				String reason = split[1];
+				bot.sendMessage("#denizen-dev", address + chatColor + "Woo! Let's party for " + reason + "!");
+				return;
+			}
+			ArrayList<User> users = new ArrayList<User>(chnl.getUsers());
+			Random rand = new Random();
+			User random = users.get(rand.nextInt(users.size()));
+			bot.sendMessage("#denizen-dev", address + chatColor + "Woo! It's party time! Come on, " + random.getNick() + ", celebrate with me!");
+			return;
 		} else if (msgLwr.startsWith(".cb") || msgLwr.startsWith(".coolbeans")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "That's cool beans.");
 			return;	
@@ -551,42 +570,39 @@ public class Spazz extends ListenerAdapter implements Listener {
 			if(colorName.length() < 2)
 				return null;
 			String symbol = colorName.substring(1, colorName.length());
-			switch(symbol){
-			case "0":
+			if (symbol == "0")
 				return Colors.BLACK;
-			case "1":
+			else if (symbol == "1")
 				return Colors.DARK_BLUE;
-			case "2":
+			else if (symbol == "2")
 				return Colors.DARK_GREEN;
-			case "3":
+			else if (symbol == "3")
 				return Colors.TEAL;
-			case "4":
+			else if (symbol == "4")
 				return Colors.RED;
-			case "5":
+			else if (symbol == "5")
 				return Colors.PURPLE;
-			case "6":
+			else if (symbol == "6")
 				return Colors.YELLOW;
-			case "7":
+			else if (symbol == "7")
 				return Colors.LIGHT_GRAY;
-			case "8":
+			else if (symbol == "8")
 				return Colors.DARK_GRAY;
-			case "9":
+			else if (symbol == "9")
 				return Colors.BLUE;
-			case "a":
+			else if (symbol == "a")
 				return Colors.GREEN;
-			case "b":
+			else if (symbol == "b")
 				return Colors.CYAN;
-			case "c":
+			else if (symbol == "c")
 				return Colors.RED;
-			case "d":
+			else if (symbol == "d")
 				return Colors.MAGENTA;
-			case "e":
+			else if (symbol == "e")
 				return Colors.YELLOW;
-			case "f":
+			else if (symbol == "f")
 				return Colors.WHITE;
-			default:
-				return null;
-			}
+			else return null;
 		}
 		
 		if(colorName.equalsIgnoreCase("black"))

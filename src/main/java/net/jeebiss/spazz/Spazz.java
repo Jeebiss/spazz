@@ -287,15 +287,21 @@ public class Spazz extends ListenerAdapter implements Listener {
 			while (!done) {
 				try {
 					WebElement usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[1]"));
-					String commandname = usage.getText();
-					System.out.println(commandname);
-						if (commandname.substring(1, commandname.length()-1).equalsIgnoreCase(command.toUpperCase())) {
+					String oldcommandname = usage.getText().replace("\"", "");
+					String[] commandnames = oldcommandname.split(", ");
+					System.out.println(oldcommandname);
+					for(int i =0; i < commandnames.length; i++) {
+						String commandname = commandnames[i];
+						if(commandname.equalsIgnoreCase(command.toUpperCase())) {
 							usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
 							String unparsed = usage.getText();
-							String formatted = parseUsage(unparsed.substring(1, unparsed.length() - 1));
-							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + formatted);
+							String[] unparsedArray = unparsed.split(commandnames[0].toLowerCase());
+							String unparsedfinal = unparsedArray[1];
+							String formatted = parseUsage(unparsedfinal.substring(1, unparsedfinal.length() - 1));
+							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + command.toLowerCase() + " " + formatted);
 							return;
-						}
+				        }
+				    }
 					x = x + 3;
 				} catch (Exception e) { e.printStackTrace(); done = true; System.out.println("done."); }
 			}

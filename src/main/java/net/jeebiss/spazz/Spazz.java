@@ -1,5 +1,6 @@
 package net.jeebiss.spazz;
 
+import java.lang.System;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -30,6 +31,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 	String optionalColor = Colors.DARK_GREEN;
 	String defaultColor = Colors.OLIVE;
 	boolean charging=false;
+	boolean logged_in=false;
 	long chargeInitiateTime;
 	long chargeFullTime = 30000;
 	User charger;
@@ -58,8 +60,8 @@ public class Spazz extends ListenerAdapter implements Listener {
         bot.joinChannel("#denizen-dev");
 		bot.setMessageDelay(0);
         
-    	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");   
-    	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");   
+    	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");
+    	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");
     }
 	
 	@Override
@@ -110,6 +112,15 @@ public class Spazz extends ListenerAdapter implements Listener {
 		}
 		if (msg.equalsIgnoreCase(".hello")) {
 			event.respond("Hello World"); 
+			return;
+		} else if (msgLwr.startsWith(".login")) {
+			if (!logged_in) {
+		    	bot.sendMessage("NickServ", "IDENTIFY " + System.getProperty("IRC_PASSWORD"));
+				bot.sendMessage("#denizen-dev", address + chatColor + "I am now logged in.");
+				logged_in = true;
+			}
+			else
+				bot.sendMessage("#denizen-dev", address + chatColor + "I'm already logged in!");
 			return;
 		} else if (msgLwr.startsWith(".color")) {
 			
@@ -318,8 +329,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 			return;
 			
 		} else if (msgLwr.startsWith(".party") || msgLwr.startsWith(".celebrate")) {
-			if (msgLwr.contains("reason:")) {
-				String[] split = msg.split("reason:");
+			if (msgLwr.contains("reason: ")) {
+				String[] split = msg.split("reason: ");
 				String reason = split[1];
 				bot.sendMessage("#denizen-dev", address + chatColor + "Woo! Let's party for " + reason + "!");
 				return;

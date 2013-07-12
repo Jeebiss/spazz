@@ -2,6 +2,8 @@ package net.jeebiss.spazz;
 
 import java.lang.System;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 import org.openqa.selenium.By;
@@ -336,10 +338,17 @@ public class Spazz extends ListenerAdapter implements Listener {
 			return;
 			
 		} else if (msgLwr.startsWith(".quotes")) {
-			String quote1 = "I like to think of the Flag command as the two barons of hell bosses at the end of Doom 1's first episode.\n" +
-					"And of the If command as the cyberdemon at the end of the second episode.\n" +
-					"And of the Listen command as the spiderdemon at the end of the third episode.\n";
-			bot.sendMessage("#denizen-dev", address + chatColor + quote1);
+			List<List<String>> quotes = new ArrayList<List<String>>();
+	        quotes.add(0, Arrays.asList
+	                        ("<davidcernat> I like to think of the Flag command as the two barons of hell bosses at the end of Doom 1's first episode.",
+	                         "<davidcernat> And of the If command as the cyberdemon at the end of the second episode.",
+	                         "<davidcernat> And of the Listen command as the spiderdemon at the end of the third episode."));
+	       
+	        List<String> randomQuote = quotes.get(new Random().nextInt(quotes.size()));
+	       
+	        for (String line : randomQuote) {
+	                bot.sendMessage("#denizen-dev", address + chatColor + line);
+	        }
 		} else if (msgLwr.startsWith(".party") || msgLwr.startsWith(".celebrate")) {
 			if (msgLwr.contains("reason: ")) {
 				String[] split = msg.split("reason:");
@@ -483,10 +492,6 @@ public class Spazz extends ListenerAdapter implements Listener {
 		
 		String formatted = unparsed;	
 		String beforeColor = chatColor;
-		
-		if(formatted.contains("chat")) {
-			return "chat " + chatColor + "[\"message to chat\"] " + optionalColor + "(npcid:#) (target(s):npc.#|player.player_name"+defaultColor+"{attached player}" + optionalColor + ")";
-		}
 		
 		formatted = formatted.replace("\\", "");
 		formatted = formatted.replace("[", chatColor + "[");

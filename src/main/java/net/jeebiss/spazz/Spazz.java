@@ -222,7 +222,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			bot.sendMessage("#denizen-dev", address + chatColor + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + chatColor +  " builds of Craftbukkit and Citizens.");
 			bot.sendMessage("#denizen-dev", chatColor + "Most errors can be fixed by updating all 3.");
 			bot.sendMessage("#denizen-dev", Colors.BOLD + "Denizen 0.8" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/Wvvg8N");
-			bot.sendMessage("#denizen-dev", Colors.BOLD + "Denizen 0.9" + Colors.NORMAL + Colors.BLUE +  "- http://goo.gl/lR4En");
+			bot.sendMessage("#denizen-dev", Colors.BOLD + "Denizen 0.9" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/18cIbVh");
 			bot.sendMessage("#denizen-dev", Colors.BOLD + "Citizens" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/Xe8YWZ");
 			bot.sendMessage("#denizen-dev", Colors.BOLD + "Craftbukkit" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/A5I50a");
 			return;
@@ -278,6 +278,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 					x++;
 				}
 			}
+		} else if (msgLwr.startsWith(".cmds") || msgLwr.startsWith(".commands")) {
+			bot.sendMessage("#denizen-dev", address + chatColor + "Here's a list of every command in Denizen.- http://bit.ly/12v6zs9");
 		} else if (msgLwr.startsWith(".cmd") || msgLwr.startsWith(".command")) {
 			String [] args = msg.split(" ");
 			String command = args[1].toLowerCase();
@@ -295,8 +297,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 						if(commandname.equalsIgnoreCase(command.toUpperCase())) {
 							usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
 							String unparsed = usage.getText();
-							String[] unparsedArray = unparsed.split(commandnames[0].toLowerCase());
-							String unparsedfinal = unparsedArray[1];
+							String unparsedfinal = unparsed.substring(commandnames[0].length()+1, unparsed.length());
 							String formatted = parseUsage(unparsedfinal.substring(1, unparsedfinal.length() - 1));
 							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + command.toLowerCase() + " " + formatted);
 							return;
@@ -334,11 +335,16 @@ public class Spazz extends ListenerAdapter implements Listener {
 			bot.sendMessage("#denizen-dev", chatColor + "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
+		} else if (msgLwr.startsWith(".quotes")) {
+			String quote1 = "I like to think of the Flag command as the two barons of hell bosses at the end of Doom 1's first episode.\n" +
+					"And of the If command as the cyberdemon at the end of the second episode.\n" +
+					"And of the Listen command as the spiderdemon at the end of the third episode.\n";
+			bot.sendMessage("#denizen-dev", address + chatColor + quote1);
 		} else if (msgLwr.startsWith(".party") || msgLwr.startsWith(".celebrate")) {
 			if (msgLwr.contains("reason: ")) {
-				String[] split = msg.split("reason: ");
-				String reason = split[1];
-				bot.sendMessage("#denizen-dev", address + chatColor + "Woo! Let's party for " + reason + "!");
+				String[] split = msg.split("reason:");
+				String reason = split[1].replace(" me ", senderNick + " ");
+				bot.sendMessage("#denizen-dev", address + chatColor + "Woo! Let's party for " + reason.substring(1, reason.length()) + "!");
 				return;
 			}
 			ArrayList<User> users = new ArrayList<User>(chnl.getUsers());
@@ -346,6 +352,17 @@ public class Spazz extends ListenerAdapter implements Listener {
 			User random = users.get(rand.nextInt(users.size()));
 			bot.sendMessage("#denizen-dev", address + chatColor + "Woo! It's party time! Come on, " + random.getNick() + ", celebrate with me!");
 			return;
+		} else if (msgLwr.startsWith(".blame")) {
+			String[] args = msg.split(" ");
+			String blamed = args[1];
+			args = msg.split(blamed);
+			String reason = args[1];
+			bot.sendMessage("#denizen-dev", address + chatColor + senderNick + " blames " + blamed + " for" + reason + "!");
+		} else if (msgLwr.startsWith(".yaii")) {
+			bot.sendMessage("#denizen-dev", address + chatColor + "Your argument is invalid.");
+			return;
+		} else if (msgLwr.startsWith(".thmf") || msgLwr.startsWith(".tfw")) {
+			bot.sendMessage("#denizen-dev", address + chatColor + "That hurt even my feelings. And I'm a robot.");
 		} else if (msgLwr.startsWith(".cb") || msgLwr.startsWith(".coolbeans")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "That's cool beans.");
 			return;	

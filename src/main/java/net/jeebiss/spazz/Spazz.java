@@ -337,7 +337,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			bot.sendMessage("#denizen-dev", chatColor + "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
-		} else if (msgLwr.startsWith(".quotes")) {
+		} else if (msgLwr.startsWith(".quote")) {
 			List<List<String>> quotes = new ArrayList<List<String>>();
 	        quotes.add(0, Arrays.asList
 	                        ("<davidcernat> I like to think of the Flag command as the two barons of hell bosses at the end of Doom 1's first episode.",

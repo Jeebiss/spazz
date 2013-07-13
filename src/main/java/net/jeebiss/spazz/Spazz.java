@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -29,7 +30,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 public class Spazz extends ListenerAdapter implements Listener {
 	
     String[] temp;
-	String chatColor = Colors.BLUE;
+	static String chatColor = Colors.BLUE;
 	String optionalColor = Colors.DARK_GREEN;
 	String defaultColor = Colors.OLIVE;
 	boolean charging=false;
@@ -64,6 +65,16 @@ public class Spazz extends ListenerAdapter implements Listener {
         
     	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");
     	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");
+    	
+    	Scanner scanner = new Scanner(System.in);
+    	String input = "";
+    	
+    	while (input.equals("cancel") == false) {
+    	
+    		bot.sendMessage("#denizen-dev", chatColor + scanner.nextLine());
+    	}
+    	
+    	scanner.close();
     }
 	
 	@Override
@@ -304,6 +315,9 @@ public class Spazz extends ListenerAdapter implements Listener {
 							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + command.toLowerCase() + " " + formatted);
 							return;
 				        }
+						else if (commandname.equalsIgnoreCase("SANTACLAUS")) {
+							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - santaclaus (location:<location>) (presents:<item>|...) (reindeers:<entity>|...) (speed:<#.#>)");
+						}
 				    }
 					x = x + 3;
 				} catch (Exception e) { e.printStackTrace(); done = true; System.out.println("done."); }

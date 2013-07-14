@@ -1,7 +1,11 @@
 package net.jeebiss.spazz;
 
+import java.lang.System;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -26,10 +30,11 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 public class Spazz extends ListenerAdapter implements Listener {
 	
     String[] temp;
-	String chatColor = Colors.DARK_GREEN;
-	String optionalColor = Colors.DARK_BLUE;
+	static String chatColor = Colors.BLUE;
+	String optionalColor = Colors.DARK_GREEN;
 	String defaultColor = Colors.OLIVE;
 	boolean charging=false;
+	boolean logged_in=false;
 	long chargeInitiateTime;
 	long chargeFullTime = 30000;
 	User charger;
@@ -58,8 +63,28 @@ public class Spazz extends ListenerAdapter implements Listener {
         bot.joinChannel("#denizen-dev");
 		bot.setMessageDelay(0);
         
-    	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");   
-    	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");   
+    	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");
+    	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");
+    	
+    	Scanner scanner = new Scanner(System.in);
+    	String input = "";
+    	
+    	while (input.equals("cancel") == false) {
+        	
+    		input = scanner.nextLine();
+    		
+    		if (input.startsWith("command")) {
+    			System.out.println("Command! " + input);
+    		}
+    		else if (input.startsWith("plain")) {
+    			System.out.println("Plain! " + input);
+    		}
+    		else {
+    			System.out.println("Regular! " + input);
+    		}
+    	}
+    	
+    	scanner.close();
     }
 	
 	@Override
@@ -110,6 +135,15 @@ public class Spazz extends ListenerAdapter implements Listener {
 		}
 		if (msg.equalsIgnoreCase(".hello")) {
 			event.respond("Hello World"); 
+			return;
+		} else if (msgLwr.startsWith(".login")) {
+			if (!logged_in) {
+		    	bot.sendMessage("NickServ", "IDENTIFY " + System.getProperty("IRC_PASSWORD"));
+				bot.sendMessage("#denizen-dev", address + chatColor + "I am now logged in.");
+				logged_in = true;
+			}
+			else
+				bot.sendMessage("#denizen-dev", address + chatColor + "I'm already logged in!");
 			return;
 		} else if (msgLwr.startsWith(".color")) {
 			
@@ -210,7 +244,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 		} else if (msgLwr.startsWith(".update")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "Due to the nature of our project, Denizen is always built against the " + Colors.RED +  "development" + chatColor +  " builds of Craftbukkit and Citizens.");
 			bot.sendMessage("#denizen-dev", chatColor + "Most errors can be fixed by updating all 3.");
-			bot.sendMessage("#denizen-dev", Colors.BOLD + "Denizen" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/Wvvg8N");
+			bot.sendMessage("#denizen-dev", Colors.BOLD + "Denizen 0.8" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/Wvvg8N");
+			bot.sendMessage("#denizen-dev", Colors.BOLD + "Denizen 0.9" + Colors.NORMAL + Colors.BLUE +  "- http://bit.ly/18cIbVh");
 			bot.sendMessage("#denizen-dev", Colors.BOLD + "Citizens" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/Xe8YWZ");
 			bot.sendMessage("#denizen-dev", Colors.BOLD + "Craftbukkit" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/A5I50a");
 			return;
@@ -218,6 +253,12 @@ public class Spazz extends ListenerAdapter implements Listener {
 			bot.sendMessage("#denizen-dev", address + chatColor +  "If you are having issues with triggers not firing, you may be using the old config file.");
 			bot.sendMessage("#denizen-dev", chatColor +  "You can easily generate a new one by deleteing your current config.yml file in the Denizen folder");
 			return;
+		} else if (msgLwr.startsWith(".wiki")) {
+			bot.sendMessage("#denizen-dev", address + chatColor +  "The Denizen wiki is currently getting a makeover. This means that it doesn't currently have a lot of things.");
+			bot.sendMessage("#denizen-dev", chatColor +  "Feel free to look at it anyway, though! http://bit.ly/13BwnUp");
+			return;
+		} else if (msgLwr.startsWith(".tags")) {
+			bot.sendMessage("#denizen-dev", address + chatColor +  "Here's the current list of replaceable tags. (Incomplete)- http://bit.ly/11AQ4kr");
 		}
 		
 		else if (msgLwr.startsWith(".yaml") || msgLwr.startsWith(".yml")) {
@@ -260,6 +301,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 					x++;
 				}
 			}
+		} else if (msgLwr.startsWith(".cmds") || msgLwr.startsWith(".commands")) {
+			bot.sendMessage("#denizen-dev", address + chatColor + "Here's a list of every command in Denizen.- http://bit.ly/12v6zs9");
 		} else if (msgLwr.startsWith(".cmd") || msgLwr.startsWith(".command")) {
 			String [] args = msg.split(" ");
 			String command = args[1].toLowerCase();
@@ -269,15 +312,23 @@ public class Spazz extends ListenerAdapter implements Listener {
 			while (!done) {
 				try {
 					WebElement usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[1]"));
-					String commandname = usage.getText();
-					System.out.println(commandname);
-						if (commandname.substring(1, commandname.length()-1).equalsIgnoreCase(command.toUpperCase())) {
+					String oldcommandname = usage.getText().replace("\"", "");
+					String[] commandnames = oldcommandname.split(", ");
+					System.out.println(oldcommandname);
+					for(int i =0; i < commandnames.length; i++) {
+						String commandname = commandnames[i];
+						if(commandname.equalsIgnoreCase(command.toUpperCase())) {
 							usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
 							String unparsed = usage.getText();
-							String formatted = parseUsage(unparsed.substring(1, unparsed.length() - 1));
-							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + formatted);
+							String unparsedfinal = unparsed.substring(commandnames[0].length()+1, unparsed.length());
+							String formatted = parseUsage(unparsedfinal.substring(1, unparsedfinal.length() - 1));
+							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + command.toLowerCase() + " " + formatted);
 							return;
+				        }
+						else if (commandname.equalsIgnoreCase("SANTACLAUS")) {
+							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - santaclaus (location:<location>) (presents:<item>|...) (reindeers:<entity>|...) (speed:<#.#>)");
 						}
+				    }
 					x = x + 3;
 				} catch (Exception e) { e.printStackTrace(); done = true; System.out.println("done."); }
 			}
@@ -310,6 +361,41 @@ public class Spazz extends ListenerAdapter implements Listener {
 			bot.sendMessage("#denizen-dev", chatColor + "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
+		} else if (msgLwr.startsWith(".quote")) {
+			List<List<String>> quotes = new ArrayList<List<String>>();
+	        quotes.add(0, Arrays.asList
+	                        ("<davidcernat> I like to think of the Flag command as the two barons of hell bosses at the end of Doom 1's first episode.",
+	                         "<davidcernat> And of the If command as the cyberdemon at the end of the second episode.",
+	                         "<davidcernat> And of the Listen command as the spiderdemon at the end of the third episode."));
+	       
+	        List<String> randomQuote = quotes.get(new Random().nextInt(quotes.size()));
+	       
+	        for (String line : randomQuote) {
+	                bot.sendMessage("#denizen-dev", address + chatColor + line);
+	        }
+		} else if (msgLwr.startsWith(".party") || msgLwr.startsWith(".celebrate")) {
+			if (msgLwr.contains("reason: ")) {
+				String[] split = msg.split("reason:");
+				String reason = split[1].replace(" me ", senderNick + " ");
+				bot.sendMessage("#denizen-dev", address + chatColor + "Woo! Let's party for " + reason.substring(1, reason.length()) + "!");
+				return;
+			}
+			ArrayList<User> users = new ArrayList<User>(chnl.getUsers());
+			Random rand = new Random();
+			User random = users.get(rand.nextInt(users.size()));
+			bot.sendMessage("#denizen-dev", address + chatColor + "Woo! It's party time! Come on, " + random.getNick() + ", celebrate with me!");
+			return;
+		} else if (msgLwr.startsWith(".blame")) {
+			String[] args = msg.split(" ");
+			String blamed = args[1];
+			args = msg.split(blamed);
+			String reason = args[1];
+			bot.sendMessage("#denizen-dev", address + chatColor + senderNick + " blames " + blamed + " for" + reason + "!");
+		} else if (msgLwr.startsWith(".yaii")) {
+			bot.sendMessage("#denizen-dev", address + chatColor + "Your argument is invalid.");
+			return;
+		} else if (msgLwr.startsWith(".thmf") || msgLwr.startsWith(".tfw")) {
+			bot.sendMessage("#denizen-dev", address + chatColor + "That hurt even my feelings. And I'm a robot.");
 		} else if (msgLwr.startsWith(".cb") || msgLwr.startsWith(".coolbeans")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "That's cool beans.");
 			return;	
@@ -431,10 +517,6 @@ public class Spazz extends ListenerAdapter implements Listener {
 		String formatted = unparsed;	
 		String beforeColor = chatColor;
 		
-		if(formatted.contains("chat")) {
-			return "chat " + chatColor + "[\"message to chat\"] " + optionalColor + "(npcid:#) (target(s):npc.#|player.player_name"+defaultColor+"{attached player}" + optionalColor + ")";
-		}
-		
 		formatted = formatted.replace("\\", "");
 		formatted = formatted.replace("[", chatColor + "[");
 		formatted = formatted.replace("(", optionalColor + "(");
@@ -551,42 +633,39 @@ public class Spazz extends ListenerAdapter implements Listener {
 			if(colorName.length() < 2)
 				return null;
 			String symbol = colorName.substring(1, colorName.length());
-			switch(symbol){
-			case "0":
+			if (symbol == "0")
 				return Colors.BLACK;
-			case "1":
+			else if (symbol == "1")
 				return Colors.DARK_BLUE;
-			case "2":
+			else if (symbol == "2")
 				return Colors.DARK_GREEN;
-			case "3":
+			else if (symbol == "3")
 				return Colors.TEAL;
-			case "4":
+			else if (symbol == "4")
 				return Colors.RED;
-			case "5":
+			else if (symbol == "5")
 				return Colors.PURPLE;
-			case "6":
+			else if (symbol == "6")
 				return Colors.YELLOW;
-			case "7":
+			else if (symbol == "7")
 				return Colors.LIGHT_GRAY;
-			case "8":
+			else if (symbol == "8")
 				return Colors.DARK_GRAY;
-			case "9":
+			else if (symbol == "9")
 				return Colors.BLUE;
-			case "a":
+			else if (symbol == "a")
 				return Colors.GREEN;
-			case "b":
+			else if (symbol == "b")
 				return Colors.CYAN;
-			case "c":
+			else if (symbol == "c")
 				return Colors.RED;
-			case "d":
+			else if (symbol == "d")
 				return Colors.MAGENTA;
-			case "e":
+			else if (symbol == "e")
 				return Colors.YELLOW;
-			case "f":
+			else if (symbol == "f")
 				return Colors.WHITE;
-			default:
-				return null;
-			}
+			else return null;
 		}
 		
 		if(colorName.equalsIgnoreCase("black"))

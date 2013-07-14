@@ -74,13 +74,13 @@ public class Spazz extends ListenerAdapter implements Listener {
     		input = scanner.nextLine();
     		
     		if (input.startsWith("command")) {
-    			System.out.println("Command! " + input);
+    			bot.sendRawLine(input);
     		}
     		else if (input.startsWith("plain")) {
-    			System.out.println("Plain! " + input);
+    			bot.sendMessage("#denizen-dev", input); 
     		}
     		else {
-    			System.out.println("Regular! " + input);
+    			bot.sendMessage("#denizen-dev", chatColor + input); 
     		}
     	}
     	

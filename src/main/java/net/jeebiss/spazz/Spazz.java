@@ -70,8 +70,18 @@ public class Spazz extends ListenerAdapter implements Listener {
     	String input = "";
     	
     	while (input.equals("cancel") == false) {
-    	
-    		bot.sendMessage("#denizen-dev", chatColor + scanner.nextLine());
+        	
+    		input = scanner.nextLine();
+    		
+    		if (input.startsWith("command")) {
+    			System.out.println("Command! " + input);
+    		}
+    		else if (input.startsWith("plain")) {
+    			System.out.println("Plain! " + input);
+    		}
+    		else {
+    			System.out.println("Regular! " + input);
+    		}
     	}
     	
     	scanner.close();

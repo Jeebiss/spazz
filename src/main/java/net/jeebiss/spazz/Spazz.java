@@ -62,6 +62,7 @@ public class Spazz extends ListenerAdapter implements Listener {
         bot.connect("irc.esper.net");
         bot.joinChannel("#denizen-dev");
 		bot.setMessageDelay(0);
+        bot.sendMessage("NickServ", "IDENTIFY " + System.getProperty("IRC_PASSWORD"));
         
     	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");
     	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");
@@ -73,14 +74,15 @@ public class Spazz extends ListenerAdapter implements Listener {
         	
     		input = scanner.nextLine();
     		
-    		if (input.startsWith("command")) {
+    		if (input.startsWith("/")) {
     			bot.sendRawLine(input);
     		}
-    		else if (input.startsWith("plain")) {
-    			bot.sendMessage("#denizen-dev", input); 
+    		else if (input.startsWith(".plain ")) {
+    			String[] inputsplit = input.split(".plain ");
+    			bot.sendMessage("#denizen-dev", inputsplit[1]);
     		}
     		else {
-    			bot.sendMessage("#denizen-dev", chatColor + input); 
+    			bot.sendMessage("#denizen-dev", chatColor + input);
     		}
     	}
     	
@@ -106,8 +108,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 		Channel chnl = event.getChannel();
 		User usr = event.getUser();
 		String senderNick = usr.getNick();
-		
 		String address = "";
+		
 		if(charging) {
 			if(System.currentTimeMillis() > (chargeInitiateTime + chargeFullTime + chargeFullTime/2)) {
 				bot.sendAction("#denizen-dev", "loses control of his beams, accidentally making pew pew noises towards "+charger.getNick()+"!");
@@ -134,32 +136,23 @@ public class Spazz extends ListenerAdapter implements Listener {
 			}
 		}
 		if (msg.equalsIgnoreCase(".hello")) {
-			event.respond("Hello World"); 
-			return;
-		} else if (msgLwr.startsWith(".login")) {
-			if (!logged_in) {
-		    	bot.sendMessage("NickServ", "IDENTIFY " + System.getProperty("IRC_PASSWORD"));
-				bot.sendMessage("#denizen-dev", address + chatColor + "I am now logged in.");
-				logged_in = true;
-			}
-			else
-				bot.sendMessage("#denizen-dev", address + chatColor + "I'm already logged in!");
+			bot.sendMessage("#denizen-dev", address + "Hello World"); 
 			return;
 		} else if (msgLwr.startsWith(".color")) {
 			
 			if(!hasOp(usr, chnl) && !hasVoice(usr, chnl)) {
-				bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "I'm sorry, but you do not have clearance to alter my photon colorization beam.");
+				bot.sendMessage("#denizen-dev", address + chatColor + "I'm sorry, but you do not have clearance to alter my photon colorization beam.");
 				return;
 			}
 			
 			String[] args = msg.split(" ");
 			if(args.length > 3) {
-				bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "I cannot read minds... yet. Hit me up with a bot-friendly color.");
+				bot.sendMessage("#denizen-dev", address + chatColor + "I cannot read minds... yet. Hit me up with a bot-friendly color.");
 				return;
 			}
 			String tempColor = parseColor(args[1]);
 			if(tempColor == null) {
-				bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "I eat " + args[1] + " for breakfast. That's not a color.");
+				bot.sendMessage("#denizen-dev", address + chatColor + "I eat " + args[1] + " for breakfast. That's not a color.");
 				return;
 			}
 			
@@ -175,31 +168,31 @@ public class Spazz extends ListenerAdapter implements Listener {
 			}
 			else 
 				chatColor=tempColor;
-			bot.sendMessage("#denizen-dev", chatColor  + "Photon colorization beam reconfigured "+ "[] " + optionalColor + "() " + defaultColor + "{}");
+			bot.sendMessage("#denizen-dev", address + chatColor  + "Photon colorization beam reconfigured "+ "[] " + optionalColor + "() " + defaultColor + "{}");
 			return;
 		} else if (msgLwr.startsWith(".botsnack")) {
 			String args[] = msg.split(" ");
 			
 			if (feeders.toString().contains(usr.toString())) {
-				bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "Thanks, but I can't have you controlling too much of my diet.");
+				bot.sendMessage("#denizen-dev", address + chatColor + "Thanks, but I can't have you controlling too much of my diet.");
 				return;
 			}
 			
 			if (args.length == 2) {
 				if(chnl.getUsers().toString().contains(args[1])) 
-					bot.sendMessage("#denizen-dev", chatColor + "Gluttony mode activated. Beginning " + args[1] + " consumption sequence.");
+					bot.sendMessage("#denizen-dev", address + chatColor + "Gluttony mode activated. Beginning " + args[1] + " consumption sequence.");
 				else {
 					ArrayList<User> users = new ArrayList<User>(chnl.getUsers());
 					Random rand = new Random();
 					User random = users.get(rand.nextInt(users.size()));
-					bot.sendMessage("#denizen-dev", chatColor + "Oh no! " + args[1] + " not found, nomming "+random.getNick() + " instead.");
+					bot.sendMessage("#denizen-dev", address + chatColor + "Oh no! " + args[1] + " not found, nomming "+random.getNick() + " instead.");
 				}
 				feeders.add(usr);
 				botsnack++;
 				return;
 				
 			} else {
-				bot.sendMessage("#denizen-dev", chatColor +  "OM NOM NOM! I love botsnacks!");
+				bot.sendMessage("#denizen-dev", address + chatColor +  "OM NOM NOM! I love botsnacks!");
 				feeders.add(usr);
 				botsnack++;
 				return;
@@ -207,7 +200,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		
 		} else if (msg.equalsIgnoreCase(".reload")) {
 			reloadSites();
-			bot.sendMessage("#denizen-dev", "Reloaded websites.");
+			bot.sendMessage("#denizen-dev", address + "Reloaded websites.");
 			return;
 		} else if (msgLwr.startsWith(".repo")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "Check out scripts made by other users! - http://bit.ly/16nRFvJ");
@@ -285,7 +278,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 				rawYaml = page.asText();
 				PASTIE.closeAllWindows();			
 			} else {
-				bot.sendMessage("#denizen-dev", Colors.RED + "I cant get your script from that website :(");
+				bot.sendMessage("#denizen-dev", address + Colors.RED + "I cant get your script from that website :(");
 			}
 			
 			Yaml yaml = new Yaml();
@@ -297,7 +290,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 				String[] stackList = fullStack.split("\\n");
 				int x = 0;
 				while (!stackList[x].contains("org.yaml")) {
-					bot.sendMessage("#denizen-dev", stackList[x]);
+					bot.sendMessage("#denizen-dev", address + stackList[x]);
 					x++;
 				}
 			}
@@ -315,7 +308,11 @@ public class Spazz extends ListenerAdapter implements Listener {
 					String oldcommandname = usage.getText().replace("\"", "");
 					String[] commandnames = oldcommandname.split(", ");
 					System.out.println(oldcommandname);
-					for(int i =0; i < commandnames.length; i++) {
+					if (command.equalsIgnoreCase("SANTACLAUS")) {
+						bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - santaclaus (location:<location>) (presents:<item>|...) (reindeers:<entity>|...) (speed:<#.#>)");
+						return;
+					}
+					else for(int i =0; i < commandnames.length; i++) {
 						String commandname = commandnames[i];
 						if(commandname.equalsIgnoreCase(command.toUpperCase())) {
 							usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[3]"));
@@ -325,15 +322,12 @@ public class Spazz extends ListenerAdapter implements Listener {
 							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - " + command.toLowerCase() + " " + formatted);
 							return;
 				        }
-						else if (commandname.equalsIgnoreCase("SANTACLAUS")) {
-							bot.sendMessage("#denizen-dev", address + chatColor + "Usage: - santaclaus (location:<location>) (presents:<item>|...) (reindeers:<entity>|...) (speed:<#.#>)");
-						}
 				    }
 					x = x + 3;
 				} catch (Exception e) { e.printStackTrace(); done = true; System.out.println("done."); }
 			}
 			
-			bot.sendMessage("#denizen-dev", chatColor + "The command '" + command + "' does not exist. If you think it should, feel free to suggest it to a developer.");
+			bot.sendMessage("#denizen-dev", address + chatColor + "The command '" + command + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
 		} else if (msgLwr.startsWith(".req") || msgLwr.startsWith(".requirement")) {
@@ -358,7 +352,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 				} catch (Exception e) { done = true; System.out.println("done."); }
 			}
 			
-			bot.sendMessage("#denizen-dev", chatColor + "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
+			bot.sendMessage("#denizen-dev", address + chatColor + "The requirement '" + requirement + "' does not exist. If you think it should, feel free to suggest it to a developer.");
 			return;
 			
 		} else if (msgLwr.startsWith(".quote")) {
@@ -383,7 +377,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			ArrayList<User> users = new ArrayList<User>(chnl.getUsers());
 			Random rand = new Random();
 			User random = users.get(rand.nextInt(users.size()));
-			bot.sendMessage("#denizen-dev", address + chatColor + "Woo! It's party time! Come on, " + random.getNick() + ", celebrate with me!");
+			bot.sendMessage("#denizen-dev", address + chatColor + "Woo! It's party time! Come on, celebrate with me!");
 			return;
 		} else if (msgLwr.startsWith(".blame")) {
 			String[] args = msg.split(" ");
@@ -403,7 +397,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			bot.sendMessage("#denizen-dev", address + chatColor + "Here is the list of all valid bukkit sounds - "+ Colors.BLUE + "http://bit.ly/14NYbvi");
 		} else if (msgLwr.startsWith(".hb") || msgLwr.startsWith(".handbook")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "Current 0.8 Documentation - "+ Colors.BLUE + "http://bit.ly/XaWBLN");
-			bot.sendMessage("#denizen-dev", address + chatColor + "PDF download (always current) - "+ Colors.BLUE + "http://bit.ly/159JBgM");
+			bot.sendMessage("#denizen-dev", chatColor + "PDF download (always current) - "+ Colors.BLUE + "http://bit.ly/159JBgM");
 			return;	
 		} else if (msgLwr.startsWith(".getstarted") || msgLwr.startsWith(".gs")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "So you're trying to to use 0.8 for first time?");
@@ -416,15 +410,15 @@ public class Spazz extends ListenerAdapter implements Listener {
 			if(hasOp(usr, chnl) || hasVoice(usr, chnl)) {
 				String args[] = msg.split(" ");
 				if(!charging) {
-					bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "Erm... was I supposed to be charging? D:");
+					bot.sendMessage("#denizen-dev", address + chatColor + "Erm... was I supposed to be charging? D:");
 					return;
 				}
 				if(usr != charger) {
-					bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "Sorry, but my firing sequence has already been started by "+charger.getNick()+".");
+					bot.sendMessage("#denizen-dev", address + chatColor + "Sorry, but my firing sequence has already been started by "+charger.getNick()+".");
 					return;
 				}
 				if(args.length != 2) {
-					bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "I can't just fire into thin air :(");
+					bot.sendMessage("#denizen-dev", address + chatColor + "I can't just fire into thin air :(");
 					return;
 				}
 				if(chnl.getUsers().toString().contains(args[1])) {
@@ -442,45 +436,45 @@ public class Spazz extends ListenerAdapter implements Listener {
 					feeders.clear();
 					return;
 				} else {
-					bot.sendMessage("#denizen-dev", senderNick + ": "+ chatColor + args[1] + ", really? I need a legitimate target. This is serious business.");
+					bot.sendMessage("#denizen-dev", chatColor + args[1] + ", really? I need a legitimate target. This is serious business.");
 					return;
 				}
 			}
 			
-			bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "Whoa there, you can't touch that button.");
+			bot.sendMessage("#denizen-dev", chatColor + "Whoa there, you can't touch that button.");
 			return;
 		
 		} else if (msgLwr.startsWith(".lzrbms") || msgLwr.startsWith(".lzrbmz")) {
 			if(hasOp(usr, chnl) || hasVoice(usr, chnl)) {
 				if (botsnack < 3) { 
-					bot.sendMessage("#denizen-dev", senderNick+ chatColor +": Botsnack levels too low. Can't charge lazers...");
+					bot.sendMessage("#denizen-dev", address + chatColor +": Botsnack levels too low. Can't charge lazers...");
 					return;
 				}
 				
 				if(charging) {
-					bot.sendMessage("#denizen-dev", senderNick+ chatColor +": I'm already a bit occupied here!");
+					bot.sendMessage("#denizen-dev", address + chatColor +": I'm already a bit occupied here!");
 					return;
 				}
 				
 				chargeInitiateTime=System.currentTimeMillis();
 				charging=true;
 				charger=usr;
-				bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "Imma chargin' up meh lazerbeamz...");
+				bot.sendMessage("#denizen-dev", address + chatColor + "Imma chargin' up meh lazerbeamz...");
 				botsnack-=3;
 				return;
 			}
 			
-			bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "Umm, that's not for you.");
+			bot.sendMessage("#denizen-dev", address + chatColor + "Umm, that's not for you.");
 			return;
 		
 		} else if (msg.equalsIgnoreCase(".bye")) {
 			if(hasOp(usr, chnl) || hasVoice(usr, chnl)) {
-				bot.sendMessage("#denizen-dev", chatColor + "Goodbye cruel world!");
+				bot.sendMessage("#denizen-dev", address + chatColor + "Goodbye cruel world!");
 				bot.disconnect();
 				return;
 			}
 			
-			bot.sendMessage("#denizen-dev", senderNick+ ": " + chatColor + "Hah! You'll never kill me...");
+			bot.sendMessage("#denizen-dev", address + chatColor + "Hah! You'll never kill me...");
 			return;
 		} else if ((msg.contains("hastebin.") || msg.contains("pastebin.") || msg.contains("pastie.")) && !(help.contains(usr) || chnl.hasVoice(usr) || chnl.isOp(usr))) {
 	        help.add(usr);

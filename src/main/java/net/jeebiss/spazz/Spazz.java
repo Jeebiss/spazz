@@ -305,6 +305,9 @@ public class Spazz extends ListenerAdapter implements Listener {
 			while (!done) {
 				try {
 					WebElement usage = GHCR.findElement(By.xpath("//*[@id=\"LC" + x + "\"]/span[1]"));
+					if (usage.getText().startsWith("// STOP")) {
+						done = true;
+					}
 					String oldcommandname = usage.getText().replace("\"", "");
 					String[] commandnames = oldcommandname.split(", ");
 					System.out.println(oldcommandname);

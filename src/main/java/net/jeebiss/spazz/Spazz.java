@@ -1,9 +1,16 @@
 package net.jeebiss.spazz;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.lang.System;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -16,9 +23,13 @@ import org.pircbotx.PircBotX;
 import org.pircbotx.User;
 import org.pircbotx.hooks.Listener;
 import org.pircbotx.hooks.ListenerAdapter;
+import org.pircbotx.hooks.events.DisconnectEvent;
 import org.pircbotx.hooks.events.JoinEvent;
 import org.pircbotx.hooks.events.MessageEvent;
+import org.pircbotx.hooks.events.NickChangeEvent;
+import org.pircbotx.hooks.events.PartEvent;
 import org.pircbotx.hooks.events.PingEvent;
+import org.pircbotx.hooks.events.QuitEvent;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
@@ -28,6 +39,10 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
 @SuppressWarnings("rawtypes")
 public class Spazz extends ListenerAdapter implements Listener {
+	
+	public static PircBotX bot = new PircBotX();
+	
+	public static Map<String, dUser> users = new HashMap<String, dUser>();
 	
     String[] temp;
 	static String chatColor = Colors.BLUE;
@@ -49,7 +64,6 @@ public class Spazz extends ListenerAdapter implements Listener {
     static WebClient PASTIE = new WebClient();
     
 	public static void main(String[] args) throws Exception {
-		PircBotX bot = new PircBotX();
 		bot.getListenerManager().addListener(new Spazz());
 		/*
 		 * Connect to #denizen-dev on start up
@@ -97,23 +111,94 @@ public class Spazz extends ListenerAdapter implements Listener {
 	
 	@Override
 	public void onJoin(JoinEvent event) throws Exception {
-		event.getBot().sendNotice(event.getUser(), "Welcome to " + Colors.BOLD + "#denizen-dev" + Colors.NORMAL + ", home of the Denizen project. If you'd like help with anything, type " + Colors.BOLD + Colors.BLUE + ".help");
+		
+		if (!users.containsKey(event.getUser().getNick()))
+    		users.put(event.getUser().getNick(), new dUser(bot, event.getUser().getNick()));
+
+		bot.sendNotice(event.getUser(), "Welcome to " + Colors.BOLD + "#denizen-dev" + Colors.NORMAL + ", home of the Denizen project. If you'd like help with anything, type " + Colors.BOLD + Colors.BLUE + ".help");
+		
+		users.get(event.getUser().getNick()).setStatus(true);
+    	users.get(event.getUser().getNick()).setLastSeen("Logging in.");
+		users.get(event.getUser().getNick()).checkPrivMessages();
+	
+	}
+	
+	@Override
+	public void onQuit(QuitEvent event) throws Exception {
+		
+		users.get(event.getUser().getNick()).saveMessages();
+		users.get(event.getUser().getNick()).setStatus(false);
+		
+	}
+	
+	@Override
+	public void onPart(PartEvent event) throws Exception {
+		
+		users.get(event.getUser().getNick()).saveMessages();
+		users.get(event.getUser().getNick()).setStatus(false);
+		
+	}
+	
+	@Override
+	public void onDisconnect(DisconnectEvent event) throws Exception {
+		
+		for (dUser user : users.values()) {
+			users.get(user.getNick()).saveMessages();
+		}
+		
 	}
 	
 	@Override
 	public void onPing(PingEvent event) throws Exception {
-		// ???
+		// CTCP PING stuff... Not incredibly useful
+		users.get(event.getUser().getNick()).checkPrivMessages();
+	}
+	
+	@Override
+	public void onNickChange(NickChangeEvent event) throws Exception {
+		if (!users.containsKey(event.getOldNick()))
+    		users.put(event.getOldNick(), new dUser(bot, event.getOldNick()));
+		if (!users.containsKey(event.getNewNick()))
+    		users.put(event.getNewNick(), new dUser(bot, event.getNewNick()));
+		dUser oldUsr = users.get(event.getOldNick());
+		dUser newUsr = users.get(event.getNewNick());
+		newUsr.setLastSeen("Changing nick (" + event.getOldNick() + " to " + event.getNewNick() + ")");
+		users.remove(event.getOldNick());
+		users.remove(event.getNewNick());
+		for (Message message : oldUsr.getPrivMessages())
+			newUsr.addPrivMessage(message);
+		users.put(event.getNewNick(), oldUsr);
+		users.get(event.getNewNick()).checkPrivMessages();
+		
+		if (!new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + ".txt").renameTo(new File(System.getProperty("user.dir") + "\\users\\" + event.getNewNick() + ".txt")) && (new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").exists() && !new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").renameTo(new File(System.getProperty("user.dir") + "\\users\\" + event.getNewNick() + "-priv.txt"))))
+			bot.sendNotice(event.getNewNick(), "Successfully renamed to " + event.getNewNick() + ".");
+		else if (!new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").exists())
+			bot.sendNotice(event.getNewNick(), "Successfully renamed to " + event.getNewNick() + ".");
+		else
+			bot.sendNotice(event.getNewNick(), "Internal error while changing nick. Please report this to a Denizen dev.");
 	}
 	
 	@Override
     public void onMessage(MessageEvent event) throws Exception {
-		
-		PircBotX bot = event.getBot();
+        
+        for (User user : bot.getChannel("#denizen-dev").getUsers())
+    		if (!users.containsKey(user.getNick())) {
+        		users.put(user.getNick(), new dUser(bot, user.getNick()));
+        		System.out.println("New user registered: " + user.getNick());
+    		}
+    	
+    	users.get(event.getUser().getNick()).setStatus(true);
+    	users.get(event.getUser().getNick()).checkPrivMessages();
+			
+		User usr = event.getUser();
 		String msg = event.getMessage();
+		
+		users.get(usr.getNick()).addMessage(new Message(usr.getNick(), msg));
+		users.get(usr.getNick()).setLastSeen("Saying \"" + event.getMessage() + "\".");
+		
 		String msgLwr = msg.toLowerCase();
 		Channel chnl = event.getChannel();
-		User usr = event.getUser();
-		String senderNick = usr.getNick();
+		String senderNick = event.getUser().getNick();
 		String address = "";
 		
 		if(charging) {
@@ -399,9 +484,6 @@ public class Spazz extends ListenerAdapter implements Listener {
 				bot.sendMessage("#denizen-dev", address + chatColor + "Woo! Let's party for " + reason.substring(1, reason.length()) + "!");
 				return;
 			}
-			ArrayList<User> users = new ArrayList<User>(chnl.getUsers());
-			Random rand = new Random();
-			User random = users.get(rand.nextInt(users.size()));
 			bot.sendMessage("#denizen-dev", address + chatColor + "Woo! It's party time! Come on, celebrate with me!");
 			return;
 		} else if (msgLwr.startsWith(".blame")) {
@@ -506,7 +588,27 @@ public class Spazz extends ListenerAdapter implements Listener {
 			
 			bot.sendMessage("#denizen-dev", address + chatColor + "Hah! You'll never kill me...");
 			return;
-		} else if ((msg.contains("hastebin.") || msg.contains("pastebin.") || msg.contains("pastie.")) && !(help.contains(usr) || chnl.hasVoice(usr) || chnl.isOp(usr))) {
+		} else if (msgLwr.startsWith(".save-all")) {
+			for (User user : users.values())
+				users.get(user.getNick()).saveMessages();
+		} else if (msgLwr.startsWith(".seen ")) {
+			String[] args = msg.split(" ");
+			if (users.containsKey(args[1]))
+				bot.sendMessage("#denizen-dev", address + chatColor + "The last time I last saw " + args[1] + " was " + users.get(args[1]).getLastSeen());
+			else
+				bot.sendMessage("#denizen-dev", address + chatColor + "I've never seen that user.");
+		} else if (msgLwr.startsWith(".send")
+				|| msgLwr.startsWith(".msg")
+				|| msgLwr.startsWith(".pm")) {
+			String[] args = msg.split(" ");
+			if (users.containsKey(args[1])) {
+				bot.sendMessage("#denizen-dev", address + chatColor + "Your message will be sent to " + args[1] + " ASAP.");
+				users.get(args[1]).addPrivMessage(new Message(usr.getNick(), msg.substring(args[0].length() + args[1].length() + 2)));
+			}
+			else
+				bot.sendMessage("#denizen-dev", address + chatColor + "I've never seen that user.");
+		}
+		else if ((msg.contains("hastebin.") || msg.contains("pastebin.") || msg.contains("pastie.")) && !(help.contains(usr) || chnl.hasVoice(usr) || chnl.isOp(usr))) {
 	        help.add(usr);
 		    bot.sendNotice(usr, "If you want to whether a Denizen script will compile, type " + Colors.BOLD + ".yml link_to_the_script");
 			return;
@@ -744,5 +846,145 @@ public class Spazz extends ListenerAdapter implements Listener {
 	    }
 	    return result.toString();
 	  }
+	
+	public static class dUser extends org.pircbotx.User {
+		
+		private String lastSeen;
+		private int id;
+		private boolean status;
+		private ArrayList<Message> messages;
+		private ArrayList<Message> pMessages;
+		
+		public dUser(PircBotX bot, String nick) {
+			super(bot, nick);
+			this.messages = new ArrayList<Message>();
+			this.pMessages = new ArrayList<Message>();
+		}
+
+		void setLastSeen(String lastSeen) {
+			this.lastSeen = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss (zzz)").format(Calendar.getInstance().getTime()) + ", " + lastSeen.replaceFirst(lastSeen.substring(0, 1), lastSeen.substring(0, 1).toLowerCase());
+		}
+		
+		void setId(int id) {
+			this.id = id;
+		}
+		
+		void setStatus(boolean status) {
+			this.status = status;
+		}
+		
+		void addMessage(Message message) {
+			this.messages.add(0, message);
+		}
+		
+		void addPrivMessage(Message message) {
+			this.pMessages.add(message);
+		}
+		
+		void saveMessages() throws Exception {
+			if (getMessages().size() > 0) {
+				final String NEW_LINE = System.getProperty("line.separator");
+			
+				File f = new File(System.getProperty("user.dir") + "\\users");
+		        f.mkdirs();
+		        
+				FileWriter writer = new FileWriter(f + "\\" + getNick() + ".txt");
+				for (Message message : getMessages())
+					writer.write(message.getUser() + ": " + message.getMessage() + NEW_LINE);
+				writer.close();
+			}
+			if (getPrivMessages().size() > 0) {
+				final String NEW_LINE = System.getProperty("line.separator");
+				
+				File f = new File(System.getProperty("user.dir") + "\\users");
+		        f.mkdirs();
+		        
+				FileWriter writer = new FileWriter(f + "\\" + getNick() + "-priv.txt");
+				for (Message message : getPrivMessages())
+					writer.write(message.getUser() + ": " + message.getMessage() + NEW_LINE);
+				writer.close();
+			}
+		}
+		
+		void loadMessages() throws Exception {
+			if (new File(System.getProperty("user.dir") + "\\users\\" + getNick() + ".txt").exists()) {
+				File f = new File(System.getProperty("user.dir") + "\\users");
+		        f.mkdirs();
+		        
+				Scanner scanner = new Scanner(new FileReader(f + "\\" + getNick() + ".txt"));
+				int x = 0;
+				while (scanner.hasNextLine()) {
+					getMessages().add(x, new Message(getNick(), scanner.nextLine().substring(getNick().length() + 2)));
+				}
+				scanner.close();
+			}
+		}
+		
+		void loadPrivMessages() throws Exception {
+			if (new File(System.getProperty("user.dir") + "\\users\\" + getNick() + "-priv.txt").exists()) {
+				File f = new File(System.getProperty("user.dir") + "\\users");
+		        f.mkdirs();
+		        
+				Scanner scanner = new Scanner(new FileReader(f + "\\" + getNick() + "-priv.txt"));
+				int x = 0;
+				while (scanner.hasNextLine()) {
+					String[] line = scanner.nextLine().split(":", 2);
+					getPrivMessages().add(x, new Message(line[0], line[1]));
+					x++;
+				}
+				scanner.close();
+			}
+		}
+		
+		void checkPrivMessages() {
+	    	for (Message message : getPrivMessages())
+	    		bot.sendNotice(getNick(), chatColor + message.getUser() + ": " + message.getMessage());
+	    	getPrivMessages().clear();
+	    	if (new File(System.getProperty("user.dir") + "\\users\\" + getNick() + "-priv.txt").exists()
+	    	&& !new File(System.getProperty("user.dir") + "\\users\\" + getNick() + "-priv.txt").delete())
+	    			bot.sendNotice(getNick(), chatColor + "Error removing private messages. Please report this to a Denizen dev.");
+		}
+		
+		public String getLastSeen() {
+			return this.lastSeen;
+		}
+	
+		public int getId() {
+			return this.id;
+		}
+		
+		public boolean getStatus() {
+			return this.status;
+		}
+		
+		public ArrayList<Message> getMessages() {
+			return this.messages;
+		}
+		
+		public ArrayList<Message> getPrivMessages() {
+			return this.pMessages;
+		}
+		
+	}
+	
+	public static class Message {
+		
+		private String user;
+		private String message;
+		
+		public Message(String user, String message) {
+			this.user = user;
+			this.message = message;
+		}
+		
+		public String getUser() {
+			return this.user;
+		}
+		
+		public String getMessage() {
+			return this.message;
+		}
+		
+	}
 	
 }

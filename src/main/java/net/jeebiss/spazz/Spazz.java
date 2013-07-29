@@ -75,7 +75,7 @@ public class Spazz extends ListenerAdapter implements Listener {
         
         bot.connect("irc.esper.net");
 		bot.setMessageDelay(0);
-        bot.sendMessage("NickServ", "IDENTIFY " + System.getProperty("IRC_PASSWORD"));
+        bot.sendMessage("NickServ", "IDENTIFY " + System.getProperty("spazz.password"));
         bot.joinChannel("#denizen-dev");
         
     	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");
@@ -112,8 +112,24 @@ public class Spazz extends ListenerAdapter implements Listener {
 	@Override
 	public void onJoin(JoinEvent event) throws Exception {
 		
-		if (!users.containsKey(event.getUser().getNick()))
-    		users.put(event.getUser().getNick(), new dUser(bot, event.getUser().getNick()));
+		if (new File(System.getProperty("user.dir") + "lastseen.txt").exists()) {
+			Scanner scanner = new Scanner(new FileReader("lastseen.txt"));
+			while (scanner.hasNextLine()) {
+				String[] line = scanner.nextLine().split(":", 2);
+				if (line[0] == event.getUser().getNick()) {
+					users.get(event.getUser().getNick()).setLastSeenRaw(line[2]);
+				}
+			}
+			scanner.close();
+		}
+		
+        for (User user : bot.getChannel("#denizen-dev").getUsers())
+    		if (!users.containsKey(user.getNick())) {
+        		users.put(user.getNick(), new dUser(bot, user.getNick()));
+        		users.get(user.getNick()).loadAll();
+        		users.get(user.getNick()).saveAll();
+        		System.out.println("New user registered: " + user.getNick());
+    		}
 
 		bot.sendNotice(event.getUser(), "Welcome to " + Colors.BOLD + "#denizen-dev" + Colors.NORMAL + ", home of the Denizen project. If you'd like help with anything, type " + Colors.BOLD + Colors.BLUE + ".help");
 		
@@ -126,7 +142,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 	@Override
 	public void onQuit(QuitEvent event) throws Exception {
 		
-		users.get(event.getUser().getNick()).saveMessages();
+		users.get(event.getUser().getNick()).saveAll();
 		users.get(event.getUser().getNick()).setStatus(false);
 		
 	}
@@ -134,7 +150,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 	@Override
 	public void onPart(PartEvent event) throws Exception {
 		
-		users.get(event.getUser().getNick()).saveMessages();
+		users.get(event.getUser().getNick()).saveAll();
 		users.get(event.getUser().getNick()).setStatus(false);
 		
 	}
@@ -143,7 +159,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 	public void onDisconnect(DisconnectEvent event) throws Exception {
 		
 		for (dUser user : users.values()) {
-			users.get(user.getNick()).saveMessages();
+			users.get(user.getNick()).saveAll();
 		}
 		
 	}
@@ -152,6 +168,25 @@ public class Spazz extends ListenerAdapter implements Listener {
 	public void onPing(PingEvent event) throws Exception {
 		// CTCP PING stuff... Not incredibly useful
 		users.get(event.getUser().getNick()).checkPrivMessages();
+		
+		if (new File(System.getProperty("user.dir") + "lastseen.txt").exists()) {
+			Scanner scanner = new Scanner(new FileReader("lastseen.txt"));
+			while (scanner.hasNextLine()) {
+				String[] line = scanner.nextLine().split(":", 2);
+				if (line[0] == event.getUser().getNick()) {
+					users.get(event.getUser().getNick()).setLastSeenRaw(line[2]);
+				}
+			}
+			scanner.close();
+		}
+		
+        for (User user : bot.getChannel("#denizen-dev").getUsers())
+    		if (!users.containsKey(user.getNick())) {
+        		users.put(user.getNick(), new dUser(bot, user.getNick()));
+        		users.get(user.getNick()).loadAll();
+        		users.get(user.getNick()).saveAll();
+        		System.out.println("New user registered: " + user.getNick());
+    		}
 	}
 	
 	@Override
@@ -162,28 +197,59 @@ public class Spazz extends ListenerAdapter implements Listener {
     		users.put(event.getNewNick(), new dUser(bot, event.getNewNick()));
 		dUser oldUsr = users.get(event.getOldNick());
 		dUser newUsr = users.get(event.getNewNick());
+		for (Message message : users.get(event.getOldNick()).getPrivMessages())
+			users.get(event.getNewNick()).addPrivMessage(message);
 		newUsr.setLastSeen("Changing nick (" + event.getOldNick() + " to " + event.getNewNick() + ")");
-		users.remove(event.getOldNick());
-		users.remove(event.getNewNick());
-		for (Message message : oldUsr.getPrivMessages())
-			newUsr.addPrivMessage(message);
 		users.put(event.getNewNick(), oldUsr);
-		users.get(event.getNewNick()).checkPrivMessages();
 		
 		if (!new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + ".txt").renameTo(new File(System.getProperty("user.dir") + "\\users\\" + event.getNewNick() + ".txt")) && (new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").exists() && !new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").renameTo(new File(System.getProperty("user.dir") + "\\users\\" + event.getNewNick() + "-priv.txt"))))
-			bot.sendNotice(event.getNewNick(), "Successfully renamed to " + event.getNewNick() + ".");
+			return;
 		else if (!new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").exists())
-			bot.sendNotice(event.getNewNick(), "Successfully renamed to " + event.getNewNick() + ".");
+			return;
 		else
 			bot.sendNotice(event.getNewNick(), "Internal error while changing nick. Please report this to a Denizen dev.");
+
+		users.get(event.getNewNick()).checkPrivMessages();
+		
+		if (new File(System.getProperty("user.dir") + "lastseen.txt").exists()) {
+			Scanner scanner = new Scanner(new FileReader("lastseen.txt"));
+			while (scanner.hasNextLine()) {
+				String[] line = scanner.nextLine().split(":", 2);
+				if (line[0] == event.getUser().getNick()) {
+					users.get(event.getUser().getNick()).setLastSeenRaw(line[2]);
+				}
+			}
+			scanner.close();
+		}
+		
+        for (User user : bot.getChannel("#denizen-dev").getUsers())
+    		if (!users.containsKey(user.getNick())) {
+        		users.put(user.getNick(), new dUser(bot, user.getNick()));
+        		users.get(user.getNick()).loadAll();
+        		users.get(user.getNick()).saveAll();
+        		System.out.println("New user registered: " + user.getNick());
+    		}
 	}
 	
 	@Override
     public void onMessage(MessageEvent event) throws Exception {
         
+		if (new File(System.getProperty("user.dir") + "lastseen.txt").exists()) {
+			Scanner scanner = new Scanner(new FileReader("lastseen.txt"));
+			while (scanner.hasNextLine()) {
+				String[] line = scanner.nextLine().split(":", 2);
+				if (line[0] == event.getUser().getNick()) {
+					users.get(event.getUser().getNick()).setLastSeenRaw(line[2]);
+				}
+			}
+			scanner.close();
+		}
+		
         for (User user : bot.getChannel("#denizen-dev").getUsers())
     		if (!users.containsKey(user.getNick())) {
         		users.put(user.getNick(), new dUser(bot, user.getNick()));
+        		users.get(user.getNick()).loadAll();
+        		users.get(user.getNick()).saveAll();
         		System.out.println("New user registered: " + user.getNick());
     		}
     	
@@ -590,7 +656,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			return;
 		} else if (msgLwr.startsWith(".save-all")) {
 			for (User user : users.values())
-				users.get(user.getNick()).saveMessages();
+				users.get(user.getNick()).saveAll();
 		} else if (msgLwr.startsWith(".seen ")) {
 			String[] args = msg.split(" ");
 			if (users.containsKey(args[1]))
@@ -862,7 +928,11 @@ public class Spazz extends ListenerAdapter implements Listener {
 		}
 
 		void setLastSeen(String lastSeen) {
-			this.lastSeen = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss (zzz)").format(Calendar.getInstance().getTime()) + ", " + lastSeen.replaceFirst(lastSeen.substring(0, 1), lastSeen.substring(0, 1).toLowerCase());
+			this.lastSeen = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss (zzz)").format(Calendar.getInstance().getTime()).replace("DT)", "ST)") + ", " + lastSeen.replaceFirst(lastSeen.substring(0, 1), lastSeen.substring(0, 1).toLowerCase());
+		}
+		
+		void setLastSeenRaw(String lastSeen) {
+			this.lastSeen = lastSeen;
 		}
 		
 		void setId(int id) {
@@ -881,7 +951,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			this.pMessages.add(message);
 		}
 		
-		void saveMessages() throws Exception {
+		void saveAll() throws Exception {
 			if (getMessages().size() > 0) {
 				final String NEW_LINE = System.getProperty("line.separator");
 			
@@ -902,6 +972,12 @@ public class Spazz extends ListenerAdapter implements Listener {
 				FileWriter writer = new FileWriter(f + "\\" + getNick() + "-priv.txt");
 				for (Message message : getPrivMessages())
 					writer.write(message.getUser() + ": " + message.getMessage() + NEW_LINE);
+				writer.close();
+			}
+			if (getLastSeen() != null) {
+				final String NEW_LINE = System.getProperty("line.separator");
+				FileWriter writer = new FileWriter("lastseen.txt");
+				writer.write(NEW_LINE + getNick() + getLastSeen());
 				writer.close();
 			}
 		}
@@ -936,6 +1012,19 @@ public class Spazz extends ListenerAdapter implements Listener {
 			}
 		}
 		
+		void loadLastSeen() throws Exception {
+			if (new File(System.getProperty("user.dir") + "lastseen.txt").exists()) {
+				Scanner scanner = new Scanner(new FileReader("lastseen.txt"));
+				while (scanner.hasNextLine()) {
+					String[] line = scanner.nextLine().split(":", 2);
+					if (line[0] == getNick()) {
+						setLastSeenRaw(line[2]);
+					}
+				}
+				scanner.close();
+			}
+		}
+		
 		void checkPrivMessages() {
 	    	for (Message message : getPrivMessages())
 	    		bot.sendNotice(getNick(), chatColor + message.getUser() + ": " + message.getMessage());
@@ -943,6 +1032,11 @@ public class Spazz extends ListenerAdapter implements Listener {
 	    	if (new File(System.getProperty("user.dir") + "\\users\\" + getNick() + "-priv.txt").exists()
 	    	&& !new File(System.getProperty("user.dir") + "\\users\\" + getNick() + "-priv.txt").delete())
 	    			bot.sendNotice(getNick(), chatColor + "Error removing private messages. Please report this to a Denizen dev.");
+		}
+		
+		void loadAll() {
+			try {loadMessages();} catch(Exception e){}
+			try {loadPrivMessages();} catch(Exception e){System.out.println("User has no message log file. Creating empty log..."); try{saveAll();}catch(Exception ex){System.out.println("Error creating file!");}}
 		}
 		
 		public String getLastSeen() {

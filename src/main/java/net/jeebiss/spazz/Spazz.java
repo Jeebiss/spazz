@@ -3,17 +3,26 @@ package net.jeebiss.spazz;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.System;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
-
+import org.apache.commons.io.IOUtils;
+import org.kohsuke.github.GHIssue;
+import org.kohsuke.github.GHIssueState;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
@@ -42,7 +51,21 @@ public class Spazz extends ListenerAdapter implements Listener {
 	
 	public static PircBotX bot = new PircBotX();
 	
-	public static Map<String, dUser> users = new HashMap<String, dUser>();
+	public static GitHub github;
+	public static GHRepository repo;
+	static int openIssues = -1;
+	static int closedIssues = -1;
+	static Map<Integer, GHIssue> openIssuesList = new HashMap<Integer, GHIssue>();
+	static Map<Integer, GHIssue> closedIssuesList = new HashMap<Integer, GHIssue>();
+
+	public static List<dTag> dTags = new ArrayList<dTag>();
+	
+    static String getUrl(String url) throws IOException {
+    	InputStream wp = new URL(url).openStream();
+		String returns = IOUtils.toString(wp);
+		wp.close();
+		return returns;
+    }
 	
     String[] temp;
 	static String chatColor = Colors.BLUE;
@@ -62,6 +85,73 @@ public class Spazz extends ListenerAdapter implements Listener {
     static HtmlUnitDriver PASTEBIN = new HtmlUnitDriver();
     static WebClient HASTEBIN = new WebClient();
     static WebClient PASTIE = new WebClient();
+	
+	private static void loadTags() throws IOException {
+		String page = getUrl("https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dPlayer.java")
+                + getUrl("https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/Duration.java")
+                + getUrl("https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dList.java")
+                + getUrl("https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dLocation.java")
+                + getUrl("https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dEntity.java")
+                + getUrl("https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dNPC.java");
+		String[] split = page.replace("\r", "").split("\n");
+        boolean intagdesc = false;
+        List<String> descs = new ArrayList<String>();
+        for (int i = 0; i < split.length; i++) {
+            String curline = split[i].trim();
+            if (curline.startsWith("// <--")) {
+                descs.clear();
+                intagdesc = true;
+            }
+            else if (curline.startsWith("// -->")) {
+                if (descs.size() < 2) {
+                    System.out.println("Bad desc at " + String.valueOf(i) + "!");
+                    continue;
+                }
+                String name = descs.get(0).substring(descs.get(0).indexOf('<') + 1);
+                int endloc = 0;
+                int morphans = 0;
+                for (int q = 0; q < name.length(); q++) {
+                    if (name.charAt(q) == '<') {
+                        morphans++;
+                    }
+                    if (name.charAt(q) == '>') {
+                        if (morphans == 0) {
+                            endloc = q;
+                            break;
+                        }
+                        morphans--;
+                    }
+                }
+                String returns = name.substring(endloc + 5);
+                name = name.substring(0, endloc);
+                String nname = "";
+                boolean flip = false;
+                for (int f = 0; f < name.length(); f++) {
+                    if (name.charAt(f) == '[')
+                        flip = true;
+                    if (!flip)
+                        nname += String.valueOf(name.charAt(f));
+                    if (name.charAt(f) == ']')
+                        flip = false;
+                }
+                if (nname.contains("@")) {
+                    nname = nname.substring(nname.indexOf('@') + 1);
+                }
+                System.out.println("Adding tag " + name + " AKA " + nname);
+                String tagdesc = "";
+                for (String desc : descs) {
+                    tagdesc += desc + "\n";
+                }
+                dTags.add(new dTag(name, tagdesc.substring(0, tagdesc.length() - 1), nname, returns));
+                intagdesc = false;
+            }
+            else if (curline.startsWith("// ")) {
+                if (intagdesc) {
+                    descs.add(curline.substring(2));
+                }
+            }
+        }
+    }
     
 	public static void main(String[] args) throws Exception {
 		bot.getListenerManager().addListener(new Spazz());
@@ -78,8 +168,18 @@ public class Spazz extends ListenerAdapter implements Listener {
         bot.sendMessage("NickServ", "IDENTIFY " + System.getProperty("spazz.password"));
         bot.joinChannel("#denizen-dev");
         
+        github = GitHub.connectUsingPassword("spazzmatic", System.getProperty("spazz.password"));
+        repo = github.getRepository("aufdemrand/Denizen");
+        openIssues = repo.getOpenIssueCount();
+        closedIssues = repo.getIssues(GHIssueState.CLOSED).size();
+        for (GHIssue issue : repo.getIssues(GHIssueState.OPEN))
+        	openIssuesList.put(issue.getNumber(), issue);
+        for (GHIssue issue : repo.getIssues(GHIssueState.CLOSED))
+        	closedIssuesList.put(issue.getNumber(), issue);
+        
     	GHCR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java");
     	GHRR.get("https://github.com/aufdemrand/Denizen/blob/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java");
+    	loadTags();
     	
     	Scanner scanner = new Scanner(System.in);
     	String input = "";
@@ -108,159 +208,106 @@ public class Spazz extends ListenerAdapter implements Listener {
     	
     	scanner.close();
     }
-	
 	@Override
 	public void onJoin(JoinEvent event) throws Exception {
-		
-		if (new File(System.getProperty("user.dir") + "lastseen.txt").exists()) {
-			Scanner scanner = new Scanner(new FileReader("lastseen.txt"));
-			while (scanner.hasNextLine()) {
-				String[] line = scanner.nextLine().split(":", 2);
-				if (line[0] == event.getUser().getNick()) {
-					users.get(event.getUser().getNick()).setLastSeenRaw(line[2]);
-				}
-			}
-			scanner.close();
-		}
-		
-        for (User user : bot.getChannel("#denizen-dev").getUsers())
-    		if (!users.containsKey(user.getNick())) {
-        		users.put(user.getNick(), new dUser(bot, user.getNick()));
-        		users.get(user.getNick()).loadAll();
-        		users.get(user.getNick()).saveAll();
-        		System.out.println("New user registered: " + user.getNick());
-    		}
 
 		bot.sendNotice(event.getUser(), "Welcome to " + Colors.BOLD + "#denizen-dev" + Colors.NORMAL + ", home of the Denizen project. If you'd like help with anything, type " + Colors.BOLD + Colors.BLUE + ".help");
-		
-		users.get(event.getUser().getNick()).setStatus(true);
-    	users.get(event.getUser().getNick()).setLastSeen("Logging in.");
-		users.get(event.getUser().getNick()).checkPrivMessages();
 	
 	}
 	
 	@Override
 	public void onQuit(QuitEvent event) throws Exception {
-		
-		users.get(event.getUser().getNick()).saveAll();
-		users.get(event.getUser().getNick()).setStatus(false);
-		
+		// ...
 	}
 	
 	@Override
 	public void onPart(PartEvent event) throws Exception {
-		
-		users.get(event.getUser().getNick()).saveAll();
-		users.get(event.getUser().getNick()).setStatus(false);
-		
+		// ...
 	}
 	
 	@Override
 	public void onDisconnect(DisconnectEvent event) throws Exception {
-		
-		for (dUser user : users.values()) {
-			users.get(user.getNick()).saveAll();
-		}
-		
+		// ...
 	}
 	
 	@Override
 	public void onPing(PingEvent event) throws Exception {
 		// CTCP PING stuff... Not incredibly useful
-		users.get(event.getUser().getNick()).checkPrivMessages();
-		
-		if (new File(System.getProperty("user.dir") + "lastseen.txt").exists()) {
-			Scanner scanner = new Scanner(new FileReader("lastseen.txt"));
-			while (scanner.hasNextLine()) {
-				String[] line = scanner.nextLine().split(":", 2);
-				if (line[0] == event.getUser().getNick()) {
-					users.get(event.getUser().getNick()).setLastSeenRaw(line[2]);
-				}
-			}
-			scanner.close();
-		}
-		
-        for (User user : bot.getChannel("#denizen-dev").getUsers())
-    		if (!users.containsKey(user.getNick())) {
-        		users.put(user.getNick(), new dUser(bot, user.getNick()));
-        		users.get(user.getNick()).loadAll();
-        		users.get(user.getNick()).saveAll();
-        		System.out.println("New user registered: " + user.getNick());
-    		}
 	}
 	
 	@Override
 	public void onNickChange(NickChangeEvent event) throws Exception {
-		if (!users.containsKey(event.getOldNick()))
-    		users.put(event.getOldNick(), new dUser(bot, event.getOldNick()));
-		if (!users.containsKey(event.getNewNick()))
-    		users.put(event.getNewNick(), new dUser(bot, event.getNewNick()));
-		dUser oldUsr = users.get(event.getOldNick());
-		dUser newUsr = users.get(event.getNewNick());
-		for (Message message : users.get(event.getOldNick()).getPrivMessages())
-			users.get(event.getNewNick()).addPrivMessage(message);
-		newUsr.setLastSeen("Changing nick (" + event.getOldNick() + " to " + event.getNewNick() + ")");
-		users.put(event.getNewNick(), oldUsr);
+		//if (!users.containsKey(event.getOldNick()))
+    	//	users.put(event.getOldNick(), new dUser(bot, event.getOldNick()));
+		//if (!users.containsKey(event.getNewNick()))
+    	//	users.put(event.getNewNick(), new dUser(bot, event.getNewNick()));
+		//dUser oldUsr = users.get(event.getOldNick());
+		//dUser newUsr = users.get(event.getNewNick());
+		//for (Message message : users.get(event.getOldNick()).getPrivMessages())
+		//	users.get(event.getNewNick()).addPrivMessage(message);
+		//newUsr.setLastSeen("Changing nick (" + event.getOldNick() + " to " + event.getNewNick() + ")");
+		//users.put(event.getNewNick(), oldUsr);
 		
-		if (!new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + ".txt").renameTo(new File(System.getProperty("user.dir") + "\\users\\" + event.getNewNick() + ".txt")) && (new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").exists() && !new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").renameTo(new File(System.getProperty("user.dir") + "\\users\\" + event.getNewNick() + "-priv.txt"))))
-			return;
-		else if (!new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").exists())
-			return;
-		else
-			bot.sendNotice(event.getNewNick(), "Internal error while changing nick. Please report this to a Denizen dev.");
+		//if (!new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + ".txt").renameTo(new File(System.getProperty("user.dir") + "\\users\\" + event.getNewNick() + ".txt")) && (new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").exists() && !new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").renameTo(new File(System.getProperty("user.dir") + "\\users\\" + event.getNewNick() + "-priv.txt"))))
+		//	return;
+		//else if (!new File(System.getProperty("user.dir") + "\\users\\" + event.getOldNick() + "-priv.txt").exists())
+		//	return;
+		//else
+		//	bot.sendNotice(event.getNewNick(), "Internal error while changing nick. Please report this to a Denizen dev.");
 
-		users.get(event.getNewNick()).checkPrivMessages();
+		//users.get(event.getNewNick()).checkPrivMessages();
 		
-		if (new File(System.getProperty("user.dir") + "lastseen.txt").exists()) {
-			Scanner scanner = new Scanner(new FileReader("lastseen.txt"));
-			while (scanner.hasNextLine()) {
-				String[] line = scanner.nextLine().split(":", 2);
-				if (line[0] == event.getUser().getNick()) {
-					users.get(event.getUser().getNick()).setLastSeenRaw(line[2]);
-				}
-			}
-			scanner.close();
-		}
+		//if (new File(System.getProperty("user.dir") + "lastseen.txt").exists()) {
+		//	Scanner scanner = new Scanner(new FileReader("lastseen.txt"));
+		//	while (scanner.hasNextLine()) {
+		//		String[] line = scanner.nextLine().split(":", 2);
+		//		if (line[0] == event.getUser().getNick()) {
+		//			users.get(event.getUser().getNick()).setLastSeenRaw(line[2]);
+		//		}
+		//	}
+		//	scanner.close();
+		//}
 		
-        for (User user : bot.getChannel("#denizen-dev").getUsers())
-    		if (!users.containsKey(user.getNick())) {
-        		users.put(user.getNick(), new dUser(bot, user.getNick()));
-        		users.get(user.getNick()).loadAll();
-        		users.get(user.getNick()).saveAll();
-        		System.out.println("New user registered: " + user.getNick());
-    		}
+        //for (User user : bot.getChannel("#denizen-dev").getUsers())
+    	//	if (!users.containsKey(user.getNick())) {
+        //		users.put(user.getNick(), new dUser(bot, user.getNick()));
+        // 		users.get(user.getNick()).loadAll();
+        //		users.get(user.getNick()).saveAll();
+        //		System.out.println("New user registered: " + user.getNick());
+    	//	}
 	}
 	
 	@Override
     public void onMessage(MessageEvent event) throws Exception {
         
-		if (new File(System.getProperty("user.dir") + "lastseen.txt").exists()) {
-			Scanner scanner = new Scanner(new FileReader("lastseen.txt"));
-			while (scanner.hasNextLine()) {
-				String[] line = scanner.nextLine().split(":", 2);
-				if (line[0] == event.getUser().getNick()) {
-					users.get(event.getUser().getNick()).setLastSeenRaw(line[2]);
-				}
+		repo = github.getRepository("aufdemrand/denizen");
+		int newOpenIssues = repo.getOpenIssueCount();
+		if (newOpenIssues < openIssues) {
+			List<GHIssue>closedIssuesList = repo.getIssues(GHIssueState.CLOSED);
+            Collections.sort(closedIssuesList, new Comparator<GHIssue>() {
+                public int compare(GHIssue issue1, GHIssue issue2) {
+                    return issue2.getClosedAt().compareTo(issue1.getClosedAt());
+                }
+            });
+			GHIssue issue = closedIssuesList.get(0);
+			bot.sendMessage("#denizen-dev", "Issue resolved: \"[" + issue.getNumber() + "] " + Colors.OLIVE + issue.getTitle() + chatColor + "\"");
+			openIssues = newOpenIssues;
+		} else if (newOpenIssues > openIssues) {
+			GHIssue issue = repo.getIssues(GHIssueState.OPEN).get(0);
+			if (closedIssuesList.containsKey(issue.getNumber())) {
+				bot.sendMessage("#denizen-dev", "Issue re-opened: [" + issue.getNumber() + "] " + Colors.OLIVE + issue.getTitle() + chatColor);
+				closedIssuesList.remove(issue.getNumber());
+				openIssuesList.put(issue.getNumber(), issue);
 			}
-			scanner.close();
+			else {
+				bot.sendMessage("#denizen-dev", "New issue opened: \"[" + issue.getNumber() + "] " + Colors.OLIVE + issue.getTitle() + chatColor + "\" by " + Colors.TEAL + issue.getUser().getLogin() + chatColor);
+				openIssuesList.put(issue.getNumber(), issue);
+			}
+			openIssues = newOpenIssues;
 		}
 		
-        for (User user : bot.getChannel("#denizen-dev").getUsers())
-    		if (!users.containsKey(user.getNick())) {
-        		users.put(user.getNick(), new dUser(bot, user.getNick()));
-        		users.get(user.getNick()).loadAll();
-        		users.get(user.getNick()).saveAll();
-        		System.out.println("New user registered: " + user.getNick());
-    		}
-    	
-    	users.get(event.getUser().getNick()).setStatus(true);
-    	users.get(event.getUser().getNick()).checkPrivMessages();
-			
 		User usr = event.getUser();
 		String msg = event.getMessage();
-		
-		users.get(usr.getNick()).addMessage(new Message(usr.getNick(), msg));
-		users.get(usr.getNick()).setLastSeen("Saying \"" + event.getMessage() + "\".");
 		
 		String msgLwr = msg.toLowerCase();
 		Channel chnl = event.getChannel();
@@ -295,6 +342,32 @@ public class Spazz extends ListenerAdapter implements Listener {
 		if (msg.equalsIgnoreCase(".hello")) {
 			bot.sendMessage("#denizen-dev", address + "Hello World"); 
 			return;
+		} else if (msgLwr.matches("\\.comment \\d+\\s.+")) {
+			
+			if (!(hasOp(usr, chnl) || hasVoice(usr, chnl))) {
+				bot.sendMessage("#denizen-dev", chatColor + "Hey! You don't have permission to do that!");
+				return;
+			}
+			
+			String beginning = msg.split("\\d+")[0];
+			String end = msg.split("\\d+\\s", 2)[1];
+			String number = msg.substring(beginning.length(), msg.length() - (end.length() + 1));try {
+				GHIssue issue = (repo.getIssue(Integer.valueOf(number)) != null ? repo.getIssue(Integer.valueOf(number)) : null);
+				bot.sendMessage("#denizen-dev", chatColor + "Commented on issue #" + number + " (" + Colors.OLIVE + issue.getTitle() + chatColor + ")");
+				issue.comment(end + "\n\n(Sent from IRC channel #denizen-dev by " + usr.getNick() + ")");
+			} catch(IOException e) {
+				bot.sendMessage("#denizen-dev", address + chatColor + "Issue #" + number + " doesn't seem to exist...");
+			}
+		} else if (msgLwr.matches("(^|.+)issues/\\d+($|.+)")) {
+			String beginning = msg.split("/\\d+")[0];
+			String end = msg.split("/\\d+", 2)[1];
+			String number = msg.substring(beginning.length() + 1, msg.length() - end.length());
+			try {
+				GHIssue issue = (repo.getIssue(Integer.valueOf(number)) != null ? repo.getIssue(Integer.valueOf(number)) : null);
+				bot.sendMessage("#denizen-dev", address + chatColor + (issue.getState().equals(GHIssueState.OPEN) ? "Open issue: \"" : "Closed issue: \"") + Colors.OLIVE + issue.getTitle() + chatColor + "\" by " + Colors.TEAL + issue.getUser().getLogin() + chatColor + ". Last updated: " + issue.getUpdatedAt());
+			} catch(IOException e) {
+				bot.sendMessage("#denizen-dev", address + chatColor + "Issue #" + number + " doesn't seem to exist...");
+			}
 		} else if (msgLwr.startsWith(".kitty")) {
 			bot.sendMessage("#denizen-dev", address + chatColor + "Meow.");
 			return;
@@ -410,7 +483,87 @@ public class Spazz extends ListenerAdapter implements Listener {
 			bot.sendMessage("#denizen-dev", chatColor +  "Feel free to look at it anyway, though! http://bit.ly/13BwnUp");
 			return;
 		} else if (msgLwr.startsWith(".tags")) {
-			bot.sendMessage("#denizen-dev", address + chatColor +  "Here's the current list of replaceable tags. (Incomplete)- http://bit.ly/11AQ4kr");
+			bot.sendMessage("#denizen-dev", chatColor +  "Here's the current list of replaceable tags. (Incomplete)- http://bit.ly/11AQ4kr");
+		} else if (msgLwr.startsWith(".tag ")) {
+			List<intstr> found = FindTags(msgLwr.split(" ")[1], null, null, null);
+            List<StringBuilder> FoundInfo = new ArrayList<StringBuilder>();
+            if (found.size() > 0) {
+                FoundInfo.add(new StringBuilder());
+                FoundInfo.get(0).append(chatColor);
+                String nname = "";
+                boolean flip = false;
+                for (int f = 0; f < msgLwr.split(" ")[1].length(); f++) {
+                    if (msgLwr.split(" ")[1].charAt(f) == '[') {
+                        flip = true;
+                    }
+                    if (!flip) {
+                        nname += String.valueOf(msgLwr.split(" ")[1].charAt(f));
+                    }
+                    if (msgLwr.split(" ")[1].charAt(f) == ']') {
+                        flip = false;
+                    }
+                }
+                if (nname.contains("@")) {
+                    nname = nname.substring(nname.indexOf('@') + 1);
+                }
+                System.out.println("Count...");
+                for (int i = 0; i < found.size(); i++) {
+                    System.out.println(i + "-" + found.get(i).intvalue + "-" + found.get(i).stringValue + ",");
+                    FoundInfo.get(FoundInfo.size() - 1).append(found.get(i).stringValue + ", ");
+                    if (FoundInfo.get(FoundInfo.size() - 1).length() > 400) {
+                        FoundInfo.add(new StringBuilder());
+                        FoundInfo.get(FoundInfo.size() - 1).append(chatColor);
+                    }
+                    if (i >= 50) {
+                        break;
+                    }
+                    if (found.get(i).stringValuea == nname || found.get(i).stringValue == msgLwr.split(" ")[1] || found.get(i).stringValueb == nname)
+                    {
+                        intstr isa = found.get(i);
+                        found.clear();
+                        found.add(isa);
+                        break;
+                    }
+                }
+            }
+            for (int i = 0; i < found.size(); i++) {
+                for (int x = i + 1; x < found.size(); x++) {
+                    if (found.get(i).stringValue == found.get(x).stringValue) {
+                        System.out.println(i + "-" + x + ",");
+                        found.remove(x);
+                        x--;
+                    }
+                }
+            }
+            if (found.size() == 0) {
+                bot.sendMessage("#denizen-dev", address + chatColor + "No matches found. Are you sure it exists?");
+            }
+            else if (found.size() == 1) {
+                System.out.println("Found 1 " + found.get(0).intvalue + " is " + found.get(0).stringValue);
+                bot.sendMessage("#denizen-dev", address + chatColor + "Oh look! A matching tag: " + dTags.get(found.get(0).intvalue).getName());
+                String[] founddesc = dTags.get(found.get(0).intvalue).getDesc().split("\n");
+                for (int x = 1; x < founddesc.length; x++) {
+                    bot.sendMessage("#denizen-dev", address + chatColor + "  " + founddesc[x]);
+                }
+            }
+            else {
+                if (FoundInfo.get(FoundInfo.size() - 1).length() < 5) {
+                    FoundInfo.remove(FoundInfo.size() - 1);
+                }
+                FoundInfo.add(FoundInfo.size() - 1, new StringBuilder(FoundInfo.get(FoundInfo.size() - 1).toString().substring(0, FoundInfo.get(FoundInfo.size() - 1).length() - 2) + "."));
+                bot.sendMessage("#denizen-dev", address + chatColor + "I found " + optionalColor + found.size() + (found.size() == 50?"+":"") + chatColor + " matches...");
+                boolean flipp = false;
+                for (StringBuilder match : FoundInfo)
+                {
+                    if (!flipp && found.size() < 10) {
+                        bot.sendMessage("denizen-dev", match.toString());
+                        flipp = true;
+                    }
+                    else {
+                        bot.sendNotice(usr, match.toString());
+                    }
+                }
+            }
 		}
 		
 		else if (msgLwr.startsWith(".yaml") || msgLwr.startsWith(".yml")) {
@@ -646,34 +799,38 @@ public class Spazz extends ListenerAdapter implements Listener {
 			return;
 		
 		} else if (msg.equalsIgnoreCase(".bye")) {
-			if(hasOp(usr, chnl) || hasVoice(usr, chnl)) {
-				bot.sendMessage("#denizen-dev", address + chatColor + "Goodbye cruel world!");
-				bot.disconnect();
-				return;
-			}
-			
 			bot.sendMessage("#denizen-dev", address + chatColor + "Hah! You'll never kill me...");
 			return;
-		} else if (msgLwr.startsWith(".save-all")) {
-			for (User user : users.values())
-				users.get(user.getNick()).saveAll();
-		} else if (msgLwr.startsWith(".seen ")) {
-			String[] args = msg.split(" ");
-			if (users.containsKey(args[1]))
-				bot.sendMessage("#denizen-dev", address + chatColor + "The last time I last saw " + args[1] + " was " + users.get(args[1]).getLastSeen());
-			else
-				bot.sendMessage("#denizen-dev", address + chatColor + "I've never seen that user.");
-		} else if (msgLwr.startsWith(".send")
-				|| msgLwr.startsWith(".msg")
-				|| msgLwr.startsWith(".pm")) {
-			String[] args = msg.split(" ");
-			if (users.containsKey(args[1])) {
-				bot.sendMessage("#denizen-dev", address + chatColor + "Your message will be sent to " + args[1] + " ASAP.");
-				users.get(args[1]).addPrivMessage(new Message(usr.getNick(), msg.substring(args[0].length() + args[1].length() + 2)));
+		} else if (msgLwr.startsWith(".issues")) {
+			bot.sendMessage("#denizen-dev", address + chatColor + "Open issues: " + (openIssues == 30 ? "30+" : openIssues));
+			int arg = repo.getOpenIssueCount();
+			try { arg = Integer.valueOf(msgLwr.split(" ")[1]); } catch(Exception e){}
+			if (arg < 1) return;
+			if (arg > repo.getOpenIssueCount()) arg = repo.getOpenIssueCount();
+			for (int i = 0; i < arg; i++) {
+				GHIssue issue = repo.getIssues(GHIssueState.OPEN).get(i);
+				bot.sendNotice(usr, chatColor + "[" + issue.getNumber() + "] \"" + Colors.OLIVE + issue.getTitle() + chatColor + "\", opened by " + Colors.TEAL + issue.getUser().getLogin() + chatColor + ". Last updated: " + issue.getUpdatedAt());
 			}
-			else
-				bot.sendMessage("#denizen-dev", address + chatColor + "I've never seen that user.");
-		}
+		}// else if (msgLwr.startsWith(".save-all")) {
+		//	for (User user : users.values())
+		//		users.get(user.getNick()).saveAll();
+		// } else if (msgLwr.startsWith(".seen ")) {
+		//	String[] args = msg.split(" ");
+		//	if (users.containsKey(args[1]))
+		//		bot.sendMessage("#denizen-dev", address + chatColor + "The last time I last saw " + args[1] + " was " + users.get(args[1]).getLastSeen());
+		//	else
+		//		bot.sendMessage("#denizen-dev", address + chatColor + "I've never seen that user.");
+		//} else if (msgLwr.startsWith(".send")
+		//		|| msgLwr.startsWith(".msg")
+		//		|| msgLwr.startsWith(".pm")) {
+		//	String[] args = msg.split(" ");
+		//	if (users.containsKey(args[1])) {
+		//		bot.sendMessage("#denizen-dev", address + chatColor + "Your message will be sent to " + args[1] + " ASAP.");
+		//		users.get(args[1]).addPrivMessage(new Message(usr.getNick(), msg.substring(args[0].length() + args[1].length() + 2)));
+		//	}
+		//	else
+		//		bot.sendMessage("#denizen-dev", address + chatColor + "I've never seen that user.");
+		//} 
 		else if ((msg.contains("hastebin.") || msg.contains("pastebin.") || msg.contains("pastie.")) && !(help.contains(usr) || chnl.hasVoice(usr) || chnl.isOp(usr))) {
 	        help.add(usr);
 		    bot.sendNotice(usr, "If you want to whether a Denizen script will compile, type " + Colors.BOLD + ".yml link_to_the_script");
@@ -913,6 +1070,138 @@ public class Spazz extends ListenerAdapter implements Listener {
 	    return result.toString();
 	  }
 	
+	static List<intstr> FindTags(String input, Integer layers, List<intstr> toret, String replacer) {
+		if (layers == null) layers = 0;
+        System.out.println("Finding " + input);
+        if (toret == null) {
+            toret = new ArrayList<intstr>();
+        }
+        String nname = "";
+        boolean flip = false;
+        if (layers > 50) {
+            System.out.println("Overloaded!");
+            return toret;
+        }
+        for (int f = 0; f < input.length(); f++) {
+            if (input.charAt(f) == '[') {
+                flip = true;
+            }
+            if (!flip) {
+                nname += String.valueOf(input.charAt(f));
+            }
+            if (input.charAt(f) == ']') {
+                flip = false;
+            }
+        }
+        if (nname.contains("@")) {
+            nname = nname.substring(nname.indexOf('@') + 1);
+        }
+        for (int i = 0; i < dTags.size(); i++) {
+        	dTag tag = dTags.get(i);
+            if (tag.getName().contains(input) || tag.getAlt().contains(nname)) {
+                if (replacer == null) {
+                    toret.add(new intstr(i, tag.getName(), tag.getAlt(), tag.getAlt()));
+                }
+                else {
+                    toret.add(new intstr(i,
+                        replacer + tag.getName().substring(tag.getName().indexOf('.')),
+                        tag.getAlt(),
+                        replacer + tag.getAlt().substring(tag.getAlt().indexOf('.'))));
+                }
+                if (toret.size() >= 50) {
+                    return toret;
+                }
+            }
+            i++;
+        }
+        if (nname.contains(".")) {
+            String ts;
+            if (replacer == null) {
+                ts = nname;
+            }
+            else {
+                if (nname.indexOf('.') + 1 < nname.length()) {
+                    ts = replacer + nname.substring(nname.indexOf('.') + 1);
+                }
+                else {
+                    ts = nname;
+                }
+            }
+            String[] split = ts.split(".");
+            for (int i1 = 0; i1 < split.length; i1++) {
+                String cat = concat(split, i1);
+                if (cat.length() == 0) {
+                    continue;
+                }
+                cat = cat.substring(0, cat.length() - 1);
+                List<intstr> found = FindTags(cat, layers, null, null);
+                System.out.println(cat + " returns " + found.size());
+                for (int x = 0; x < found.size(); x++) {
+                    if (found.get(x).stringValue == cat) {
+                        String ret = dTags.get(found.get(x).intvalue).getReturn();
+                        System.out.println("Ret: " + ret);
+                        if (ret.toLowerCase().contains("dlocation")) {
+                            FindTags("location" + nname.substring(cat.length()), layers, toret, cat);
+                        }
+                        else if (ret.toLowerCase().contains("dplayer")) {
+                            FindTags("player" + nname.substring(cat.length()), layers, toret, cat);
+                        }
+                        else if (ret.toLowerCase().contains("dlist")) {
+                            FindTags("list" + nname.substring(cat.length()), layers, toret, cat);
+                        }
+                        else if (ret.toLowerCase().contains("dentity")) {
+                            FindTags("entity" + nname.substring(cat.length()), layers, toret, cat);
+                        }
+                        else if (ret.toLowerCase().contains("dnpc")) {
+                            FindTags("npc" + nname.substring(cat.length()), layers, toret, cat);
+                        }
+                        break;
+                    }
+                }
+            }
+            if (nname.startsWith("player.") && nname.length() > 7) {
+                String asentity = "entity." + nname.substring(7);
+                FindTags(asentity, layers, toret, "player");
+            }
+        }
+        return toret;
+    }
+	
+	public static class intstr {
+        public int intvalue;
+        public String stringValue;
+        public String stringValuea;
+        public String stringValueb;
+        public intstr(int ia, String sa, String sva, String svb) {
+            intvalue = ia;
+            stringValue = sa;
+            stringValuea = sva;
+            stringValueb = svb;
+        }
+    }
+	
+    static String concat(List<String> strs, int start)
+    {
+        StringBuilder toret = new StringBuilder();
+        for (int i = start; i < strs.size(); i++)
+        {
+            toret.append(strs.get(i));
+            if (i + 1 < strs.size())
+            {
+                toret.append(" ");
+            }
+        }
+        return toret.toString();
+    }
+	
+	static String concat(String[] input, int upto) {
+        String toret = "";
+        for (int i = 0; i < upto; i++) {
+            toret += input[i] + ".";
+        }
+        return toret;
+    }
+	
 	public static class dUser extends org.pircbotx.User {
 		
 		private String lastSeen;
@@ -972,12 +1261,6 @@ public class Spazz extends ListenerAdapter implements Listener {
 				FileWriter writer = new FileWriter(f + "\\" + getNick() + "-priv.txt");
 				for (Message message : getPrivMessages())
 					writer.write(message.getUser() + ": " + message.getMessage() + NEW_LINE);
-				writer.close();
-			}
-			if (getLastSeen() != null) {
-				final String NEW_LINE = System.getProperty("line.separator");
-				FileWriter writer = new FileWriter("lastseen.txt");
-				writer.write(NEW_LINE + getNick() + getLastSeen());
 				writer.close();
 			}
 		}
@@ -1079,6 +1362,36 @@ public class Spazz extends ListenerAdapter implements Listener {
 			return this.message;
 		}
 		
+	}
+	
+	public static class dTag {
+		public String name;
+        public String desc;
+        public String alt;
+        public String returnType;
+        
+        public dTag(String name, String desc, String alt, String returnType) {
+            this.name = name;
+            this.desc = desc;
+            this.alt = alt;
+            this.returnType = returnType;
+        }
+        
+        public String getName() {
+        	return name;
+        }
+        
+        public String getDesc() {
+        	return desc;
+        }
+        
+        public String getAlt() {
+        	return alt;
+        }
+        
+        public String getReturn() {
+        	return returnType;
+        }
 	}
 	
 }

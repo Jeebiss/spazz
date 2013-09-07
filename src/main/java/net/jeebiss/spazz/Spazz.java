@@ -514,6 +514,7 @@ public class Spazz extends ListenerAdapter implements Listener {
         bot.setLogin("spazz");
         bot.setVerbose(debugMode);
         bot.setAutoNickChange(true);
+        bot.setAutoReconnect(true);
         bot.identify(System.getProperty("spazz.password"));
         
         bot.connect("irc.esper.net");
@@ -577,7 +578,12 @@ public class Spazz extends ListenerAdapter implements Listener {
 	@Override
 	public void onJoin(JoinEvent event) throws Exception {
 
-	    dUsers.put(event.getUser().getNick(), new dUser(event.getUser().getNick()));
+	    dUser dusr = null;
+	    if (!dUsers.containsKey(event.getUser().getNick()))
+	        dusr = new dUser(event.getUser().getNick());
+	    else
+	        dusr = dUsers.get(event.getUser().getNick());
+	    
 		bot.sendNotice(event.getUser(), chatColor + "Welcome to " + Colors.BOLD + event.getChannel().getName() + Colors.NORMAL + chatColor + ", home of the Denizen project. If you'd like help with anything, type " + Colors.BOLD + Colors.BLUE + ".help");
 		bot.sendNotice(event.getUser(), chatColor + "If you are using Depenizen and would like help with that as well, let me know by typing " + Colors.BOLD + Colors.BLUE + ".depenizen");
 	
@@ -595,7 +601,9 @@ public class Spazz extends ListenerAdapter implements Listener {
 	
 	@Override
 	public void onDisconnect(DisconnectEvent event) throws Exception {
-		// ...
+        for (dUser usr : dUsers.values()) {
+            usr.saveAll();
+        }
 	}
 	
 	@Override
@@ -1621,7 +1629,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		}
 		
 		else if (msgLwr.startsWith(".load")) {
-		    dusr.loadMessages();
+		    dusr.loadAll();
 		}
 
 		repo = github.getRepository("aufdemrand/denizen");
@@ -2157,8 +2165,10 @@ public class Spazz extends ListenerAdapter implements Listener {
                 f.mkdirs();
                 InputStream is = f.toURI().toURL().openStream();
                 map = (LinkedHashMap) yaml.load(is);
-                if (map.get("lastseen") instanceof String)
+                if (map.get("lastseen") instanceof String && !map.get("lastseen").equals(""))
                     this.lastSeen = (String) map.get("lastseen");
+                else
+                    setLastSeen("Existing.");
             } catch (MalformedURLException e) { e.printStackTrace(); } catch (IOException e) { e.printStackTrace(); }
 		}
 		

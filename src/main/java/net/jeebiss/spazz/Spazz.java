@@ -489,7 +489,7 @@ public class Spazz extends ListenerAdapter implements Listener {
         });
     }
     
-    public static boolean debugMode = true;
+    public static boolean debugMode = false;
     
 	public static void main(String[] args) throws Exception {
         
@@ -517,7 +517,7 @@ public class Spazz extends ListenerAdapter implements Listener {
         bot.identify(System.getProperty("spazz.password"));
         
         bot.connect("irc.esper.net");
-		bot.setMessageDelay(0);
+        bot.setMessageDelay(500);
         bot.joinChannel("#denizen-dev");
         bot.joinChannel("#denizen-devs");
         
@@ -2128,6 +2128,8 @@ public class Spazz extends ListenerAdapter implements Listener {
                 map = (LinkedHashMap) yaml.load(is);
                 if (map.get("messages") instanceof ArrayList<?>)
                     this.messages = (ArrayList<String>) map.get("messages");
+                else
+                    this.messages = new ArrayList<String>();
             } catch (MalformedURLException e) { e.printStackTrace(); } catch (IOException e) { e.printStackTrace(); }
 		}
 		
@@ -2179,6 +2181,8 @@ public class Spazz extends ListenerAdapter implements Listener {
                 map = (LinkedHashMap) yaml.load(is);
                 if (map.get("depenizen") instanceof Boolean)
                     this.depenizen = (Boolean) map.get("depenizen");
+                else
+                    this.depenizen = false;
             } catch (MalformedURLException e) { e.printStackTrace(); } catch (IOException e) { e.printStackTrace(); }
 		}
 		

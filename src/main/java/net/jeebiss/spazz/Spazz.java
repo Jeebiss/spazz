@@ -550,11 +550,23 @@ public class Spazz extends ListenerAdapter implements Listener {
                 }
             }
           }, 3000);
+        
+        System.out.println("Successfully loaded Spazzmatic. You may now begin using console commands.");
+        System.out.println();
+        System.out.println("Available commands:");
+        System.out.println("/me <action>       Performs an action in #denizen-dev.");
+        System.out.println("/msg <user> <msg>  Sends a private message to a user.");
+        System.out.println("/plain <msg>       Sends a non-colored message to #denizen-dev.");
+        System.out.println("/join <channel>    Joins a channel.");
+        System.out.println("/leave <channel>   Leaves a channel.");
+        System.out.println("/disconnect        Saves user info and disconnects from the server.");
+        System.out.println("/cancel            Stops console commands. They cannot be restarted.");
+        System.out.println("<anything else>    Sends a message to #denizen-dev.");
     	
     	Scanner scanner = new Scanner(System.in);
     	String input = "";
     	
-    	while (input.equals("cancel") == false) {
+    	while (input.equals("/cancel") == false) {
         	
     		input = scanner.nextLine().toLowerCase();
     		
@@ -567,7 +579,7 @@ public class Spazz extends ListenerAdapter implements Listener {
     			String message = input.substring(5).split(user + " ")[1];
     			bot.sendMessage(user, message);
     		}
-    		else if (input.startsWith(".plain ")) {
+    		else if (input.startsWith("/plain ")) {
     			String message = input.substring(7, input.length());
     			bot.sendMessage("#denizen-dev", message);
     		}
@@ -1711,14 +1723,15 @@ public class Spazz extends ListenerAdapter implements Listener {
                 if (debugMode) System.out.println("Saving dUser: " + dusr2.getNick() + "...");
                 try {
                     dusr2.saveAll();
-                    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Successfully saved all user information.");
                 } catch (Exception e) {
-                    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), Colors.RED + "ERROR" + chatColor + ". Failed to save user information.");
+                    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), Colors.RED + "ERROR. Failed to save user information: " + defaultColor + dusr2.getNick());
                     if (debugMode) e.printStackTrace();
                     else
                         System.out.println("An error has occured while using .save-all for user " + dusr2.getNick() + "... Turn on debug for more information.");
+                    return;
                 }
             }
+            bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Successfully saved all user information.");
         }
 		
 		else if (msgLwr.startsWith(".load")) {
@@ -1726,13 +1739,13 @@ public class Spazz extends ListenerAdapter implements Listener {
 		        if (debugMode) System.out.println("Loading dUser information: " + dusr2.getNick() + "...");
 		        try {
                     dusr2.loadAll();
-                    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Successfully loaded all user information.");
                 } catch (Exception e) {
-                    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), Colors.RED + "ERROR" + chatColor + ". Failed to load user information.");
+                    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), Colors.RED + "ERROR. Failed to load user information: " + defaultColor + dusr2.getNick());
                     if (debugMode) e.printStackTrace();
                     else
                         System.out.println("An error has occured while using .load for user " + dusr2.getNick() + "... Turn on debug for more information.");
                 }
+                bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Successfully loaded all user information.");
 		    }
 		}
 

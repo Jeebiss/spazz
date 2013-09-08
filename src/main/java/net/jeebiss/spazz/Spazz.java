@@ -3,7 +3,6 @@ package net.jeebiss.spazz;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System;
 import java.net.URL;
@@ -15,14 +14,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.WordUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Seconds;
 import org.joda.time.format.DateTimeFormat;
@@ -36,7 +29,6 @@ import org.pircbotx.Channel;
 import org.pircbotx.Colors;
 import org.pircbotx.PircBotX;
 import org.pircbotx.User;
-import org.pircbotx.hooks.Listener;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.ActionEvent;
 import org.pircbotx.hooks.events.DisconnectEvent;
@@ -48,14 +40,12 @@ import org.pircbotx.hooks.events.PingEvent;
 import org.pircbotx.hooks.events.PrivateMessageEvent;
 import org.pircbotx.hooks.events.QuitEvent;
 import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
-
 import com.rosaloves.bitlyj.Bitly;
 
 @SuppressWarnings("rawtypes")
-public class Spazz extends ListenerAdapter implements Listener {
+public class Spazz extends ListenerAdapter {
 	
 	public static PircBotX bot = new PircBotX();
 	
@@ -77,9 +67,9 @@ public class Spazz extends ListenerAdapter implements Listener {
 	
 	public static Map<String, dUser> dUsers = new HashMap<String, dUser>();
 	
-    static String getUrl(String url) throws IOException {
+    static String getUrl(String url) throws Exception {
     	InputStream wp = new URL(url).openStream();
-		String returns = IOUtils.toString(wp);
+		String returns = org.apache.commons.io.IOUtils.toString(wp);
 		wp.close();
 		return returns;
     }
@@ -89,21 +79,19 @@ public class Spazz extends ListenerAdapter implements Listener {
 	static String optionalColor = Colors.DARK_GREEN;
 	static String defaultColor = Colors.OLIVE;
 	boolean charging=false;
-	boolean logged_in=false;
 	long chargeInitiateTime;
 	long chargeFullTime = 30000;
 	User charger;
 	int botsnack = 0;
 	ArrayList<User> feeders = new ArrayList<User>();
 	ArrayList<User> help = new ArrayList<User>();
-	boolean usingResources = false;
 	String confirmingComment = null;
 	int confirmingIssue = 0;
 	Boolean confirmComment = false;
 	String confirmIssueUser = null;
 	GHIssueBuilder confirmIssue = null;
 	
-    private static void loadMeta() throws IOException {
+    private static void loadMeta() throws Exception {
 		dTags.clear();
 		dTagPrefixes.clear();
 		dTagByType.clear();
@@ -315,12 +303,12 @@ public class Spazz extends ListenerAdapter implements Listener {
                     String realname = name.split(", ")[0];
                     for (String alias : name.split(", ")) {
                         if (type.startsWith("c")) {
-                            dCommands.add(new dCommand(WordUtils.capitalize(alias), WordUtils.capitalize(realname),
+                            dCommands.add(new dCommand(org.apache.commons.lang.WordUtils.capitalize(alias), org.apache.commons.lang.WordUtils.capitalize(realname),
                                     fulldesc, usage.replaceFirst(realname.toLowerCase(), name.toLowerCase()),
                                     alt, descAlt, stable, fullExample, deprecated));
                         }
                         else if (type.startsWith("r")) {
-                            dRequirements.add(new dCommand(WordUtils.capitalize(alias), WordUtils.capitalize(realname),
+                            dRequirements.add(new dCommand(org.apache.commons.lang.WordUtils.capitalize(alias), org.apache.commons.lang.WordUtils.capitalize(realname),
                                     fulldesc, usage.replaceFirst(realname.toLowerCase(), name.toLowerCase()),
                                     alt, descAlt, stable, fullExample, deprecated));
                         }
@@ -480,7 +468,7 @@ public class Spazz extends ListenerAdapter implements Listener {
         });
     }
     
-    public static boolean debugMode = false;
+    public static boolean debugMode = true;
     
 	public static void main(String[] args) {
         
@@ -517,7 +505,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		 */
         bot.setVersion("Spazzmatic v0.3 [Morphan1]");
         bot.setAutoReconnect(true);
-        bot.setName("spazzmatic");
+        bot.setName("MorphBot0-3");
         bot.setLogin("spazz");
         bot.setVerbose(debugMode);
         bot.setAutoNickChange(true);
@@ -531,10 +519,10 @@ public class Spazz extends ListenerAdapter implements Listener {
             return;
         }
         bot.setMessageDelay(500);
-        bot.joinChannel("#denizen-dev");
+        //bot.joinChannel("#denizen-dev");
         bot.joinChannel("#denizen-devs");
         
-        new Timer().schedule(new TimerTask() {
+        new java.util.Timer().schedule(new java.util.TimerTask() {
             @Override
             public void run() {
                 for (Channel chnl : bot.getChannels()) {
@@ -612,15 +600,12 @@ public class Spazz extends ListenerAdapter implements Listener {
     	scanner.close();
     }
 	@Override
-	public void onJoin(JoinEvent event) throws Exception {
+	public void onJoin(JoinEvent event) {
 
 	    User usr = event.getUser();
 	    
-        dUser dusr = null;
         if (!dUsers.containsKey(usr.getNick().toLowerCase()))
             dUsers.put(usr.getNick().toLowerCase(), new dUser(usr.getNick()));
-        
-        dusr = dUsers.get(usr.getNick().toLowerCase());
 	    
 		bot.sendNotice(event.getUser(), chatColor + "Welcome to " + Colors.BOLD + event.getChannel().getName() + Colors.NORMAL + chatColor + ", home of the Denizen project. If you'd like help with anything, type " + Colors.BOLD + Colors.BLUE + ".help");
 		bot.sendNotice(event.getUser(), chatColor + "If you are using Depenizen and would like help with that as well, let me know by typing " + Colors.BOLD + Colors.BLUE + ".depenizen");
@@ -628,34 +613,40 @@ public class Spazz extends ListenerAdapter implements Listener {
 	}
 	
 	@Override
-	public void onQuit(QuitEvent event) throws Exception {
+	public void onQuit(QuitEvent event) {
 		dUsers.remove(event.getUser().getNick().toLowerCase());
 	}
 	
 	@Override
-	public void onPart(PartEvent event) throws Exception {
+	public void onPart(PartEvent event) {
         dUsers.remove(event.getUser().getNick().toLowerCase());
 	}
 	
 	@Override
-	public void onDisconnect(DisconnectEvent event) throws Exception {
+	public void onDisconnect(DisconnectEvent event) {
         for (dUser usr : dUsers.values()) {
-            usr.saveAll();
+            try {
+                usr.saveAll();
+            } catch (Exception e) {
+                if (debugMode) e.printStackTrace();
+                else
+                    System.out.println("An error has occured while using saving user " + usr.getNick() + " on disconnect... Turn on debug for more information.");
+            }
         }
 	}
 	
 	@Override
-	public void onPing(PingEvent event) throws Exception {
+	public void onPing(PingEvent event) {
 		// CTCP PING stuff... Not incredibly useful
 	}
 	
 	@Override
-	public void onNickChange(NickChangeEvent event) throws Exception {
+	public void onNickChange(NickChangeEvent event) {
 		// ...
 	}
 	
 	@Override
-	public void onAction(ActionEvent event) throws Exception {
+	public void onAction(ActionEvent event) {
 	    dUsers.get(event.getUser().getNick()).setLastSeen("performing an action in " + event.getChannel().getName() 
 	            + chatColor + ": " + event.getAction());
 	}
@@ -670,8 +661,6 @@ public class Spazz extends ListenerAdapter implements Listener {
     public void onMessage(MessageEvent event) {
 	    
         final Channel chnl = event.getChannel();
-		
-		if (usingResources) return;
 		
 		User usr = event.getUser();
 		
@@ -732,8 +721,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Please confirm issue creation by using \".createIssue confirm\"");
 				confirmIssue = repo.createIssue("Issue from " + senderNick + " at #denizen-dev").body(msg.substring(13));
 				confirmIssueUser = senderNick;
-				Timer timer = new Timer();
-				timer.schedule(new TimerTask() {
+				java.util.Timer timer = new java.util.Timer();
+				timer.schedule(new java.util.TimerTask() {
 					@Override
 					public void run() {
 						if (confirmIssue == null) return;
@@ -753,7 +742,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 					bot.sendMessage((chnl != null ? chnl.getName() : senderNick), "New issue opened: \"[" + issue.getNumber() + "] " + Colors.OLIVE + issue.getTitle() + chatColor + "\" by " + Colors.TEAL + issue.getUser().getLogin() + chatColor);
 					openIssues++;
 					openIssuesList.put(issue.getNumber(), issue);
-				} catch (IOException e) {
+				} catch (Exception e) {
 					bot.sendMessage((chnl != null ? chnl.getName() : senderNick), "Issue creation failed! Please report this to someone with authority!");
 					return;
 				}
@@ -768,12 +757,10 @@ public class Spazz extends ListenerAdapter implements Listener {
 				confirmIssueUser = null;
 			}
 		} else if (msgLwr.matches("\\.comments \\d+($|.+)")) {
-			usingResources = true;
 			String beginning = msg.split("\\d+")[0];
 			String end = msg.split("\\d+", 2)[1];
 			Integer number = Integer.valueOf(msg.substring(beginning.length(), msg.length() - end.length()));
 			try {
-				int messageCount = 0;
 				GHIssue issue = repo.getIssue(number);
 				if (issue.getCommentsCount() > 0) {
 					String user = null;
@@ -801,7 +788,6 @@ public class Spazz extends ListenerAdapter implements Listener {
 									checked = true;
 								}
 								bot.sendNotice(usr, (!user.equalsIgnoreCase(currentUser) ? user + ": " : "") + (linePrinted ? line2 : line2Printed ? line3 : line));
-								messageCount++;
 								currentUser = user;
 								if (line2Printed) break;
 								else if (line2 == null) break;
@@ -820,15 +806,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 				}
 				else
 					bot.sendMessage((chnl != null ? chnl.getName() : senderNick), "That issue has no comments.");
-				new Timer().schedule(new TimerTask() {
-					@Override
-					public void run() {
-						usingResources = false;
-					}
-				  }, messageCount*500);
-				messageCount = 0;
 			}
-			catch (IOException e) {
+			catch (Exception e) {
 				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Issue #" + number + " doesn't seem to exist...");
 				return;
 			}
@@ -868,7 +847,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 				confirmingComment = end + "\n\n(Sent from IRC channel #denizen-dev by " + usr.getNick() + ")";
 				confirmingIssue = number;
 				confirmComment = true;
-				new Timer().schedule(new TimerTask() {
+				new java.util.Timer().schedule(new java.util.TimerTask() {
 					@Override
 					public void run() {
 						if (confirmComment) {
@@ -880,7 +859,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 					}
 		           }, 30000);
 			}
-			catch (IOException e) {
+			catch (Exception e) {
 				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Issue #" + number + " doesn't seem to exist...");
 				return;
 			}
@@ -891,7 +870,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 			try {
 				GHIssue issue = (repo.getIssue(Integer.valueOf(number)) != null ? repo.getIssue(Integer.valueOf(number)) : null);
 				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + (issue.getState().equals(GHIssueState.OPEN) ? "Open issue: \"" : "Closed issue: \"") + Colors.OLIVE + issue.getTitle() + chatColor + "\" by " + Colors.TEAL + issue.getUser().getLogin() + chatColor + ". Last updated: " + issue.getUpdatedAt());
-			} catch(IOException e) {
+			} catch(Exception e) {
 				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Issue #" + number + " doesn't seem to exist...");
 			}
 			if (!msg.matches("(.*)github.com/.+/issues.+"))
@@ -964,13 +943,13 @@ public class Spazz extends ListenerAdapter implements Listener {
 		    if (dusr.getDepenizen() || (args.length > 1 && args[1].equals("debug")))
                 try {
                     reloadSites(true);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             else
                 try {
                     reloadSites(false);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     System.out.println("An error has occured while reloading resources... Turn on debug for more information.");
                 }
 			bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Reloaded data. I now have " + defaultColor + dCommands.size() + chatColor + " commands, " + defaultColor + dRequirements.size() + chatColor + " requirements, " + defaultColor + dEvents.size() + chatColor + " world events, and " + defaultColor + dTags.size() + chatColor + " tags loaded.");
@@ -1253,7 +1232,6 @@ public class Spazz extends ListenerAdapter implements Listener {
                 return;
             }
             else if (found.size() == 1) {
-                usingResources = true;
                 int messageCount = 0;
                 dCommand match = found.get(0);
                 bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + fullCap + " found: " + optionalColor + match.getName());
@@ -1349,12 +1327,6 @@ public class Spazz extends ListenerAdapter implements Listener {
                         }
                     }
                 }
-                new Timer().schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        usingResources = false;
-                    }
-                  }, (messageCount*400));
                 return;
             }
             else {
@@ -1667,7 +1639,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 						else break;
 					}
 				}
-				catch (IOException e) {
+				catch (Exception e) {
 					bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Issue not found: #" + args[1]);
 				}
 			}
@@ -1782,7 +1754,7 @@ public class Spazz extends ListenerAdapter implements Listener {
         
 	}
 
-	private static void reloadSites(boolean debug) throws IOException {
+	private static void reloadSites(boolean debug) throws Exception {
 	    boolean original = debugMode;
 	    if (!debugMode)
 	        debugMode = debug;
@@ -2178,7 +2150,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		        this.depenizen = false;
 		        
 		        DumperOptions options = new DumperOptions();
-		        options.setDefaultFlowStyle(FlowStyle.BLOCK);
+		        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 		        Yaml yaml = new Yaml(options);
 		        
 		        Map<String, Object> data = new HashMap<String, Object>();
@@ -2197,7 +2169,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		            FileWriter writer = new FileWriter(usersFolder + "/" + nick.toLowerCase() + ".yml");
 		            writer.write(yaml.dump(data));
 		            writer.close();
-		        } catch (IOException e) {
+		        } catch (Exception e) {
 	                if (debugMode) e.printStackTrace();
 	                else
 	                    System.out.println("An error has occured while saving new user " + getNick() + "... Turn on debug for more information.");
@@ -2242,7 +2214,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		
 		void saveAll() throws Exception {
 		    DumperOptions options = new DumperOptions();
-            options.setDefaultFlowStyle(FlowStyle.BLOCK);
+            options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
             Yaml yaml = new Yaml(options);
             
             Map<String, Object> data = new HashMap<String, Object>();
@@ -2265,7 +2237,7 @@ public class Spazz extends ListenerAdapter implements Listener {
             InputStream is = f.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
             if (map.get("messages") instanceof HashMap<?, ?>) {
-                for (Entry<String, ArrayList<String>> msgs : ((HashMap<String, ArrayList<String>>) map.get("messages")).entrySet()) {
+                for (Map.Entry<String, ArrayList<String>> msgs : ((HashMap<String, ArrayList<String>>) map.get("messages")).entrySet()) {
                     for (String msg : msgs.getValue()) {
                         if (!this.messages.getMessagesFrom(msgs.getKey()).contains(msg)) {
                             String[] split = msg.split("_", 2);
@@ -2335,7 +2307,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		public void checkMessages(Channel chnl) {
 		    if (this.messages.isEmpty() || chnl == null) return;
 		    ArrayList<String> toSend = new ArrayList<String>();
-		    for (Entry<String, ArrayList<String>> msgs : this.messages.getMessages().entrySet()) {
+		    for (Map.Entry<String, ArrayList<String>> msgs : this.messages.getMessages().entrySet()) {
 		        for (String time_msg : msgs.getValue()) {
 		            toSend.add(time_msg + "_" + msgs.getKey());
 		        }

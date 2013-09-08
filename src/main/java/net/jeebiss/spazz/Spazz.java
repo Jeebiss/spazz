@@ -2,6 +2,7 @@ package net.jeebiss.spazz;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System;
@@ -31,9 +32,6 @@ import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.pircbotx.Channel;
 import org.pircbotx.Colors;
 import org.pircbotx.PircBotX;
@@ -54,9 +52,6 @@ import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
-import com.gargoylesoftware.htmlunit.TextPage;
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.rosaloves.bitlyj.Bitly;
 
 @SuppressWarnings("rawtypes")
@@ -77,6 +72,8 @@ public class Spazz extends ListenerAdapter implements Listener {
 	public static List<dCommand> dCommands = new ArrayList<dCommand>();
 	public static List<dCommand> dRequirements = new ArrayList<dCommand>();
 	public static List<dEvent> dEvents = new ArrayList<dEvent>();
+	
+	public static File usersFolder = null;
 	
 	public static Map<String, dUser> dUsers = new HashMap<String, dUser>();
 	
@@ -105,12 +102,6 @@ public class Spazz extends ListenerAdapter implements Listener {
 	Boolean confirmComment = false;
 	String confirmIssueUser = null;
 	GHIssueBuilder confirmIssue = null;
-
-    static HtmlUnitDriver GHCR = new HtmlUnitDriver();
-    static HtmlUnitDriver GHRR = new HtmlUnitDriver();
-    static HtmlUnitDriver PASTEBIN = new HtmlUnitDriver();
-    static WebClient HASTEBIN = new WebClient();
-    static WebClient PASTIE = new WebClient();
 	
     private static void loadMeta() throws IOException {
 		dTags.clear();
@@ -515,6 +506,11 @@ public class Spazz extends ListenerAdapter implements Listener {
             System.out.println("Failed to load resources. CMD, REQ, TAG, and EVENT commands may not function correctly.");
         }
         
+        usersFolder = new File(System.getProperty("user.dir") + "/users");
+        if (!usersFolder.isDirectory() && !usersFolder.mkdir()) {
+            System.out.println("Could not load users folder. User-related commands may not function correctly.");
+        }
+        
 		bot.getListenerManager().addListener(new Spazz());
 		/*
 		 * Connect to #denizen-dev on start up
@@ -543,11 +539,16 @@ public class Spazz extends ListenerAdapter implements Listener {
             public void run() {
                 for (Channel chnl : bot.getChannels()) {
                     for (User usr : chnl.getUsers()) {
-                        if (usr.getNick().toLowerCase().equals(bot.getNick().toLowerCase()) || usr.getNick().length() == 0)
-                            continue;
-                        dUsers.put(usr.getNick().toLowerCase(), new dUser(usr.getNick()));
+                        String nick = usr.getNick().toLowerCase();
+                        if (dUsers.containsKey(nick) || bot.getName().equalsIgnoreCase(nick) || nick.length() == 0) continue;
+                        dUsers.put(nick, new dUser(usr.getNick()));
                     }
                 }
+                for (String usr : findUserFiles()) {
+                    if (dUsers.containsKey(usr)) continue;
+                    dUsers.put(usr, new dUser(usr));
+                }
+                
             }
           }, 3000);
         
@@ -655,7 +656,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 	
 	@Override
 	public void onAction(ActionEvent event) throws Exception {
-	    dUsers.get(event.getUser().getNick()).setLastSeen("performing an action in " + defaultColor + event.getChannel().getName() 
+	    dUsers.get(event.getUser().getNick()).setLastSeen("performing an action in " + event.getChannel().getName() 
 	            + chatColor + ": " + event.getAction());
 	}
 	
@@ -682,7 +683,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		
 		String msg = event.getMessage();
 		
-        dusr.setLastSeen("Saying \"" + msg + chatColor + "\" in " + defaultColor + chnl.getName());
+        dusr.setLastSeen("Saying \"" + msg + chatColor + "\" in " + chnl.getName());
 		
 		String msgLwr = msg.toLowerCase();
 		final String senderNick = event.getUser().getNick();
@@ -1140,33 +1141,27 @@ public class Spazz extends ListenerAdapter implements Listener {
 			}
 			String rawYaml = null;
 			try {
+                String url[] = args[1].split("/");
 			    if (args[1].contains("hastebin")) {
-			        String url[] = args[1].split("/");
-			        TextPage txt = HASTEBIN.getPage("http://hastebin.com/raw/"+url[3]);
-			        rawYaml = txt.getContent();
-			        HASTEBIN.closeAllWindows();	
+			        rawYaml = getUrl("http://hastebin.com/raw/" + url[3]);
 			    } else if (args[1].contains("pastebin")) {
-			        PASTEBIN.get(args[1]);
-			        WebElement pastedYaml = PASTEBIN.findElement(By.id("paste_code"));
-			        rawYaml = pastedYaml.getAttribute("value");
+			        rawYaml = getUrl("http://pastebin.com/raw.php?i=" + url[3]);
 			    } else if (args[1].contains("pastie")) {
-			        String url[] = args[1].split("/");
-			        HtmlPage page = PASTIE.getPage("http://pastie.org/pastes/" + url[3] + "/text");
-			        rawYaml = page.asText();
-			        PASTIE.closeAllWindows();				
+			        rawYaml = getUrl("http://pastie.org/pastes/" + url[3] + "/text");		
 			    } else if (args[1].contains("ult-gaming")) {
-			        String url[] = args[1].split("/");
-			        HtmlPage page = PASTIE.getPage("http://paste.ult-gaming.com/" + url[3] + "?raw");
-			        rawYaml = page.asText();
-			        PASTIE.closeAllWindows();			
+			        rawYaml = getUrl("http://paste.ult-gaming.com/" + url[3] + "?raw");
+			    } else if (args[1].contains("citizensnpcs")) {
+			        rawYaml = getUrl("http://scripts.citizensnpcs.co/dscript/" + url[4]);
 			    } else {
-			        bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + Colors.RED + "I cant get your script from that website :(");
+			        bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + Colors.RED + "I can't get your script from that website :(");
 			    }
 			}
 			catch (Exception e) {
                 if (debugMode) e.printStackTrace();
                 else
                     System.out.println("An error has occured while getting script from website... Turn on debug for more information.");
+                bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Invalid website format!");
+                return;
 			}
 			
 			Yaml yaml = new Yaml();
@@ -1686,28 +1681,30 @@ public class Spazz extends ListenerAdapter implements Listener {
 		else if (msgLwr.startsWith(".seen")) {
 		    String[] args = msg.split(" ");
 		    String user = null;
+		    dUser dusr2 = null;
 		    if (args.length > 1)
 		        user = args[1];
-		    if (!dUsers.containsKey(user.toLowerCase()))
+		    if (!dUsers.containsKey(user.toLowerCase())) {
 		        bot.sendMessage(chnl, chatColor + "I've never seen that user: " + defaultColor + user);
-		    else {
-		        dUser dusr2 = dUsers.get(user.toLowerCase());
-		        DateTime currentTime = DateTime.now();
-		        DateTime seen = dusr2.getLastSeenTime();
-		        int seconds = Seconds.secondsBetween(seen, currentTime).getSeconds();
-		        int minutes = seconds/60;
-		        seconds = seconds-(minutes*60);
-		        int hours = minutes/60;
-		        minutes = minutes-(hours*60);
-		        int days = hours/24;
-		        hours = hours-(days*24);
-		        bot.sendMessage(chnl, chatColor + "Last I saw of " + defaultColor + dusr2.getNick() + chatColor + " was " + dusr2.getLastSeen()
-		                + chatColor + ". That was "
-		                + (days > 1 ? (days + " days, ") : (days == 1 ? "1 day, " : ""))
-		                + (hours > 1 ? (hours + " hours, ") : (hours == 1 ? "1 hour, " : ""))
-		                + (minutes > 1 ? (minutes + " minutes, ") : (minutes == 1 ? "1 minute, " : ""))
-		                + (seconds == 1 ? "1 second ago." : seconds + " seconds ago."));
 		    }
+		    else {
+		        dusr2 = dUsers.get(user.toLowerCase());
+		    }
+		    DateTime currentTime = DateTime.now();
+		    DateTime seen = dusr2.getLastSeenTime();
+		    int seconds = Seconds.secondsBetween(seen, currentTime).getSeconds();
+		    int minutes = seconds/60;
+		    seconds = seconds-(minutes*60);
+		    int hours = minutes/60;
+		    minutes = minutes-(hours*60);
+		    int days = hours/24;
+		    hours = hours-(days*24);
+		    bot.sendMessage(chnl, chatColor + "Last I saw of " + defaultColor + dusr2.getNick() + chatColor + " was " + dusr2.getLastSeen()
+		            + chatColor + ". That " + (seconds < -1 ? "is " : "was ")
+		            + ((days > 1 || days < -1) ? (Math.abs(days) + " days, ") : ((days == 1 || days == -1) ? "1 day, " : ""))
+		            + ((hours > 1 || hours < -1) ? (Math.abs(hours) + " hours, ") : ((hours == 1 || hours == -1) ? "1 hour, " : ""))
+		            + ((minutes > 1 || minutes < -1) ? (Math.abs(minutes) + " minutes, ") : ((minutes == 1 || minutes == -1) ? "1 minute, " : ""))
+		            + ((seconds == 1 || seconds == -1) ? (seconds == -1 ? "1 second from now." : "1 second ago.") : Math.abs(seconds) + (seconds < -1 ? " seconds from now." : " seconds ago.")));
 		} else if ((msg.contains("hastebin.") || msg.contains("pastebin.") || msg.contains("pastie.")) && !(help.contains(usr) || chnl.hasVoice(usr) || chnl.isOp(usr))) {
 	        help.add(usr);
 		    bot.sendNotice(usr, "If you want to whether a Denizen script will compile, type " + Colors.BOLD + ".yml link_to_the_script");
@@ -1791,6 +1788,16 @@ public class Spazz extends ListenerAdapter implements Listener {
 	        debugMode = debug;
     	loadMeta();
     	debugMode = original;
+	}
+	
+	private static ArrayList<String> findUserFiles() {
+	    ArrayList<String> ret = new ArrayList<String>();
+	    
+	    for (File file : usersFolder.listFiles(new FilenameFilter() {public boolean accept(File dir, String filename){return filename.endsWith(".yml");}})) {
+	        ret.add(file.getName().substring(0, file.getName().indexOf('.')));
+	    }
+	    
+	    return ret;
 	}
 	
 	private boolean hasVoice(User chatter, Channel channel) {
@@ -2185,11 +2192,9 @@ public class Spazz extends ListenerAdapter implements Listener {
                 if (debugMode) System.out.println("Creating user with lasttime \"" + getLastSeenTime() + "\"...");
 		        data.put("messages", new HashMap<String, ArrayList<String>>());
                 if (debugMode) System.out.println("Creating user with empty messages...");
-		        File f = new File(System.getProperty("user.dir") + "/users");
-		        f.mkdirs();
 
 		        try {
-		            FileWriter writer = new FileWriter(f + "/" + nick.toLowerCase() + ".yml");
+		            FileWriter writer = new FileWriter(usersFolder + "/" + nick.toLowerCase() + ".yml");
 		            writer.write(yaml.dump(data));
 		            writer.close();
 		        } catch (IOException e) {
@@ -2241,15 +2246,13 @@ public class Spazz extends ListenerAdapter implements Listener {
             Yaml yaml = new Yaml(options);
             
             Map<String, Object> data = new HashMap<String, Object>();
-            data.put("name", getNick());
+            data.put("name", getNick().toString());
             data.put("depenizen", getDepenizen());
-            data.put("lastseen", getLastSeen());
+            data.put("lastseen", getLastSeen().replace("|", "````").replace("#", "`````"));
             data.put("lasttime", getLastSeenTime().toString());
             data.put("messages", getMessages().getMessages());
-            File f = new File(System.getProperty("user.dir") + "/users");
-            f.mkdirs();
 
-            FileWriter writer = new FileWriter(f + "/" + getNick().toLowerCase() + ".yml");
+            FileWriter writer = new FileWriter(usersFolder + "/" + getNick().toLowerCase() + ".yml");
             writer.write(yaml.dump(data));
             writer.close();
 		}
@@ -2258,8 +2261,7 @@ public class Spazz extends ListenerAdapter implements Listener {
         void loadMessages() throws Exception {
 		    LinkedHashMap map = null;
             Yaml yaml = new Yaml();
-            File f = new File(System.getProperty("user.dir") + "/users/" + getNick().toLowerCase() + ".yml");
-            f.mkdirs();
+            File f = new File(usersFolder + "/" + getNick().toLowerCase() + ".yml");
             InputStream is = f.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
             if (map.get("messages") instanceof HashMap<?, ?>) {
@@ -2277,12 +2279,12 @@ public class Spazz extends ListenerAdapter implements Listener {
 		void loadLastSeen() throws Exception {
 		    LinkedHashMap map = null;
             Yaml yaml = new Yaml();
-            File f = new File(System.getProperty("user.dir") + "/users/" + getNick().toLowerCase() + ".yml");
+            File f = new File(usersFolder + "/" + getNick().toLowerCase() + ".yml");
             f.mkdirs();
             InputStream is = f.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
             if (map.get("lastseen") instanceof String && !map.get("lastseen").equals("")) {
-                this.lastSeen = (String) map.get("lastseen");
+                this.lastSeen = ((String) map.get("lastseen")).replace("`````", "#").replace("````", "|");
                 this.lastSeenTime = DateTime.parse((String) map.get("lasttime"));
             }
             else
@@ -2292,7 +2294,7 @@ public class Spazz extends ListenerAdapter implements Listener {
 		void loadDepenizen() throws Exception {
 		    LinkedHashMap map = null;
             Yaml yaml = new Yaml();
-            File f = new File(System.getProperty("user.dir") + "/users/" + getNick().toLowerCase() + ".yml");
+            File f = new File(usersFolder + "/" + getNick().toLowerCase() + ".yml");
             f.mkdirs();
             InputStream is = f.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);

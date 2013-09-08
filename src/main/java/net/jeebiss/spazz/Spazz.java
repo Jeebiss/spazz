@@ -1745,8 +1745,8 @@ public class Spazz extends ListenerAdapter implements Listener {
                     else
                         System.out.println("An error has occured while using .load for user " + dusr2.getNick() + "... Turn on debug for more information.");
                 }
-                bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Successfully loaded all user information.");
 		    }
+            bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Successfully loaded all user information.");
 		}
 
 		try {

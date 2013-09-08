@@ -6,19 +6,19 @@ import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.lang.System;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
-import org.joda.time.DateTime;
-import org.joda.time.Seconds;
-import org.joda.time.format.DateTimeFormat;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueBuilder;
 import org.kohsuke.github.GHIssueComment;
@@ -1107,8 +1107,9 @@ public class Spazz extends ListenerAdapter {
 		    msg = msg.replaceFirst(args[0] + " " + args[1] + " ", "");
 		    if (!dUsers.containsKey(args[1].toLowerCase()))
 		        dUsers.put(args[1].toLowerCase(), new dUser(args[1]));
-            dUsers.get(args[1].toLowerCase()).addMessage(new Message(senderNick, DateTime.now(), msg));
+            dUsers.get(args[1].toLowerCase()).addMessage(new Message(senderNick, Calendar.getInstance().getTime(), msg));
 		    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Message sent to: " + defaultColor + args[1] + chatColor + ".");
+		    return;
 		}
 		
 		else if (msgLwr.startsWith(".yaml") || msgLwr.startsWith(".yml")) {
@@ -1130,7 +1131,7 @@ public class Spazz extends ListenerAdapter {
 			    } else if (args[1].contains("ult-gaming")) {
 			        rawYaml = getUrl("http://paste.ult-gaming.com/" + url[3] + "?raw");
 			    } else if (args[1].contains("citizensnpcs")) {
-			        rawYaml = getUrl("http://scripts.citizensnpcs.co/dscript/" + url[4]);
+			        rawYaml = getUrl("http://scripts.citizensnpcs.co/raw/" + url[4]);
 			    } else {
 			        bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + Colors.RED + "I can't get your script from that website :(");
 			    }
@@ -1662,14 +1663,14 @@ public class Spazz extends ListenerAdapter {
 		    else {
 		        dusr2 = dUsers.get(user.toLowerCase());
 		    }
-		    DateTime currentTime = DateTime.now();
-		    DateTime seen = dusr2.getLastSeenTime();
-		    int seconds = Seconds.secondsBetween(seen, currentTime).getSeconds();
-		    int minutes = seconds/60;
+		    long currentTime = Calendar.getInstance().getTimeInMillis();
+		    long seen = dusr2.getLastSeenTime().getTime();
+		    long seconds = (currentTime-seen)/1000;
+		    long minutes = seconds/60;
 		    seconds = seconds-(minutes*60);
-		    int hours = minutes/60;
+		    long hours = minutes/60;
 		    minutes = minutes-(hours*60);
-		    int days = hours/24;
+		    long days = hours/24;
 		    hours = hours-(days*24);
 		    bot.sendMessage(chnl, chatColor + "Last I saw of " + defaultColor + dusr2.getNick() + chatColor + " was " + dusr2.getLastSeen()
 		            + chatColor + ". That " + (seconds < -1 ? "is " : "was ")
@@ -2135,7 +2136,7 @@ public class Spazz extends ListenerAdapter {
 	public static class dUser {
 		
 		private String lastSeen;
-		private DateTime lastSeenTime;
+		private Date lastSeenTime;
 		private String nick;
 		private boolean status;
 		private MessageList messages;
@@ -2158,9 +2159,9 @@ public class Spazz extends ListenerAdapter {
 		        if (debugMode) System.out.println("Creating user with nick \"" + nick + "\"...");
 		        data.put("depenizen", false);
 		        if (debugMode) System.out.println("Creating user with depenizen \"false\"...");
-		        data.put("lastseen", getLastSeen());
+		        data.put("lastseen", getLastSeen().getBytes());
 		        if (debugMode) System.out.println("Creating user with lastseen \"" + getLastSeen() + "\"...");
-		        data.put("lasttime", getLastSeenTime().toString());
+	            data.put("lasttime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS zzz").format(getLastSeenTime()));
                 if (debugMode) System.out.println("Creating user with lasttime \"" + getLastSeenTime() + "\"...");
 		        data.put("messages", new HashMap<String, ArrayList<String>>());
                 if (debugMode) System.out.println("Creating user with empty messages...");
@@ -2188,8 +2189,8 @@ public class Spazz extends ListenerAdapter {
 		}
 
 		void setLastSeen(String lastSeen) {
-		    this.lastSeenTime = new DateTime();
-			this.lastSeen = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm:ss (zzz)").print(getLastSeenTime()).replace("DT)", "ST)") + ", " + lastSeen.replaceFirst(lastSeen.substring(0, 1), lastSeen.substring(0, 1).toLowerCase());
+		    this.lastSeenTime = Calendar.getInstance().getTime();
+			this.lastSeen = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss (zzz)").format(getLastSeenTime()).replace("DT)", "ST)") + ", " + lastSeen.replaceFirst(lastSeen.substring(0, 1), lastSeen.substring(0, 1).toLowerCase());
 		}
 		
 		void setLastSeenRaw(String lastSeen) {
@@ -2220,8 +2221,8 @@ public class Spazz extends ListenerAdapter {
             Map<String, Object> data = new HashMap<String, Object>();
             data.put("name", getNick().toString());
             data.put("depenizen", getDepenizen());
-            data.put("lastseen", getLastSeen().replace("|", "````").replace("#", "`````"));
-            data.put("lasttime", getLastSeenTime().toString());
+            data.put("lastseen", getLastSeen().getBytes());
+            data.put("lasttime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS zzz").format(getLastSeenTime()));
             data.put("messages", getMessages().getMessages());
 
             FileWriter writer = new FileWriter(usersFolder + "/" + getNick().toLowerCase() + ".yml");
@@ -2241,7 +2242,7 @@ public class Spazz extends ListenerAdapter {
                     for (String msg : msgs.getValue()) {
                         if (!this.messages.getMessagesFrom(msgs.getKey()).contains(msg)) {
                             String[] split = msg.split("_", 2);
-                            addMessage(new Message(msgs.getKey(), DateTime.parse(split[0]), split[1]));
+                            addMessage(new Message(msgs.getKey(), new SimpleDateFormat().parse(split[0]), split[1]));
                         }
                     }
                 }
@@ -2255,9 +2256,14 @@ public class Spazz extends ListenerAdapter {
             f.mkdirs();
             InputStream is = f.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
-            if (map.get("lastseen") instanceof String && !map.get("lastseen").equals("")) {
+            // Keep string checker so we can edit a YAML file with text and have Spazz translate it later
+            if (map.get("lastseen") instanceof String) {
                 this.lastSeen = ((String) map.get("lastseen")).replace("`````", "#").replace("````", "|");
-                this.lastSeenTime = DateTime.parse((String) map.get("lasttime"));
+                this.lastSeenTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS zzz").parse((String) map.get("lasttime"));
+            }
+            else if (map.get("lastseen") instanceof byte[]) {
+                this.lastSeen = new String((byte[]) map.get("lastseen"));
+                this.lastSeenTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS zzz").parse((String) map.get("lasttime"));
             }
             else
                 setLastSeen("Existing");
@@ -2292,7 +2298,7 @@ public class Spazz extends ListenerAdapter {
 			return this.lastSeen;
 		}
 		
-		public DateTime getLastSeenTime() {
+		public Date getLastSeenTime() {
 		    return this.lastSeenTime;
 		}
 	
@@ -2314,7 +2320,12 @@ public class Spazz extends ListenerAdapter {
 		    }
 		    Collections.sort(toSend, new Comparator<String>() {
 		        public int compare(String o1, String o2) {
-                    return DateTime.parse(o1.split("_")[0]).compareTo(DateTime.parse(o2.split("_")[0]));
+                    try {
+                        return new SimpleDateFormat().parse(o1.split("_")[0]).compareTo(new SimpleDateFormat().parse(o2.split("_")[0]));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return 0;
+                    }
                 }
 	        });
             bot.sendMessage(chnl, getNick() + ": " + chatColor + "You have messages waiting for you...");
@@ -2401,12 +2412,12 @@ public class Spazz extends ListenerAdapter {
 	public static class Message {
 		
 		private String user;
-		private DateTime time;
+		private Date time;
 		private String message;
 		
-		public Message(String user, DateTime time, String message) {
+		public Message(String user, Date date, String message) {
 			this.user = user;
-			this.time = time;
+			this.time = date;
 			this.message = message;
 		}
 		
@@ -2418,7 +2429,7 @@ public class Spazz extends ListenerAdapter {
 			return this.message;
 		}
 		
-		public DateTime getTime() {
+		public Date getTime() {
 		    return this.time;
 		}
 		

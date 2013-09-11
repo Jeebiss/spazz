@@ -18,6 +18,10 @@ public class CommitEvent {
         Spazz.onCommit(this);
     }
     
+    public GitHub getGitHub() {
+        return root;
+    }
+    
     public ArrayList<Commit> getCommits() {
         return commits;
     }

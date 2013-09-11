@@ -19,10 +19,14 @@ public class Issue {
         this.information = information;
     }
     
+    public GitHub getGitHub() {
+        return root;
+    }
+    
     @SuppressWarnings("unchecked")
     public User getUser() {
         JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("user"));
-        return new User(root, (String) userInfo.get("login"), userInfo);
+        return new User(root, userInfo);
     }
     
     public int getNumber() {

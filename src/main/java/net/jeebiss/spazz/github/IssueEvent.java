@@ -18,6 +18,10 @@ public class IssueEvent {
         Spazz.onIssue(this);
     }
     
+    public GitHub getGitHub() {
+        return root;
+    }
+    
     public Issue getIssue() {
         return issue;
     }

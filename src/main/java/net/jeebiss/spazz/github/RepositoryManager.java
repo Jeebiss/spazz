@@ -27,6 +27,10 @@ public class RepositoryManager {
         }
     }
     
+    public GitHub getGitHub() {
+        return root;
+    }
+    
     public boolean addRepository(String owner, String project) {
         try {
             repositories.put(project, root.getRepository(owner, project));

@@ -21,6 +21,10 @@ public class Commit {
         commitInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("commit"));
     }
     
+    public GitHub getGitHub() {
+        return root;
+    }
+    
     public String getCommitId() {
         return (String) information.get("sha");
     }
@@ -32,7 +36,7 @@ public class Commit {
     @SuppressWarnings("unchecked")
     public User getAuthor() {
         JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("author"));
-        return new User(root, (String) userInfo.get("login"), userInfo);
+        return new User(root, userInfo);
     }
     
     public Repository getRepo() {

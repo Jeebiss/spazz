@@ -735,7 +735,7 @@ public class Spazz extends ListenerAdapter {
         Issue issue = event.getIssue();
         Repository repo = issue.getRepo();
         
-        sendToAllChannels(chatColor + "[" + repo.getProject() + "] Issue " + event.getState().name().toLowerCase()
+        sendToAllChannels(chatColor + "[" + repo.getName() + "] Issue " + event.getState().name().toLowerCase()
                 + ": [" + defaultColor + issue.getNumber() + chatColor + "] " + defaultColor + issue.getTitle()
                 + chatColor + "\" by " + optionalColor + issue.getUser().getLogin());
         
@@ -751,7 +751,7 @@ public class Spazz extends ListenerAdapter {
             users += user + ", ";
         }
         
-        sendToAllChannels(chatColor + "[" + optionalColor + repo.getProject() + chatColor + "] " 
+        sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " 
                 + defaultColor + users.substring(0, users.length()-2) + chatColor + " pushed " + commits.size() 
                 + " commit" + (commits.size() == 1 ? "" : "s") + " to master branch");
         
@@ -774,7 +774,7 @@ public class Spazz extends ListenerAdapter {
         if (comment instanceof IssueComment) {
             IssueComment icomment = (IssueComment) comment;
             Issue issue = icomment.getIssue();
-            sendToAllChannels(chatColor + "[" + optionalColor + repo.getProject() + chatColor + "] " + defaultColor 
+            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor 
                     + comment.getUser().getLogin() + chatColor + " commented on " + issue.getState() + " issue: [" + defaultColor 
                     + issue.getNumber() + chatColor + "] " + defaultColor + issue.getTitle()+ chatColor + " by " + defaultColor 
                     + issue.getUser().getLogin());
@@ -782,7 +782,7 @@ public class Spazz extends ListenerAdapter {
         else if (comment instanceof CommitComment) {
             CommitComment ccomment = (CommitComment) comment;
             Commit commit = ccomment.getCommit();
-            sendToAllChannels(chatColor + "[" + optionalColor + repo.getProject() + chatColor + "] " + defaultColor 
+            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor 
                     + comment.getUser().getLogin() + chatColor + " commented on commit: " + defaultColor + commit.getMessage()
                     + chatColor + " by " + defaultColor + commit.getAuthor().getLogin());
         }
@@ -1838,8 +1838,8 @@ public class Spazz extends ListenerAdapter {
             seconds = seconds-(minutes*60);
             
 		    bot.sendNotice(usr, chatColor + "Next reset: "
-		            + (minutes > 0 ? (minutes > 1 ? minutes + " minutes, " : " minute, ") : "")
-		            + (seconds > 0 ? (seconds > 1 ? seconds + " seconds" : " second") : ""));
+		            + (minutes > 0 ? minutes > 1 ? minutes + " minutes, " : "1 minute, " : "")
+		            + (seconds > 0 ? seconds > 1 ? seconds + " seconds" : "1 second" : minutes > 0 ? "0 seconds" : "Now."));
 		}
         
         dusr.checkMessages(chnl);

@@ -13,9 +13,6 @@ public class Repository {
     
     private final GitHub root;
 
-    private final String url;
-    private final String owner;
-    private final String project;
     private JSONObject information;
     
     private HashMap<Integer, Issue> openIssues;
@@ -23,12 +20,8 @@ public class Repository {
     private HashMap<String, Commit> commits;
     private HashMap<Integer, Comment> comments;
     
-    public Repository(GitHub root, String url, JSONObject information) {
+    public Repository(GitHub root, JSONObject information) {
         this.root = root;
-        this.url = url;
-        String[] split = url.split("/");
-        this.owner = split[split.length-2];
-        this.project = split[split.length-1];
         this.information = information;
         openIssues = getIssues(true);
         closedIssues = getIssues(false);
@@ -38,7 +31,7 @@ public class Repository {
     
     public boolean reload() {
         try {
-            information = root.retrieve().parse(url);
+            information = root.retrieve().parse(((String) information.get("url")).replaceAll("\\{.+\\}", ""));
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -49,6 +42,10 @@ public class Repository {
         return true;
     }
     
+    public GitHub getGitHub() {
+        return root;
+    }
+    
     public int getOpenIssueCount() {
         return (int) information.get("open_issues_count");
     }
@@ -57,7 +54,7 @@ public class Repository {
     public HashMap<Integer, Issue> getIssues(boolean open) {
         HashMap<Integer, Issue> issues = new HashMap<Integer, Issue>();
         try {
-            JSONArray openIssuesArray = root.retrieve().parseArray(url + "/issues?state=" + (open ? "open" : "closed") + "&sort=updated");
+            JSONArray openIssuesArray = root.retrieve().parseArray(((String) information.get("issues_url")).replaceAll("\\{.+\\}", "") + "?state=" + (open ? "open" : "closed") + "&sort=updated");
             for (int i = 0; i < openIssuesArray.size(); i++) {
                 Issue issue = new Issue(root, this, Utilities.getJSONFromMap((Map<String, Object>) openIssuesArray.get(i)));
                 issues.put(issue.getNumber(), issue);
@@ -72,7 +69,7 @@ public class Repository {
     public HashMap<String, Commit> getCommits() {
         HashMap<String, Commit> newCommits = new HashMap<String, Commit>();
         try {
-            JSONArray commitsArray = root.retrieve().parseArray(url + "/commits?per_page=100");
+            JSONArray commitsArray = root.retrieve().parseArray(((String) information.get("commits_url")).replaceAll("\\{.+\\}", "") + "?per_page=100");
             for (int i = 0; i < commitsArray.size(); i++) {
                 Commit commit = new Commit(root, this, Utilities.getJSONFromMap((Map<String, Object>) commitsArray.get(i)));
                 newCommits.put(commit.getCommitId(), commit);
@@ -87,7 +84,7 @@ public class Repository {
     public HashMap<Integer, Comment> getComments() {
         HashMap<Integer, Comment> newComments = new HashMap<Integer, Comment>();
         try {
-            JSONArray eventsList = root.retrieve().parseArray(url + "/events");
+            JSONArray eventsList = root.retrieve().parseArray(((String) information.get("events_url")).replaceAll("\\{.+\\}", ""));
             for (int i = eventsList.size()-1; i > -1; i--) {
                 Map<String, Object> map = (Map<String, Object>) eventsList.get(i);
                 Map<String, Object> payload = (Map<String, Object>) map.get("payload");
@@ -109,17 +106,22 @@ public class Repository {
         return newComments;
     }
     
+    @SuppressWarnings("unchecked")
     public User getOwner() {
         try {
-            return new User(root, owner, root.retrieve().parse(url.replace("/" + project, "")));
+            return new User(root, Utilities.getJSONFromMap((Map<String,Object>) information.get("owner")));
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
     
-    public String getProject() {
-        return project;
+    public String getName() {
+        return (String) information.get("name");
+    }
+    
+    public String getFullName() {
+        return (String) information.get("full_name");
     }
     
     private void reloadComments() {

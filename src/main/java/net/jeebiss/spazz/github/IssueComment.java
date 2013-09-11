@@ -18,6 +18,10 @@ public class IssueComment implements Comment {
         this.information = information;
     }
     
+    public GitHub getGitHub() {
+        return root;
+    }
+    
     public Issue getIssue() {
         return owner;
     }
@@ -35,8 +39,7 @@ public class IssueComment implements Comment {
     @SuppressWarnings("unchecked")
     @Override
     public User getUser() {
-        JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("user"));
-        return new User(root, (String) userInfo.get("login"), userInfo);
+        return new User(root, Utilities.getJSONFromMap((Map<String, Object>) information.get("user")));
     }
     
 }

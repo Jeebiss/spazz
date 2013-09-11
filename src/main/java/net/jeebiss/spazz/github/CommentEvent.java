@@ -16,6 +16,10 @@ public class CommentEvent {
         Spazz.onComment(this);
     }
     
+    public GitHub getGitHub() {
+        return root;
+    }
+    
     public Repository getRepo() {
         return owner;
     }

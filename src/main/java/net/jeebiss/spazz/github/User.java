@@ -6,17 +6,19 @@ public class User {
 
     private final GitHub root;
     
-    private final String login;
     private JSONObject information;
     
-    public User(GitHub root, String login, JSONObject information) {
+    public User(GitHub root, JSONObject information) {
         this.root = root;
-        this.login = login;
         this.information = information;
     }
     
+    public GitHub getGitHub() {
+        return root;
+    }
+    
     public String getLogin() {
-        return login;
+        return (String) information.get("login");
     }
     
 }

@@ -122,7 +122,6 @@ public class Repository {
         return project;
     }
     
-    @SuppressWarnings("unchecked")
     private void reloadComments() {
         HashMap<Integer, Comment> newComments = getComments();
         for (Comment newComment : newComments.values()) {
@@ -138,17 +137,17 @@ public class Repository {
         HashMap<Integer, Issue> newClosedIssues = getIssues(false);
         for (Issue newClosedIssue : newClosedIssues.values()) {
             if (openIssues.containsKey(newClosedIssue.getNumber())) {
-                new IssueEvent(root, newClosedIssue, Issue.State.CLOSED);
+                new IssueEvent(root, newClosedIssue, IssueEvent.State.CLOSED);
                 continue;
             }
         }
         for (Issue newOpenIssue : newOpenIssues.values()) {
             if (closedIssues.containsKey(newOpenIssue.getNumber())) {
-                new IssueEvent(root, newOpenIssue, Issue.State.REOPENED);
+                new IssueEvent(root, newOpenIssue, IssueEvent.State.REOPENED);
                 continue;
             }
             if (!openIssues.containsKey(newOpenIssue.getNumber())) {
-                new IssueEvent(root, newOpenIssue, Issue.State.OPENED);
+                new IssueEvent(root, newOpenIssue, IssueEvent.State.OPENED);
                 continue;
             }
         }

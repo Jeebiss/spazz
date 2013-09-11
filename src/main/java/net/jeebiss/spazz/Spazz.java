@@ -735,7 +735,7 @@ public class Spazz extends ListenerAdapter {
         Issue issue = event.getIssue();
         Repository repo = issue.getRepo();
         
-        sendToAllChannels(chatColor + "[" + repo.getProject() + "] Issue " + issue.getState().name().toLowerCase()
+        sendToAllChannels(chatColor + "[" + repo.getProject() + "] Issue " + event.getState().name().toLowerCase()
                 + ": [" + defaultColor + issue.getNumber() + chatColor + "] " + defaultColor + issue.getTitle()
                 + chatColor + "\" by " + optionalColor + issue.getUser().getLogin());
         
@@ -775,8 +775,9 @@ public class Spazz extends ListenerAdapter {
             IssueComment icomment = (IssueComment) comment;
             Issue issue = icomment.getIssue();
             sendToAllChannels(chatColor + "[" + optionalColor + repo.getProject() + chatColor + "] " + defaultColor 
-                    + comment.getUser().getLogin() + chatColor + " commented on issue: [" + defaultColor + issue.getNumber()
-                    + chatColor + "] " + defaultColor + issue.getTitle()+ chatColor + " by " + defaultColor + issue.getUser().getLogin());
+                    + comment.getUser().getLogin() + chatColor + " commented on " + issue.getState() + " issue: [" + defaultColor 
+                    + issue.getNumber() + chatColor + "] " + defaultColor + issue.getTitle()+ chatColor + " by " + defaultColor 
+                    + issue.getUser().getLogin());
         }
         else if (comment instanceof CommitComment) {
             CommitComment ccomment = (CommitComment) comment;

@@ -13,8 +13,6 @@ public class Issue {
     private final Repository owner;
     private JSONObject information;
     
-    public enum State { OPENED, CLOSED, REOPENED }
-    
     public Issue(GitHub root, Repository owner, JSONObject information) {
         this.root = root;
         this.owner = owner;
@@ -43,8 +41,8 @@ public class Issue {
         return owner;
     }
     
-    public State getState() {
-        return State.valueOf((String) information.get("state"));
+    public String getState() {
+        return (String) information.get("state");
     }
     
     public Date getLastUpdated() {

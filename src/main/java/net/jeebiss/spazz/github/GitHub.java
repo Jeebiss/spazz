@@ -5,8 +5,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
 
-import org.apache.commons.codec.binary.Base64;
-
 import net.jeebiss.spazz.Utilities;
 
 public class GitHub {
@@ -16,7 +14,7 @@ public class GitHub {
     public final String authentication;
     
     private GitHub(String user, String password) {
-        authentication = new String(Base64.encodeBase64((user + ":" + password).getBytes()));
+        authentication = Utilities.encodeBase64(user + ":" + password);
     }
     
     public static GitHub connect(String user, String password) {
@@ -24,8 +22,7 @@ public class GitHub {
     }
     
     public Repository getRepository(String owner, String project) throws Exception {
-        String url = GITHUB_URL + "/repos/" + owner + "/" + project;
-        return new Repository(this, url, retrieve().parse(url));
+        return new Repository(this, retrieve().parse(GITHUB_URL + "/repos/" + owner + "/" + project));
     }
     
     public Requester retrieve() {

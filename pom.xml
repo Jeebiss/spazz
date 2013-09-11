@@ -26,11 +26,6 @@
 			<artifactId>json-smart-mini</artifactId>
 			<version>1.0.8</version>
 		</dependency>
-		<dependency>
-			<groupId>commons-codec</groupId>
-			<artifactId>commons-codec</artifactId>
-			<version>20041127.091804</version>
-		</dependency>
 	</dependencies>
 	        
 	<repositories>

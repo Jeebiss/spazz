@@ -17,11 +17,6 @@
 		    <version>1.12</version>
 		  </dependency>
 		<dependency>
-			<groupId>com.rosaloves</groupId>
-			<artifactId>bitlyj</artifactId>
-			<version>2.0.0</version>
-		</dependency>
-		<dependency>
 			<groupId>net.minidev</groupId>
 			<artifactId>json-smart-mini</artifactId>
 			<version>1.0.8</version>

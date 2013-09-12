@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import net.minidev.json.JSONObject;
+import net.minidev.json.JSONValue;
 
 public class Utilities {
 
@@ -29,6 +30,19 @@ public class Utilities {
         String r = s.hasNext() ? s.next() : "";
         s.close();
         return r;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static String getShortUrl(String url) {
+        String shortened = null;
+        try {
+            JSONObject json = (JSONObject) JSONValue.parse(getStringFromUrl("https://api-ssl.bitly.com/v3/shorten?login=spazzmatic&apiKey=" 
+                    + System.getProperty("spazz.bitly") + "&longUrl=" + url));
+            shortened = (String) getJSONFromMap((Map<String, Object>) json.get("data")).get("url");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return shortened;
     }
     
     public static String capitalize(String string) {

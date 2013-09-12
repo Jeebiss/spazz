@@ -13,7 +13,7 @@ public class Repository {
     
     private final GitHub root;
 
-    private int updateDelay;
+    private long updateDelay;
     private boolean hasIssues = false;
     private JSONObject information;
     
@@ -22,13 +22,16 @@ public class Repository {
     private HashMap<String, Commit> commits;
     private HashMap<Integer, Comment> comments;
     
-    public Repository(GitHub root, int updateDelay, boolean hasIssues, JSONObject information) {
+    public Repository(GitHub root, long updateDelay, boolean hasIssues, JSONObject information) {
         this.root = root;
         this.information = information;
-        if (updateDelay > 0) {
+        if (updateDelay > 1000) {
+            System.out.println("STARTING THREAD FOR " + getName() + ": " + updateDelay);
             this.updateDelay = updateDelay;
             new Thread(new RepositoryChecker()).start();
         }
+        else
+            System.out.println("IGNORING THREAD FOR " + getName() + ": " + updateDelay);
         if (hasIssues) {
             this.hasIssues = true;
             openIssues = getIssues(true);
@@ -105,7 +108,7 @@ public class Repository {
                 }
                 if (((String) map.get("type")).equals("CommitCommentEvent")) {
                     JSONObject commentMap = Utilities.getJSONFromMap((Map<String, Object>) payload.get("comment"));
-                    Commit commit = commits.get((String) commentMap.get("commit"));
+                    Commit commit = commits.get((String) commentMap.get("commit_id"));
                     CommitComment comment = new CommitComment(root, commit, commentMap);
                     newComments.put(comment.getCommentId(), comment);
                 }
@@ -182,7 +185,7 @@ public class Repository {
     }
     
     public class RepositoryChecker implements Runnable {
-
+        
         @Override
         public void run() {
             while (true) {
@@ -193,6 +196,7 @@ public class Repository {
                     e.printStackTrace();
                     return;
                 }
+                System.out.println("Reloading " + getName());
                 reload();
             }
         }

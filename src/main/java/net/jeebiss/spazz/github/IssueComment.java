@@ -39,7 +39,12 @@ public class IssueComment implements Comment {
     @SuppressWarnings("unchecked")
     @Override
     public User getUser() {
-        return new User(root, Utilities.getJSONFromMap((Map<String, Object>) information.get("user")));
+        return new User(root, Utilities.getJSONFromMap((Map<String, Object>) information.get("actor")));
+    }
+
+    @Override
+    public String getUrl() {
+        return Utilities.getShortUrl((String) information.get("html_url"));
     }
     
 }

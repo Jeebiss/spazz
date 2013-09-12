@@ -48,7 +48,6 @@ import org.pircbotx.hooks.events.QuitEvent;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
-import com.rosaloves.bitlyj.Bitly;
 
 @SuppressWarnings("rawtypes")
 public class Spazz extends ListenerAdapter {
@@ -512,12 +511,12 @@ public class Spazz extends ListenerAdapter {
 	    github = GitHub.connect("spazzmatic", System.getProperty("spazz.password"));
 	    repoManager = new RepositoryManager(github);
 	    
-	    repoManager.addRepository("aufdemrand", "Denizen", 15000, true);
-	    repoManager.addRepository("Morphan1", "Depenizen", 20000, true);
-	    repoManager.addRepository("CitizensDev", "Citizens2", 15000, false);
-        repoManager.addRepository("CitizensDev", "CitizensAPI", 20000, false);
-	    repoManager.addRepository("Jeebiss", "spazz", 30000, true);
-	    repoManager.addRepository("jrbudda", "Sentry", 100000, true);
+	    repoManager.addRepository("aufdemrand", "Denizen", 20, true);
+	    repoManager.addRepository("Morphan1", "Depenizen", 30, true);
+	    repoManager.addRepository("CitizensDev", "Citizens2", 20, false);
+        repoManager.addRepository("CitizensDev", "CitizensAPI", 30, false);
+	    repoManager.addRepository("Jeebiss", "spazz", 60, true);
+	    repoManager.addRepository("jrbudda", "Sentry", 100, true);
         
         try {
             reloadSites(debugMode);
@@ -545,7 +544,7 @@ public class Spazz extends ListenerAdapter {
             return;
         }
         bot.setMessageDelay(0);
-        bot.joinChannel("#denizen-dev");
+        // bot.joinChannel("#denizen-dev");
         bot.joinChannel("#denizen-devs");
         
         new java.util.Timer().schedule(new java.util.TimerTask() {
@@ -786,8 +785,8 @@ public class Spazz extends ListenerAdapter {
             CommitComment ccomment = (CommitComment) comment;
             Commit commit = ccomment.getCommit();
             sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor 
-                    + comment.getUser().getLogin() + chatColor + " commented on commit: " + defaultColor + commit.getMessage()
-                    + chatColor + " by " + defaultColor + commit.getAuthor().getLogin());
+                    + comment.getUser().getLogin() + chatColor + " commented on commit: " + defaultColor 
+                    + commit.getMessage() + chatColor + " by " + defaultColor + commit.getAuthor().getLogin());
         }
         
     }
@@ -1183,7 +1182,7 @@ public class Spazz extends ListenerAdapter {
 		else if (msgLwr.startsWith(".shorten")) {
 		    String[] args = msg.split(" ");
 		    if (args.length > 1) {
-		        bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + args[1] + " -> " + Bitly.as("spazzmatic", System.getProperty("spazz.bitly")).call(Bitly.shorten(args[1])).getShortUrl());
+		        bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + args[1] + " -> " + Utilities.getShortUrl(args[1]));
 		    }
 		}
 		

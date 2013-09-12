@@ -30,9 +30,9 @@ public class RepositoryManager {
         return root;
     }
     
-    public boolean addRepository(String owner, String project, int updateDelay, boolean hasIssues) {
+    public boolean addRepository(String owner, String project, double updateDelay, boolean hasIssues) {
         try {
-            repositories.put(project, root.getRepository(owner, project, updateDelay, hasIssues));
+            repositories.put(project, root.getRepository(owner, project, ((long)updateDelay)*1000, hasIssues));
             return true;
         } catch (Exception e) {
             e.printStackTrace();

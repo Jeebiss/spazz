@@ -39,7 +39,7 @@ public class CommitComment implements Comment {
     @SuppressWarnings("unchecked")
     @Override
     public User getUser() {
-        JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("user"));
+        JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("actor"));
         return new User(root, userInfo);
     }
     

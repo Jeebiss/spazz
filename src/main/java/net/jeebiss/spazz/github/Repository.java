@@ -13,6 +13,8 @@ public class Repository {
     
     private final GitHub root;
 
+    private int updateDelay;
+    private boolean hasIssues = false;
     private JSONObject information;
     
     private HashMap<Integer, Issue> openIssues;
@@ -20,11 +22,18 @@ public class Repository {
     private HashMap<String, Commit> commits;
     private HashMap<Integer, Comment> comments;
     
-    public Repository(GitHub root, JSONObject information) {
+    public Repository(GitHub root, int updateDelay, boolean hasIssues, JSONObject information) {
         this.root = root;
         this.information = information;
-        openIssues = getIssues(true);
-        closedIssues = getIssues(false);
+        if (updateDelay > 0) {
+            this.updateDelay = updateDelay;
+            new Thread(new RepositoryChecker()).start();
+        }
+        if (hasIssues) {
+            this.hasIssues = true;
+            openIssues = getIssues(true);
+            closedIssues = getIssues(false);
+        }
         commits = getCommits();
         comments = getComments();
     }
@@ -36,7 +45,8 @@ public class Repository {
             e.printStackTrace();
             return false;
         }
-        reloadIssues();
+        if (hasIssues)
+            reloadIssues();
         reloadCommits();
         reloadComments();
         return true;
@@ -169,6 +179,24 @@ public class Repository {
             new CommitEvent(root, this, eventCommits);
         }
         commits = newCommits;
+    }
+    
+    public class RepositoryChecker implements Runnable {
+
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    Thread.sleep(updateDelay);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    return;
+                }
+                reload();
+            }
+        }
+        
     }
     
 }

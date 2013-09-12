@@ -512,9 +512,12 @@ public class Spazz extends ListenerAdapter {
 	    github = GitHub.connect("spazzmatic", System.getProperty("spazz.password"));
 	    repoManager = new RepositoryManager(github);
 	    
-	    repoManager.addRepository("aufdemrand", "Denizen");
-	    repoManager.addRepository("Morphan1", "Depenizen");
-	    repoManager.addRepository("Jeebiss", "spazz");
+	    repoManager.addRepository("aufdemrand", "Denizen", 15000, true);
+	    repoManager.addRepository("Morphan1", "Depenizen", 20000, true);
+	    repoManager.addRepository("CitizensDev", "Citizens2", 15000, false);
+        repoManager.addRepository("CitizensDev", "CitizensAPI", 20000, false);
+	    repoManager.addRepository("Jeebiss", "spazz", 30000, true);
+	    repoManager.addRepository("jrbudda", "Sentry", 100000, true);
         
         try {
             reloadSites(debugMode);

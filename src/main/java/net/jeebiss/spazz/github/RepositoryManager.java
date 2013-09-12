@@ -11,7 +11,6 @@ public class RepositoryManager {
 
     public RepositoryManager(GitHub root) {
         this.root = root;
-        new Thread(new RepositoryChecker()).start();
     }
     
     public Repository getRepository(String project) {
@@ -31,32 +30,14 @@ public class RepositoryManager {
         return root;
     }
     
-    public boolean addRepository(String owner, String project) {
+    public boolean addRepository(String owner, String project, int updateDelay, boolean hasIssues) {
         try {
-            repositories.put(project, root.getRepository(owner, project));
+            repositories.put(project, root.getRepository(owner, project, updateDelay, hasIssues));
             return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
-    }
-    
-    private class RepositoryChecker implements Runnable {
-
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    Thread.sleep(10000);
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                    return;
-                }
-                reloadAll();
-            }
-        }
-        
     }
     
 }

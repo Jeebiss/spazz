@@ -544,7 +544,7 @@ public class Spazz extends ListenerAdapter {
             return;
         }
         bot.setMessageDelay(0);
-        // bot.joinChannel("#denizen-dev");
+        bot.joinChannel("#denizen-dev");
         bot.joinChannel("#denizen-devs");
         
         new java.util.Timer().schedule(new java.util.TimerTask() {
@@ -644,6 +644,7 @@ public class Spazz extends ListenerAdapter {
     		        break;
     		        
     		    case "disconnect":
+    		        repoManager.shutdown();
                     bot.disconnect();
     		        System.out.println();
     		        System.out.println();
@@ -739,7 +740,7 @@ public class Spazz extends ListenerAdapter {
         
         sendToAllChannels(chatColor + "[" + repo.getName() + "] Issue " + event.getState().name().toLowerCase()
                 + ": [" + defaultColor + issue.getNumber() + chatColor + "] " + defaultColor + issue.getTitle()
-                + chatColor + "\" by " + optionalColor + issue.getUser().getLogin());
+                + chatColor + "\" by " + optionalColor + issue.getUser().getLogin() + chatColor + " - " + issue.getShortUrl());
         
     }
     
@@ -763,7 +764,7 @@ public class Spazz extends ListenerAdapter {
                 message = message.substring(0, message.indexOf('\n'));
             }
             
-            sendToAllChannels(defaultColor + "  " + commit.getAuthor().getLogin() + chatColor + ": " + message);
+            sendToAllChannels(defaultColor + "  " + commit.getAuthor().getLogin() + chatColor + ": " + message + " - " + commit.getShortUrl());
         }
         
     }
@@ -779,14 +780,15 @@ public class Spazz extends ListenerAdapter {
             sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor 
                     + comment.getUser().getLogin() + chatColor + " commented on " + issue.getState() + " issue: [" + defaultColor 
                     + issue.getNumber() + chatColor + "] " + defaultColor + issue.getTitle()+ chatColor + " by " + defaultColor 
-                    + issue.getUser().getLogin());
+                    + issue.getUser().getLogin() + chatColor + " - " + comment.getShortUrl());
         }
         else if (comment instanceof CommitComment) {
             CommitComment ccomment = (CommitComment) comment;
             Commit commit = ccomment.getCommit();
             sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor 
                     + comment.getUser().getLogin() + chatColor + " commented on commit: " + defaultColor 
-                    + commit.getMessage() + chatColor + " by " + defaultColor + commit.getAuthor().getLogin());
+                    + commit.getMessage() + chatColor + " by " + defaultColor + commit.getAuthor().getLogin()
+                    + chatColor + " - " + comment.getShortUrl());
         }
         
     }
@@ -1664,6 +1666,7 @@ public class Spazz extends ListenerAdapter {
                     bot.sendMessage(chnl, chatColor + "Ahaha, you can never kill me, " + senderNick + "!");
             }
             else {
+                repoManager.shutdown();
                 for (dUser duser : dUsers.values()) {
                     try {
                         duser.saveAll();

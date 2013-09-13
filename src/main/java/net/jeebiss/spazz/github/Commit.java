@@ -42,5 +42,13 @@ public class Commit {
     public Repository getRepo() {
         return owner;
     }
+
+    public String getUrl() {
+        return (String) information.get("html_url");
+    }
+
+    public String getShortUrl() {
+        return Utilities.getShortUrl((String) information.get("html_url"));
+    }
     
 }

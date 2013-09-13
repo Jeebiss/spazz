@@ -6,5 +6,6 @@ public interface Comment {
     public User getUser();
     public String getType();
     public String getUrl();
+    public String getShortUrl();
     
 }

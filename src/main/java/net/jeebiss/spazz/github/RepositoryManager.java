@@ -26,6 +26,12 @@ public class RepositoryManager {
         }
     }
     
+    public void shutdown() {
+        for (Repository repo : repositories.values()) {
+            repo.shutdown();
+        }
+    }
+    
     public GitHub getGitHub() {
         return root;
     }

@@ -57,6 +57,14 @@ public class Issue {
             return null;
         }
     }
+
+    public String getUrl() {
+        return (String) information.get("html_url");
+    }
+
+    public String getShortUrl() {
+        return Utilities.getShortUrl((String) information.get("html_url"));
+    }
     
     public Date getCreatedAt() {
         try {

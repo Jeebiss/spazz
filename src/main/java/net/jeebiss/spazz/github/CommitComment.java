@@ -45,6 +45,11 @@ public class CommitComment implements Comment {
 
     @Override
     public String getUrl() {
+        return (String) information.get("html_url");
+    }
+
+    @Override
+    public String getShortUrl() {
         return Utilities.getShortUrl((String) information.get("html_url"));
     }
     

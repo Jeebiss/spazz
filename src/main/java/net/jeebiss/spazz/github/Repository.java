@@ -17,6 +17,8 @@ public class Repository {
     private boolean hasIssues = false;
     private JSONObject information;
     
+    private boolean shutdown = false;
+    
     private HashMap<Integer, Issue> openIssues;
     private HashMap<Integer, Issue> closedIssues;
     private HashMap<String, Commit> commits;
@@ -25,13 +27,10 @@ public class Repository {
     public Repository(GitHub root, long updateDelay, boolean hasIssues, JSONObject information) {
         this.root = root;
         this.information = information;
-        if (updateDelay > 1000) {
-            System.out.println("STARTING THREAD FOR " + getName() + ": " + updateDelay);
+        if (updateDelay > 2000) {
             this.updateDelay = updateDelay;
             new Thread(new RepositoryChecker()).start();
         }
-        else
-            System.out.println("IGNORING THREAD FOR " + getName() + ": " + updateDelay);
         if (hasIssues) {
             this.hasIssues = true;
             openIssues = getIssues(true);
@@ -53,6 +52,10 @@ public class Repository {
         reloadCommits();
         reloadComments();
         return true;
+    }
+    
+    public void shutdown() {
+        shutdown = true;
     }
     
     public GitHub getGitHub() {
@@ -188,7 +191,7 @@ public class Repository {
         
         @Override
         public void run() {
-            while (true) {
+            while (!shutdown) {
                 try {
                     Thread.sleep(updateDelay);
                 }
@@ -196,7 +199,6 @@ public class Repository {
                     e.printStackTrace();
                     return;
                 }
-                System.out.println("Reloading " + getName());
                 reload();
             }
         }

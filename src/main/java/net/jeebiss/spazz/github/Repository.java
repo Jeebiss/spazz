@@ -3,6 +3,7 @@ package net.jeebiss.spazz.github;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import net.jeebiss.spazz.Utilities;
 import net.jeebiss.spazz.github.Comment;
@@ -47,9 +48,9 @@ public class Repository {
             e.printStackTrace();
             return false;
         }
+        reloadCommits();
         if (hasIssues)
             reloadIssues();
-        reloadCommits();
         reloadComments();
         return true;
     }
@@ -64,6 +65,17 @@ public class Repository {
     
     public int getOpenIssueCount() {
         return (int) information.get("open_issues_count");
+    }
+    
+    public HashMap<Integer, Issue> getLoadedIssues(boolean open) {
+        if (open)
+            return openIssues;
+        else
+            return closedIssues;
+    }
+    
+    public HashMap<String, Commit> getLoadedCommits() {
+        return commits;
     }
     
     @SuppressWarnings("unchecked")
@@ -154,7 +166,7 @@ public class Repository {
         HashMap<Integer, Issue> newOpenIssues = getIssues(true);
         HashMap<Integer, Issue> newClosedIssues = getIssues(false);
         for (Issue newClosedIssue : newClosedIssues.values()) {
-            if (openIssues.containsKey(newClosedIssue.getNumber())) {
+            if (openIssues.containsKey(newClosedIssue.getNumber()) && !committedPullRequests.contains(newClosedIssue.getNumber())) {
                 new IssueEvent(root, newClosedIssue, IssueEvent.State.CLOSED);
                 continue;
             }
@@ -173,12 +185,18 @@ public class Repository {
         closedIssues = newClosedIssues;
     }
     
+    private ArrayList<Integer> committedPullRequests = new ArrayList<Integer>();
+    
     private void reloadCommits() {
         HashMap<String, Commit> newCommits = getCommits();
         ArrayList<Commit> eventCommits = new ArrayList<Commit>();
         for (Commit newCommit : newCommits.values()) {
             if (!commits.containsKey(newCommit.getCommitId())) {
                 eventCommits.add(newCommit);
+                if (newCommit.isPullRequest()) {
+                    committedPullRequests.add(Integer.valueOf(Pattern.compile("Merge pull request #(\\d+) from .+")
+                            .matcher(newCommit.getMessage()).group(0)));
+                }
             }
         }
         if (!eventCommits.isEmpty()) {

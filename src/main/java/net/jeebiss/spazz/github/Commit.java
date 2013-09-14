@@ -33,9 +33,22 @@ public class Commit {
         return (String) commitInfo.get("message");
     }
     
+    public boolean isPullRequest() {
+        if (getMessage().startsWith("Merge pull request #"))
+            return true;
+        
+        return false;
+    }
+    
     @SuppressWarnings("unchecked")
     public User getAuthor() {
         JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("author"));
+        return new User(root, userInfo);
+    }
+    
+    @SuppressWarnings("unchecked")
+    public User getCommitter() {
+        JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("committer"));
         return new User(root, userInfo);
     }
     

@@ -58,11 +58,27 @@ public class Issue {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public String getUrl() {
+        if (((Map<String, Object>) information.get("pull_request")).get("html_url") != null)
+            return (String) ((Map<String, Object>) information.get("pull_request")).get("html_url");
+
         return (String) information.get("html_url");
     }
+    
+    @SuppressWarnings("unchecked")
+    public boolean isPullRequest() {
+        if (((Map<String, Object>) information.get("pull_request")).get("html_url") != null)
+            return true;
+                    
+        return false;
+    }
 
+    @SuppressWarnings("unchecked")
     public String getShortUrl() {
+        if (((Map<String, Object>) information.get("pull_request")).get("html_url") != null)
+            return Utilities.getShortUrl((String) ((Map<String, Object>) information.get("pull_request")).get("html_url"));
+        
         return Utilities.getShortUrl((String) information.get("html_url"));
     }
     

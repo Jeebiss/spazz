@@ -738,9 +738,20 @@ public class Spazz extends ListenerAdapter {
         Issue issue = event.getIssue();
         Repository repo = issue.getRepo();
         
-        sendToAllChannels(chatColor + "[" + repo.getName() + "] Issue " + event.getState().name().toLowerCase()
-                + ": [" + defaultColor + issue.getNumber() + chatColor + "] " + defaultColor + issue.getTitle()
-                + chatColor + "\" by " + optionalColor + issue.getUser().getLogin() + chatColor + " - " + issue.getShortUrl());
+        if (!issue.isPullRequest()) {
+            sendToAllChannels(chatColor + "[" + repo.getName() + "] Issue " + event.getState().name().toLowerCase()
+                    + ": [" + defaultColor + issue.getNumber() + chatColor + "] \"" + defaultColor + issue.getTitle()
+                    + chatColor + "\" by " + optionalColor + issue.getUser().getLogin() + chatColor + " - " + issue.getShortUrl());
+        }
+        
+        else {
+            if (event.getState() == IssueEvent.State.OPENED) {
+                sendToAllChannels(chatColor + "[" + repo.getName() + "] Pull request " + (event.getState().name().equals("CLOSED") ?
+                        "denied" : event.getState().name().toLowerCase()) + ": [" + defaultColor + issue.getNumber()
+                        + chatColor + "] \"" + defaultColor + issue.getTitle() + chatColor + "\" by " + optionalColor
+                        + issue.getUser().getLogin() + chatColor + " - " + issue.getShortUrl());
+            }
+        }
         
     }
     
@@ -1217,7 +1228,7 @@ public class Spazz extends ListenerAdapter {
 			    } else if (args[1].contains("pastebin")) {
 			        rawYaml = Utilities.getStringFromUrl("http://pastebin.com/raw.php?i=" + url[3]);
 			    } else if (args[1].contains("pastie")) {
-			        rawYaml = Utilities.getStringFromUrl("http://pastie.org/pastes/" + url[3] + "/text");		
+			        rawYaml = Utilities.getStringFromUrl("http://pastie.org/pastes/" + url[3] + "/download");		
 			    } else if (args[1].contains("ult-gaming")) {
 			        rawYaml = Utilities.getStringFromUrl("http://paste.ult-gaming.com/" + url[3] + "?raw");
 			    } else if (args[1].contains("citizensnpcs")) {

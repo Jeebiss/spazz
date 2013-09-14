@@ -1,7 +1,6 @@
 package net.jeebiss.spazz.github;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -46,7 +45,8 @@ public class Repository {
         try {
             information = root.retrieve().parse(((String) information.get("url")).replaceAll("\\{.+\\}", ""));
         } catch (Exception e) {
-            Requester.lastChecked = Calendar.getInstance().getTime();
+            e.printStackTrace();
+            return false;
         }
         reloadCommits();
         if (hasIssues)
@@ -74,6 +74,10 @@ public class Repository {
             return closedIssues;
     }
     
+    public HashMap<String, Commit> getLoadedCommits() {
+        return commits;
+    }
+    
     @SuppressWarnings("unchecked")
     public HashMap<Integer, Issue> getIssues(boolean open) {
         HashMap<Integer, Issue> issues = new HashMap<Integer, Issue>();
@@ -84,7 +88,7 @@ public class Repository {
                 issues.put(issue.getNumber(), issue);
             }
         } catch (Exception e) {
-            return getLoadedIssues(open);
+            e.printStackTrace();
         }
         return issues;
     }
@@ -99,7 +103,7 @@ public class Repository {
                 newCommits.put(commit.getCommitId(), commit);
             }
         } catch (Exception e) {
-            return commits;
+            e.printStackTrace();
         }
         return newCommits;
     }
@@ -125,7 +129,7 @@ public class Repository {
                 }
             }
         } catch (Exception e) {
-            return comments;
+            e.printStackTrace();
         }
         return newComments;
     }

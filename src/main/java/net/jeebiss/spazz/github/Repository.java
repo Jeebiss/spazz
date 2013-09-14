@@ -43,15 +43,15 @@ public class Repository {
     }
     
     public boolean reload() {
+        reloadCommits();
+        if (hasIssues)
+            reloadIssues();
+        reloadComments();
         try {
             information = root.retrieve().parse(((String) information.get("url")).replaceAll("\\{.+\\}", ""));
         } catch (Exception e) {
             Requester.lastChecked = Calendar.getInstance().getTime();
         }
-        reloadCommits();
-        if (hasIssues)
-            reloadIssues();
-        reloadComments();
         return true;
     }
     

@@ -739,14 +739,14 @@ public class Spazz extends ListenerAdapter {
         Repository repo = issue.getRepo();
         
         if (!issue.isPullRequest()) {
-            sendToAllChannels(chatColor + "[" + repo.getName() + "] Issue " + event.getState().name().toLowerCase()
+            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + "] Issue " + event.getState().name().toLowerCase()
                     + ": [" + defaultColor + issue.getNumber() + chatColor + "] \"" + defaultColor + issue.getTitle()
                     + chatColor + "\" by " + optionalColor + issue.getUser().getLogin() + chatColor + " - " + issue.getShortUrl());
         }
         
         else {
             if (event.getState() == IssueEvent.State.OPENED) {
-                sendToAllChannels(chatColor + "[" + repo.getName() + "] Pull request " + (event.getState().name().equals("CLOSED") ?
+                sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + "] Pull request " + (event.getState().name().equals("CLOSED") ?
                         "denied" : event.getState().name().toLowerCase()) + ": [" + defaultColor + issue.getNumber()
                         + chatColor + "] \"" + defaultColor + issue.getTitle() + chatColor + "\" by " + optionalColor
                         + issue.getUser().getLogin() + chatColor + " - " + issue.getShortUrl());

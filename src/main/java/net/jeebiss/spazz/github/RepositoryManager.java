@@ -1,5 +1,6 @@
 package net.jeebiss.spazz.github;
 
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,7 +39,9 @@ public class RepositoryManager {
     
     public boolean addRepository(String owner, String project, double updateDelay, boolean hasIssues) {
         try {
+            Requester.lastChecked = null;
             repositories.put(project, root.getRepository(owner, project, ((long)updateDelay)*1000, hasIssues));
+            Requester.lastChecked = Calendar.getInstance().getTime();
             return true;
         } catch (Exception e) {
             e.printStackTrace();

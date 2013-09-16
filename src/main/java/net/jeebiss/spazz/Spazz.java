@@ -1111,7 +1111,7 @@ public class Spazz extends ListenerAdapter {
 			bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor +  "Feel free to look at it anyway, though! http://bit.ly/14o3kdq");
 			return;
 		} else if (msgLwr.startsWith(".tags")) {
-			bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor +  "Here's every replaceable tag in Denizen! - http://bit.ly/1aaHhGs");
+			bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor +  "Here's every replaceable tag in Denizen! - http://bit.ly/164DlSE");
 		} else if (msgLwr.startsWith(".tag ")) {
 			String arg = msgLwr.split(" ")[1].replaceAll("(\\[.+\\]|\\[|\\])", "");
 			List<dTag> found = null;

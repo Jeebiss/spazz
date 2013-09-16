@@ -3,6 +3,7 @@ package net.jeebiss.spazz.github;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.jeebiss.spazz.Utilities;
@@ -193,9 +194,9 @@ public class Repository {
         for (Commit newCommit : newCommits.values()) {
             if (!commits.containsKey(newCommit.getCommitId())) {
                 eventCommits.add(newCommit);
-                if (newCommit.isPullRequest()) {
-                    committedPullRequests.add(Integer.valueOf(Pattern.compile("^Merge pull request #(\\d+) from .+$")
-                            .matcher(newCommit.getMessage()).group(1)));
+                Matcher m = Pattern.compile("^Merge pull request #(\\d+) from .+$").matcher(newCommit.getMessage());
+                if (m.matches()) {
+                    committedPullRequests.add(Integer.valueOf(m.group(1)));
                 }
             }
         }

@@ -194,7 +194,7 @@ public class Repository {
             if (!commits.containsKey(newCommit.getCommitId())) {
                 eventCommits.add(newCommit);
                 if (newCommit.isPullRequest()) {
-                    committedPullRequests.add(Integer.valueOf(Pattern.compile("Merge pull request #(\\d+) from .+")
+                    committedPullRequests.add(Integer.valueOf(Pattern.compile("^Merge pull request #(\\d+) from .+$")
                             .matcher(newCommit.getMessage()).group(1)));
                 }
             }

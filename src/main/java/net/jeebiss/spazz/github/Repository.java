@@ -81,9 +81,10 @@ public class Repository {
     
     @SuppressWarnings("unchecked")
     public HashMap<Integer, Issue> getIssues(boolean open) {
-        HashMap<Integer, Issue> issues = new HashMap<Integer, Issue>();
+        HashMap<Integer, Issue> issues = null;
         try {
             JSONArray openIssuesArray = root.retrieve().parseArray(((String) information.get("issues_url")).replaceAll("\\{.+\\}", "") + "?state=" + (open ? "open" : "closed") + "&sort=updated");
+            issues = new HashMap<Integer, Issue>();
             for (int i = 0; i < openIssuesArray.size(); i++) {
                 Issue issue = new Issue(root, this, Utilities.getJSONFromMap((Map<String, Object>) openIssuesArray.get(i)));
                 issues.put(issue.getNumber(), issue);
@@ -96,9 +97,10 @@ public class Repository {
     
     @SuppressWarnings("unchecked")
     public HashMap<String, Commit> getCommits() {
-        HashMap<String, Commit> newCommits = new HashMap<String, Commit>();
+        HashMap<String, Commit> newCommits = null;
         try {
             JSONArray commitsArray = root.retrieve().parseArray(((String) information.get("commits_url")).replaceAll("\\{.+\\}", "") + "?per_page=100");
+            newCommits = new HashMap<String, Commit>();
             for (int i = 0; i < commitsArray.size(); i++) {
                 Commit commit = new Commit(root, this, Utilities.getJSONFromMap((Map<String, Object>) commitsArray.get(i)));
                 newCommits.put(commit.getCommitId(), commit);
@@ -111,9 +113,10 @@ public class Repository {
     
     @SuppressWarnings("unchecked")
     public HashMap<Integer, Comment> getComments() {
-        HashMap<Integer, Comment> newComments = new HashMap<Integer, Comment>();
+        HashMap<Integer, Comment> newComments = null;
         try {
             JSONArray eventsList = root.retrieve().parseArray(((String) information.get("events_url")).replaceAll("\\{.+\\}", ""));
+            newComments = new HashMap<Integer, Comment>();
             for (int i = eventsList.size()-1; i > -1; i--) {
                 Map<String, Object> map = (Map<String, Object>) eventsList.get(i);
                 Map<String, Object> payload = (Map<String, Object>) map.get("payload");

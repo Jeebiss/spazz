@@ -798,7 +798,7 @@ public class Spazz extends ListenerAdapter {
             Commit commit = ccomment.getCommit();
             sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor 
                     + comment.getUser().getLogin() + chatColor + " commented on commit: " + defaultColor 
-                    + commit.getMessage() + chatColor + " by " + defaultColor + commit.getAuthor().getLogin()
+                    + commit.getMessage() // + chatColor + " by " + defaultColor + commit.getAuthor().getLogin()
                     + chatColor + " - " + comment.getShortUrl());
         }
         

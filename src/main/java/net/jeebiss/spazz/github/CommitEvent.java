@@ -29,8 +29,8 @@ public class CommitEvent {
     public ArrayList<String> getUsers() {
         ArrayList<String> users = new ArrayList<String>();
         for (Commit commit : commits) {
-            if (!users.contains(commit.getAuthor().getLogin())) {
-                users.add(commit.getAuthor().getLogin());
+            if (!users.contains(commit.getAuthor())) {
+                users.add(commit.getAuthor());
             }
         }
         return users;

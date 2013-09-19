@@ -41,9 +41,9 @@ public class Commit {
     }
     
     @SuppressWarnings("unchecked")
-    public User getAuthor() {
-        JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("author"));
-        return new User(root, userInfo);
+    public String getAuthor() {
+        JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) commitInfo.get("author"));
+        return (String) userInfo.get("name");
     }
     
     @SuppressWarnings("unchecked")

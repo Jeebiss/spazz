@@ -775,7 +775,7 @@ public class Spazz extends ListenerAdapter {
                 message = message.substring(0, message.indexOf('\n'));
             }
             
-            sendToAllChannels(defaultColor + "  " + commit.getAuthor().getLogin() + chatColor + ": " + message + " - " + commit.getShortUrl());
+            sendToAllChannels(defaultColor + "  " + commit.getAuthor() + chatColor + ": " + message + " - " + commit.getShortUrl());
         }
         
     }
@@ -788,18 +788,23 @@ public class Spazz extends ListenerAdapter {
         if (comment instanceof IssueComment) {
             IssueComment icomment = (IssueComment) comment;
             Issue issue = icomment.getIssue();
+            String url = comment.getShortUrl();
             sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor 
-                    + comment.getUser().getLogin() + chatColor + " commented on " + issue.getState() + " issue: [" + defaultColor 
-                    + issue.getNumber() + chatColor + "] " + defaultColor + issue.getTitle()+ chatColor + " by " + defaultColor 
-                    + issue.getUser().getLogin() + chatColor + " - " + comment.getShortUrl());
+                    + comment.getUser().getLogin() + chatColor + " commented on " 
+                    + issue.getState() + " issue: [" 
+                    + defaultColor + issue.getNumber() + chatColor + "] " + defaultColor 
+                    + issue.getTitle() + chatColor + " by " + defaultColor 
+                    + issue.getUser().getLogin() + chatColor 
+                    + (url != null ? " - " + url : ""));
         }
         else if (comment instanceof CommitComment) {
             CommitComment ccomment = (CommitComment) comment;
             Commit commit = ccomment.getCommit();
+            String url = comment.getShortUrl();
             sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor 
                     + comment.getUser().getLogin() + chatColor + " commented on commit: " + defaultColor 
-                    + commit.getMessage() // + chatColor + " by " + defaultColor + commit.getAuthor().getLogin()
-                    + chatColor + " - " + comment.getShortUrl());
+                    + commit.getMessage() + chatColor + " by " + defaultColor 
+                    + commit.getAuthor() + chatColor + (url != null ? " - " + url : ""));
         }
         
     }

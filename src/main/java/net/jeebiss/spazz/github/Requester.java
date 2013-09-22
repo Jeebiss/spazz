@@ -26,7 +26,10 @@ public class Requester {
     public JSONObject parse(String url) throws Exception {
         JSONObject json = null;
         if (method.equals("GET")) {
-            json = (JSONObject) JSONValue.parse(Utilities.getStringFromStream(setupConnection(url).getInputStream()));
+            HttpURLConnection get = setupConnection(url);
+            if (get.getResponseCode() != 400)
+                return json;
+            json = (JSONObject) JSONValue.parse(Utilities.getStringFromStream(get.getInputStream()));
         }
         return json;
     }
@@ -34,7 +37,10 @@ public class Requester {
     public JSONArray parseArray(String url) throws Exception {
         JSONArray json = null;
         if (method.equals("GET")) {
-            json = (JSONArray) JSONValue.parse(Utilities.getStringFromStream(setupConnection(url).getInputStream()));
+            HttpURLConnection get = setupConnection(url);
+            if (get.getResponseCode() != 400)
+                return json;
+            json = (JSONArray) JSONValue.parse(Utilities.getStringFromStream(get.getInputStream()));
         }
         return json;
     }

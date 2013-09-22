@@ -46,7 +46,6 @@ public class Repository {
         try {
             information = root.retrieve().parse(((String) information.get("url")).replaceAll("\\{.+\\}", ""));
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
         reloadCommits();
@@ -151,6 +150,8 @@ public class Repository {
     
     private void reloadComments() {
         HashMap<Integer, Comment> newComments = getComments();
+        if (newComments == null)
+            return;
         for (Comment newComment : newComments.values()) {
             if (!comments.containsKey(newComment.getCommentId())) {
                 new CommentEvent(root, this, newComment);
@@ -162,6 +163,8 @@ public class Repository {
     private void reloadIssues() {
         HashMap<Integer, Issue> newOpenIssues = getIssues(true);
         HashMap<Integer, Issue> newClosedIssues = getIssues(false);
+        if (newOpenIssues == null || newClosedIssues == null)
+            return;
         for (Issue newClosedIssue : newClosedIssues.values()) {
             if (openIssues.containsKey(newClosedIssue.getNumber()) && !committedPullRequests.contains(newClosedIssue.getNumber())) {
                 new IssueEvent(root, newClosedIssue, IssueEvent.State.CLOSED);
@@ -186,6 +189,8 @@ public class Repository {
     
     private void reloadCommits() {
         HashMap<String, Commit> newCommits = getCommits();
+        if (newCommits == null)
+            return;
         ArrayList<Commit> eventCommits = new ArrayList<Commit>();
         for (Commit newCommit : newCommits.values()) {
             if (!commits.containsKey(newCommit.getCommitId())) {

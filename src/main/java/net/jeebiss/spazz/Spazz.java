@@ -480,6 +480,7 @@ public class Spazz extends ListenerAdapter {
     }
     
     public static boolean debugMode = false;
+    public static String chatChannel = "#denizen-dev";
     public static GitHub github = null;
     public static RepositoryManager repoManager = null;
     
@@ -574,7 +575,8 @@ public class Spazz extends ListenerAdapter {
         System.out.println("/join <channel>          Joins a channel.");
         System.out.println("/leave <channel> <msg>   Leaves a channel with an optional message.");
         System.out.println("/disconnect              Saves user info and disconnects from the server.");
-        System.out.println("<channel> <msg>          Sends a message to a channel.");
+        System.out.println("/channel <channel>       Set the chat channel.");
+        System.out.println("<msg>                    Sends a message to the current chat channel.");
         System.out.println();
     	
     	Scanner scanner = new Scanner(System.in);
@@ -1301,7 +1303,7 @@ public class Spazz extends ListenerAdapter {
             }
 			String [] args = msg.split(" ");
 			if (args.length < 2) {
-				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Check your argument count. Command format: ." + shortened +" [<" + full + ">] (stability) (usage) (description) (example)");
+				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Check your argument count. Command format: ." + shortened +" [<" + full + ">] (stability) (usage) (description)");
 				return;
 			}
             List<String> argList = new ArrayList<String>();
@@ -1321,9 +1323,6 @@ public class Spazz extends ListenerAdapter {
                 }
                 if (argList.contains("d")) {
                     extra += "d";
-                }
-                if (argList.contains("e")) {
-                    extra += "e";
                 }
             }
             
@@ -1410,30 +1409,6 @@ public class Spazz extends ListenerAdapter {
                         }
                     }
                 }
-                if (extra.contains("e")) {
-                    String[] example = match.getExample().split("\n");
-                    for (int i = 0; i < example.length; i++) {
-                        if (i == 0) {
-                            if (messageCount > 5) {
-                                bot.sendNotice(usr, defaultColor + "  Example" + chatColor + ": " + example[i]);
-                            }
-                            else {
-                                bot.sendMessage((chnl != null ? chnl.getName() : senderNick), defaultColor + "  Example" + chatColor + ": " + example[i]);
-                                messageCount++;
-                            }
-                        }
-                        else {
-                            if (messageCount > 5) {
-                                bot.sendNotice(usr, chatColor + "           " + example[i]);
-                                messageCount++;
-                            }
-                            else {
-                                bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "           " + example[i]);
-                                messageCount++;
-                            }
-                        }
-                    }
-                }
                 return;
             }
             else {
@@ -1444,16 +1419,45 @@ public class Spazz extends ListenerAdapter {
 		} else if (msgLwr.startsWith(".events")) {
             List<dEvent> found = FindEvents("");
             String list = "";
-            bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "I found " + defaultColor + found.size() + chatColor + " matches...");
-            for (int x = 0; x < found.size();  x++) {
-                list += found.get(x).getEvent().split(", ")[0] + ", ";
-                if (x != 0 && x%20 == 0 && x+1 != x) {
-                    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), optionalColor + list);
+            int size = found.size();
+            bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "I found " + defaultColor + (size == 50 ? "50+" : size)
+                    + chatColor + " matches...");
+            for (int x = 0; x < size; x++) {
+                if ((list + found.get(x).getEvent()).length() + 2 < 400) {
+                    list += found.get(x).getEvent() + ", ";
+                    if (x != 0 && x%10 == 0 && x+1 != size) {
+                        if (x > 10) {
+                            bot.sendNotice((address == "" ? senderNick : address.substring(0, address.length()-2)), optionalColor + list);
+                        }
+                        else {
+                            bot.sendMessage((chnl != null ? chnl.getName() : senderNick), optionalColor 
+                                    + list.substring(0, (x == 10 ? list.length()-2 : list.length()))
+                                    + (x == 10 ? "..." : ""));
+                        }
+                        list = "";
+                    }
+                }
+                else {
+                    x--;
+                    if (x > 10) {
+                        bot.sendNotice((address == "" ? senderNick : address.substring(0, address.length()-2)), optionalColor + list);
+                    }
+                    else {
+                        bot.sendMessage((chnl != null ? chnl.getName() : senderNick), optionalColor 
+                                + list.substring(0, (x == 10 ? list.length()-2 : list.length()))
+                                + (x == 10 ? "..." : ""));
+                    }
                     list = "";
                 }
             }
-            list = list.substring(0, list.length()-2) + ".";
-            bot.sendMessage((chnl != null ? chnl.getName() : senderNick), optionalColor + list);
+            if (size > 10) {
+                bot.sendNotice((address == "" ? senderNick : address.substring(0, address.length()-2)),
+                        optionalColor + list.substring(0, list.length()-2) + ".");
+            }
+            else {
+                bot.sendMessage((chnl != null ? chnl.getName() : senderNick), optionalColor + list.substring(0, list.length()-2) + ".");
+            }
+            return;
         } else if (msgLwr.startsWith(".event")) {
 		    String[] args = msg.split(" ");
 		    int argSize = args.length;

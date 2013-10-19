@@ -503,11 +503,8 @@ public class Spazz extends ListenerAdapter {
 	    }
 	    catch (Exception e) {
 	        if (!usersFolder.isDirectory() && !usersFolder.mkdir()) {
-	            System.out.println("Could not load users folder.");
-	            if (System.getProperty("spazz.password") == null) {
-	                System.out.println("Password for Spazzmatic not found. Cancelling startup...");
-	                return;
-	            }
+	            System.out.println("Could not load users folder. Password for Spazzmatic not found. Cancelling startup...");
+	            return;
 	        }
         }
 	    

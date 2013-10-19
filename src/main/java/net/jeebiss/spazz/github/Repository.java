@@ -88,7 +88,9 @@ public class Repository {
                 Issue issue = new Issue(root, this, Utilities.getJSONFromMap((Map<String, Object>) openIssuesArray.get(i)));
                 issues.put(issue.getNumber(), issue);
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return issues;
     }
     
@@ -102,7 +104,9 @@ public class Repository {
                 Commit commit = new Commit(root, this, Utilities.getJSONFromMap((Map<String, Object>) commitsArray.get(i)));
                 newCommits.put(commit.getCommitId(), commit);
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return newCommits;
     }
     
@@ -127,7 +131,9 @@ public class Repository {
                     newComments.put(comment.getCommentId(), comment);
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return newComments;
     }
     
@@ -136,6 +142,7 @@ public class Repository {
         try {
             return new User(root, Utilities.getJSONFromMap((Map<String,Object>) information.get("owner")));
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -215,7 +222,10 @@ public class Repository {
                 try {
                     Thread.sleep(updateDelay);
                 }
-                catch (Exception e) {}
+                catch (Exception e) {
+                    e.printStackTrace();
+                    return;
+                }
                 reload();
             }
         }

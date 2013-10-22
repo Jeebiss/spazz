@@ -46,7 +46,6 @@ public class Repository {
         try {
             information = root.retrieve().parse(((String) information.get("url")).replaceAll("\\{.+\\}", ""));
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
         reloadCommits();
@@ -89,9 +88,7 @@ public class Repository {
                 Issue issue = new Issue(root, this, Utilities.getJSONFromMap((Map<String, Object>) openIssuesArray.get(i)));
                 issues.put(issue.getNumber(), issue);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) {}
         return issues;
     }
     
@@ -105,9 +102,7 @@ public class Repository {
                 Commit commit = new Commit(root, this, Utilities.getJSONFromMap((Map<String, Object>) commitsArray.get(i)));
                 newCommits.put(commit.getCommitId(), commit);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) {}
         return newCommits;
     }
     
@@ -132,9 +127,7 @@ public class Repository {
                     newComments.put(comment.getCommentId(), comment);
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) {}
         return newComments;
     }
     
@@ -143,7 +136,6 @@ public class Repository {
         try {
             return new User(root, Utilities.getJSONFromMap((Map<String,Object>) information.get("owner")));
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -216,12 +208,11 @@ public class Repository {
             while (!shutdown) {
                 try {
                     Thread.sleep(updateDelay);
+                    reload();
                 }
                 catch (Exception e) {
                     e.printStackTrace();
-                    return;
                 }
-                reload();
             }
         }
         

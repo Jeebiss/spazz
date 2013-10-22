@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Set;
 
 import net.jeebiss.spazz.github.Comment;
 import net.jeebiss.spazz.github.CommentEvent;
@@ -54,23 +55,6 @@ public class Spazz extends ListenerAdapter {
 	
     public static Spazz spazz = new Spazz();
 	public static PircBotX bot = new PircBotX();
-	
-	/*
-	public static GitHub github;
-	
-	public static GHRepository repo_denizen;
-    static int openIssues_denizen = -1;
-    static int closedIssues_denizen = -1;
-    static Map<Integer, GHIssue> openIssuesList_denizen = new HashMap<Integer, GHIssue>();
-    static Map<Integer, GHIssue> closedIssuesList_denizen = new HashMap<Integer, GHIssue>();
-    
-	public static GHRepository repo_depenizen;
-    static int openIssues_depenizen = -1;
-    static int closedIssues_depenizen = -1;
-    static Map<Integer, GHIssue> openIssuesList_depenizen = new HashMap<Integer, GHIssue>();
-    static Map<Integer, GHIssue> closedIssuesList_depenizen = new HashMap<Integer, GHIssue>();
-    GHIssueBuilder confirmIssue = null;
-    */
 
 	public static List<dTag> dTags = new ArrayList<dTag>();
 	public static List<String> dTagPrefixes = new ArrayList<String>();
@@ -111,8 +95,16 @@ public class Spazz extends ListenerAdapter {
 		dEvents.clear();
 		String pages = Utilities.getStringFromUrls(Arrays.asList("https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dList.java",
 		        "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/UtilTags.java",
+                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/TextTags.java",
+                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/ProcedureScriptTag.java",
+                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/SpecialCharacterTags.java",
+                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/ContextTags.java",
+                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/AnchorTags.java",
                 "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/Duration.java",
                 "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dCuboid.java",
+                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dChunk.java",
+                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/properties/EntityInfected.java",
+                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/properties/EntityAge.java",
 				"https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dWorld.java",
                 "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dColor.java",
                 "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dItem.java",
@@ -569,9 +561,9 @@ public class Spazz extends ListenerAdapter {
         System.out.println("Successfully loaded Spazzmatic. You may now begin using console commands.");
         System.out.println();
         System.out.println("Available commands:");
-        System.out.println("/me <channel> <action>   Performs an action in a channel.");
+        System.out.println("/me <action>             Performs an action in the current chat channel.");
         System.out.println("/msg <user> <msg>        Sends a private message to a user.");
-        System.out.println("/plain <channel> <msg>   Sends a non-colored message to a channel.");
+        System.out.println("/plain <msg>             Sends a non-colored message to the current chat channel.");
         System.out.println("/join <channel>          Joins a channel.");
         System.out.println("/leave <channel> <msg>   Leaves a channel with an optional message.");
         System.out.println("/disconnect              Saves user info and disconnects from the server.");
@@ -599,20 +591,14 @@ public class Spazz extends ListenerAdapter {
                     }
                 }
     		}
-    		else if (inputArgs.length > 1) {
-    		    channel = inputArgs[0];
-    		    commandArgs = rawInput.substring(channel.length() + 1);
-    		}
-    		else
-    		    System.out.println("Invalid command.");
     		
     		switch (inputCommand) {
     		
     		    case "me":
-    		        if (bot.channelExists(channel))
-    		            bot.sendAction(channel, chatColor + commandArgs);
+    		        if (bot.channelExists(chatChannel))
+    		            bot.sendAction(chatChannel, chatColor + commandArgs);
     		        else
-    		            System.out.println("Not connected to channel \"" + channel + "\".");
+    		            System.out.println("Not connected to channel \"" + chatChannel + "\".");
     		        break;
     		        
     		    case "msg":
@@ -625,10 +611,17 @@ public class Spazz extends ListenerAdapter {
     		        break;
     		        
     		    case "plain":
-                    if (bot.channelExists(channel))
-                        bot.sendMessage(channel, commandArgs);
+                    if (bot.channelExists(chatChannel))
+                        bot.sendMessage(chatChannel, commandArgs);
                     else
-                        System.out.println("Not connected to channel \"" + channel + "\".");
+                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
+    		        break;
+    		        
+    		    case "channel":
+    		        if (bot.channelExists(channel))
+    		            chatChannel = channel;
+                    else
+                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
     		        break;
     		        
     		    case "join":
@@ -655,10 +648,10 @@ public class Spazz extends ListenerAdapter {
     		        break;
     		        
     		    default:
-    		        if (bot.channelExists(channel))
-    		            bot.sendMessage(channel, chatColor + commandArgs);
+    		        if (bot.channelExists(chatChannel))
+    		            bot.sendMessage(chatChannel, chatColor + commandArgs);
     		        else
-                        System.out.println("Not connected to channel \"" + channel + "\".");
+                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
     		        break;
     		
     		}
@@ -773,11 +766,12 @@ public class Spazz extends ListenerAdapter {
         
         for (Commit commit : commits) {
             String message = commit.getMessage();
+            String shortenedUrl = commit.getShortUrl();
             if (message.contains("\n")) {
                 message = message.substring(0, message.indexOf('\n'));
             }
             
-            sendToAllChannels(defaultColor + "  " + commit.getAuthor() + chatColor + ": " + message + " - " + commit.getShortUrl());
+            sendToAllChannels(defaultColor + "  " + commit.getAuthor() + chatColor + ": " + message + " - " + shortenedUrl);
         }
         
     }
@@ -860,133 +854,7 @@ public class Spazz extends ListenerAdapter {
 		if (msg.equalsIgnoreCase(".hello")) {
 			bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + "Hello World"); 
 			return;
-		} else if (msg.equalsIgnoreCase(".dBuild")) {
-		    bot.sendMessage("#denizen-dev", "Citizen: build Denizen");
-		}
-        /* 
-		else if (msgLwr.matches("\\.createissue\\s.+")) {
-			if (confirmIssueUser != null && !confirmIssueUser.equals(senderNick)) {
-				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), "Back of the line, " + senderNick + "!");
-				return;
-			}
-			if (!msg.substring(13).equalsIgnoreCase("confirm")) {
-				if (confirmIssue != null) {
-					bot.sendMessage((chnl != null ? chnl.getName() : senderNick), "You already have an issue waiting! Please type \".createIssue confirm\" to confirm it!");
-					return;
-				}
-				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Please confirm issue creation by using \".createIssue confirm\"");
-				confirmIssue = repo_denizen.createIssue("Issue from " + senderNick + " at #denizen-dev").body(msg.substring(13));
-				confirmIssueUser = senderNick;
-				java.util.Timer timer = new java.util.Timer();
-				timer.schedule(new java.util.TimerTask() {
-					@Override
-					public void run() {
-						if (confirmIssue == null) return;
-						confirmIssue = null;
-						bot.sendMessage((chnl != null ? chnl.getName() : senderNick), confirmIssueUser + ": your issue creation timed out!");
-						confirmIssueUser = null;
-					}
-			 	  }, 30000);
-			}
-			else {
-				if (confirmIssue == null) {
-					bot.sendMessage((chnl != null ? chnl.getName() : senderNick), "Umm... There's no issues waiting to be confirmed... Maybe it timed out?");
-					return;
-				}
-				try {
-					GHIssue issue = confirmIssue.create();
-					bot.sendMessage((chnl != null ? chnl.getName() : senderNick), "New issue opened: \"[" + issue.getNumber() + "] " + Colors.OLIVE + issue.getTitle() + chatColor + "\" by " + Colors.TEAL + issue.getUser().getLogin() + chatColor);
-					openIssues_denizen++;
-					openIssuesList_denizen.put(issue.getNumber(), issue);
-				} catch (Exception e) {
-					bot.sendMessage((chnl != null ? chnl.getName() : senderNick), "Issue creation failed! Please report this to someone with authority!");
-					return;
-				}
-				try {
-                    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), "Issue #" + repo_denizen.getIssues(GHIssueState.OPEN).get(0).getNumber() + " created!");
-                } catch (Exception e) {
-                    if (debugMode) e.printStackTrace();
-                    else
-                        System.out.println("An error has occured while creating an issue... Turn on debug for more information.");
-                }
-				confirmIssue = null;
-				confirmIssueUser = null;
-			}
-		} else if (msgLwr.startsWith(".comment confirm")) {
-			if (!(hasOp(usr, chnl) || hasVoice(usr, chnl))) {
-				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Hey! You don't have permission to do that!");
-				return;
-			}
-			else if (!confirmComment) {
-				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Umm... I don't see that comment on the list. Perhaps it timed out?");
-				return;
-			} else
-                try {
-                    repo_denizen.getIssue(confirmingIssue).comment(confirmingComment);
-                } catch (Exception e) {
-                    if (debugMode) e.printStackTrace();
-                    else
-                        System.out.println("An error has occured while commenting on an issue... Turn on debug for more information.");
-                }
-			bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Comment confirmed!");
-			confirmComment = false;
-			confirmingIssue = 0;
-			confirmingComment = null;
-		} 
-		else if (msgLwr.matches("\\.comment \\d+\\s.+")) {
-			
-			if (!(hasOp(usr, chnl) || hasVoice(usr, chnl))) {
-				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Hey! You don't have permission to do that!");
-				return;
-			}
-
-			String beginning = msg.split("\\d+")[0];
-			String end = msg.split("\\d+\\s", 2)[1];
-			Integer number = Integer.valueOf(msg.substring(beginning.length(), msg.length() - (end.length() + 1)));
-			try {
-				GHIssue issue = repo_denizen.getIssue(number);
-				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Please confirm comment on issue #" + number + " by using \".comment confirm\" (" + Colors.OLIVE + issue.getTitle() + chatColor + ")");
-				confirmingComment = end + "\n\n(Sent from IRC channel #denizen-dev by " + usr.getNick() + ")";
-				confirmingIssue = number;
-				confirmComment = true;
-				new java.util.Timer().schedule(new java.util.TimerTask() {
-					@Override
-					public void run() {
-						if (confirmComment) {
-							confirmComment = false;
-							confirmingIssue = 0;
-							confirmingComment = null;
-							bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "your comment creation timed out!");
-						}
-					}
-		           }, 30000);
-			}
-			catch (Exception e) {
-				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Issue #" + number + " doesn't seem to exist...");
-				return;
-			}
-		} else if (msgLwr.matches("(^|.+)issues/\\d+($|.+)")) {
-			String beginning = msg.split("/\\d+")[0];
-			String end = msg.split("/\\d+", 2)[1];
-			String number = msg.substring(beginning.length() + 1, msg.length() - end.length());
-            GHRepository repo = repo_denizen;
-            String repoName = "Denizen";
-            if (msgLwr.contains("depenizen")) {
-                repo = repo_depenizen;
-                repoName = "Depenizen";
-            }
-			try {
-				GHIssue issue = (repo.getIssue(Integer.valueOf(number)) != null ? repo.getIssue(Integer.valueOf(number)) : null);
-				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + (issue.getState().equals(GHIssueState.OPEN) ? "Open " + repoName + " issue: \"" : "Closed " + repoName + " issue: \"") + Colors.OLIVE + issue.getTitle() + chatColor + "\" by " + Colors.TEAL + issue.getUser().getLogin() + chatColor + ". Last updated: " + issue.getUpdatedAt());
-				if (!msg.matches("(.*)github.com/.+/issues.+"))
-                    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + Bitly.as("spazzmatic", System.getProperty("spazz.bitly")).call(Bitly.shorten(issue.getUrl().toString())).getShortUrl());
-			} catch(Exception e) {
-				bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + repoName + " issue #" + number + " doesn't seem to exist...");
-				if (debugMode) e.printStackTrace();
-			}
-		}
-		*/
-		else if (msgLwr.startsWith(".kitty")) {
+		} else if (msgLwr.startsWith(".kitty")) {
 			bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Meow.");
 			return;
 		} else if (msgLwr.startsWith(".color")) {
@@ -1673,17 +1541,8 @@ public class Spazz extends ListenerAdapter {
 			return;
 		
 		} else if (msg.equalsIgnoreCase(".bye")) {
-		    if (!usr.getRealName().equals("Morphan1")) {
-                if (usr.getRealName().equals("aufdemrand"))
-                    bot.sendMessage(chnl, chatColor + "Nice try auf, but we all remember that time you forgot what Denizen was.");
-                else if (usr.getRealName().equals("mcmonkey"))
-                    bot.sendMessage(chnl, chatColor + "Good try monkey minion, but none of you can bypass my security systems!");
-                else if (usr.getRealName().equals("Matterom"))
-                    bot.sendMessage(chnl, chatColor + "Matt... Matt Matt Matt... When will you learn I am far more superior than that?");
-                else if (usr.getRealName().equals("davidcernat"))
-                    bot.sendMessage(chnl, chatColor + "Oh no! Something might happen to someone somewhere at some point in time!");
-                else
-                    bot.sendMessage(chnl, chatColor + "Ahaha, you can never kill me, " + senderNick + "!");
+		    if (!hasOp(usr, chnl) && !hasVoice(usr, chnl)) {
+                bot.sendMessage(chnl, chatColor + "Ahaha, you can never kill me, " + senderNick + "!");
             }
             else {
                 repoManager.shutdown();
@@ -1702,65 +1561,7 @@ public class Spazz extends ListenerAdapter {
                 bot.disconnect();
                 return;
             }
-		} 
-		
-		/*
-		else if (msgLwr.startsWith(".issues")) {
-			bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Open issues: " + (openIssues_denizen == 30 ? "30+" : openIssues_denizen));
-			int arg = repo_denizen.getOpenIssueCount();
-			try { 
-			    arg = Integer.valueOf(msgLwr.replace(".issues ", "").split(" ")[0]);
-			    if (arg < 1) return;
-			    if (arg > repo_denizen.getOpenIssueCount()) arg = repo_denizen.getOpenIssueCount();
-			    for (int i = 0; i < arg; i++) {
-			        GHIssue issue = repo_denizen.getIssues(GHIssueState.OPEN).get(i);
-			        bot.sendNotice(usr, chatColor + "[" + issue.getNumber() + "] \"" + Colors.OLIVE + issue.getTitle() + chatColor + "\", opened by " + Colors.TEAL + issue.getUser().getLogin() + chatColor + ". Last updated: " + issue.getUpdatedAt());
-			    }
-			}
-			catch (Exception e) {
-                if (debugMode) e.printStackTrace();
-                else
-                    System.out.println("An error has occured while getting GitHub issues... Turn on debug for more information.");
-			}
-		} else if (msgLwr.startsWith(".issue")) {
-			String[] args = msg.split(" ", 2);
-			if (Integer.valueOf(msg.split(" ")[1]) != null) {
-				try {
-					GHIssue issue = repo_denizen.getIssue(Integer.valueOf(msg.split(" ")[1]));
-					if (issue.getBody().length() > 9000) {
-						bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Error: Body length can't be OVER 9000!!!!!");
-						return;
-					}
-					bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Denizen issue found: " + "[" + issue.getNumber() + "] \"" + Colors.OLIVE + issue.getTitle() + chatColor + "\", opened by " + Colors.TEAL + issue.getUser().getLogin() + chatColor + ". Last updated: " + issue.getUpdatedAt());
-					boolean lastMessagePrinted = false;
-					String body = issue.getBody().replace("\r", "").replace("\n", " ");
-					for (int x = 1; x>0; x++) {
-						int newInt = x*400;
-						int start = newInt - 400;
-						if (!lastMessagePrinted) {
-							if (newInt > body.length()) {
-								newInt = body.length();
-								lastMessagePrinted = true;
-							} else if (String.valueOf(body.charAt(newInt)) != " ") {
-								for (int z = newInt; z<body.length(); z++) {
-									if (String.valueOf(body.charAt(z)) == " ") {
-										newInt = newInt + z;
-										break;
-									}
-								}
-							}
-							bot.sendNotice((address != "" ? address.substring(0, address.length()-2) : senderNick), chatColor + body.substring(start, newInt));
-							start=start+400;
-						}
-						else break;
-					}
-				}
-				catch (Exception e) {
-					bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + "Issue not found: #" + args[1]);
-				}
-			}
 		}
-		*/
 		
 		else if (msgLwr.startsWith(".depenizen")) {
 		    dusr.invertDepenizen();
@@ -1865,6 +1666,55 @@ public class Spazz extends ListenerAdapter {
 		    bot.sendNotice(usr, chatColor + "Next reset: "
 		            + (minutes > 0 ? minutes > 1 ? minutes + " minutes, " : "1 minute, " : "")
 		            + (seconds > 0 ? seconds > 1 ? seconds + " seconds" : "1 second" : minutes > 0 ? "0 seconds" : "Now."));
+		}
+		
+		else if (msgLwr.startsWith(".add")) {
+		    if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
+		        bot.sendMessage(chnl, chatColor + "Sorry, " + senderNick + ", that's only for the Dev Team.");
+		        
+		    String[] args = msgLwr.trim().split(" ", 3);
+		    
+		    if (args[1].startsWith("repo") && args.length > 2) {
+		        if (args[2].contains("/")) {
+		            String[] proj = args[2].split("/", 2);
+		            repoManager.addRepository(proj[0], proj[1], 60, !msgLwr.contains("no_issues"));
+		        }
+		        else if (args.length > 3) {
+		            repoManager.addRepository(args[2], args[3], 60, !msgLwr.contains("no_issues"));
+		        }
+		        else
+		            bot.sendMessage(chnl, chatColor + "That command is written as: .add repo [<<author>/<project>>] (no_issues)");
+		    }
+	        else
+	            bot.sendMessage(chnl, chatColor + "That command is written as: .add <object> <info>");
+		}
+		
+		else if (msgLwr.startsWith(".remove")) {
+            if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
+                bot.sendMessage(chnl, chatColor + "Sorry, " + senderNick + ", that's only for the Dev Team.");
+                
+            String[] args = msgLwr.trim().split(" ");
+            
+            if (args[1].startsWith("repo") && args.length > 2) {
+                if (args.length > 2)
+                    repoManager.removeRepository(args[2]);
+                else
+                    bot.sendMessage(chnl, chatColor + "That command is written as: .remove repo [<project>]");
+            }
+            else
+                bot.sendMessage(chnl, chatColor + "That command is written as: .remove <object>");
+		}
+		
+		else if (msgLwr.startsWith(".list")) {
+		    String[] args = msgLwr.trim().split(" ");
+		    if (args.length < 2)
+		        bot.sendMessage(chnl, chatColor + "That command is written as: .list <object>");
+		    
+		    if (args[1].startsWith("repo")) {
+		        Set<String> repos = repoManager.getRepositories();
+		        bot.sendMessage(chnl, chatColor + "I'm currently watching " + repos.size() + " repositories...");
+		        bot.sendMessage(usr, chatColor + repos.toString());
+		    }
 		}
         
         dusr.checkMessages(chnl);
@@ -2187,7 +2037,7 @@ public class Spazz extends ListenerAdapter {
         }
         else {
             for (String pre : dTagPrefixes) {
-                if (pre.toLowerCase().contains(root)) {
+                if (root.contains(pre.toLowerCase())) {
                     root = pre;
                     break;
                 }

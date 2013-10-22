@@ -2,6 +2,7 @@ package net.jeebiss.spazz.github;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class RepositoryManager {
     
@@ -18,6 +19,10 @@ public class RepositoryManager {
             return repositories.get(project);
         else
             return null;
+    }
+    
+    public Set<String> getRepositories() {
+        return repositories.keySet();
     }
     
     public void reloadAll() {
@@ -45,5 +50,20 @@ public class RepositoryManager {
             return false;
         }
     }
+    
+    public boolean removeRepository(String project) {
+        try {
+            if (!repositories.containsKey(project))
+                return false;
+            repositories.get(project).shutdown();
+            repositories.remove(project);
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
     
 }

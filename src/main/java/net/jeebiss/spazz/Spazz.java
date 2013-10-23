@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
@@ -503,13 +504,7 @@ public class Spazz extends ListenerAdapter {
 	    
 	    github = GitHub.connect("spazzmatic", System.getProperty("spazz.password"));
 	    repoManager = new RepositoryManager(github);
-	    
-	    repoManager.addRepository("aufdemrand", "Denizen", 20, true);
-	    repoManager.addRepository("Morphan1", "Depenizen", 30, true);
-	    repoManager.addRepository("CitizensDev", "Citizens2", 20, false);
-        repoManager.addRepository("CitizensDev", "CitizensAPI", 30, false);
-	    repoManager.addRepository("Jeebiss", "spazz", 60, true);
-	    repoManager.addRepository("jrbudda", "Sentry", 100, true);
+	    Utilities.loadQuotes();
         
         try {
             reloadSites(debugMode);
@@ -640,7 +635,8 @@ public class Spazz extends ListenerAdapter {
     		        
     		    case "disconnect":
     		        repoManager.shutdown();
-                    bot.disconnect();
+    		        Utilities.saveQuotes();
+                    bot.quitServer("Command sent by console: /disconnect");
     		        System.out.println();
     		        System.out.println();
     		        System.out.println("Disconnected.");
@@ -695,6 +691,8 @@ public class Spazz extends ListenerAdapter {
 	
 	@Override
 	public void onDisconnect(DisconnectEvent event) {
+	    repoManager.shutdown();
+	    Utilities.saveQuotes();
         for (dUser usr : dUsers.values()) {
             try {
                 usr.saveAll();
@@ -734,14 +732,14 @@ public class Spazz extends ListenerAdapter {
         Repository repo = issue.getRepo();
         
         if (!issue.isPullRequest()) {
-            sendToAllChannels(chatColor + "[" + repo.getName() + "] Issue " + event.getState().name().toLowerCase()
+            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Issue " + event.getState().name().toLowerCase()
                     + ": [" + defaultColor + issue.getNumber() + chatColor + "] \"" + defaultColor + issue.getTitle()
                     + chatColor + "\" by " + optionalColor + issue.getUser().getLogin() + chatColor + " - " + issue.getShortUrl());
         }
         
         else {
             if (event.getState() == IssueEvent.State.OPENED) {
-                sendToAllChannels(chatColor + "[" + repo.getName() + "] Pull request " + (event.getState().name().equals("CLOSED") ?
+                sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Pull request " + (event.getState().name().equals("CLOSED") ?
                         "denied" : event.getState().name().toLowerCase()) + ": [" + defaultColor + issue.getNumber()
                         + chatColor + "] \"" + defaultColor + issue.getTitle() + chatColor + "\" by " + optionalColor
                         + issue.getUser().getLogin() + chatColor + " - " + issue.getShortUrl());
@@ -1420,25 +1418,31 @@ public class Spazz extends ListenerAdapter {
             }
 		}
 		
-		else if (msgLwr.startsWith(".quote")) {
+		else if (msgLwr.startsWith(".quote") || msgLwr.startsWith(".q")) {
 		    String[] args = msg.split(" ");
-			List<List<String>> quotes = new ArrayList<List<String>>();
-	        quotes.add(0, Arrays.asList
-	                        ("<davidcernat> I like to think of the Flag command as the two barons of hell bosses at the end of Doom 1's first episode.",
-	                         "<davidcernat> And of the If command as the cyberdemon at the end of the second episode.",
-	                         "<davidcernat> And of the Listen command as the spiderdemon at the end of the third episode."));
-	        quotes.add(1, Arrays.asList
-	        				("<Mr_Einsburgtengra> how do i bring my power up really quick?",
-	        				 "<Fatal_Ink> masturbate"));
-            int number = new Random().nextInt(quotes.size());
-            if (args.length > 1 && Integer.valueOf(args[1]) != null)
-                number = (Integer.valueOf(args[1])-1 < 0 ? 0 : Integer.valueOf(args[1]));
-	        List<String> randomQuote = quotes.get(number);
-	       
-	        for (String line : randomQuote) {
-	                bot.sendMessage((chnl != null ? chnl.getName() : senderNick), address + chatColor + line);
-	        }
-		} else if (msgLwr.startsWith(".party") || msgLwr.startsWith(".celebrate")) {
+		    int number;
+		    if (args.length > 1 && Integer.valueOf(args[1]) != null) {
+		        number = Integer.valueOf(args[1]);
+	            if (number > (Utilities.getQuoteCount()-1)) {
+	                number = Utilities.getQuoteCount()-1;
+	            }
+	            else if (number < 0)
+	                number = 0;
+		    }
+            else
+                number = Utilities.getRandomNumber(Utilities.getQuoteCount());
+		    String spacing = "   ";
+		    for (int x = 0; x < String.valueOf(number).length(); x++)
+		        spacing += " ";
+		    
+		    for (Entry<Integer, Object> quote : Utilities.getQuote(number).entrySet()) {
+		        bot.sendMessage(chnl, chatColor
+		                + (quote.getKey() == 0 ? "[" + optionalColor + number + chatColor + "] " : spacing)
+		                + quote.getValue());
+		    }
+		} 
+		
+		else if (msgLwr.startsWith(".party") || msgLwr.startsWith(".celebrate")) {
 			if (msgLwr.contains("reason: ")) {
 				String[] split = msg.split("reason:");
 				String reason = split[1].replace(" me ", senderNick + " ");
@@ -1546,6 +1550,7 @@ public class Spazz extends ListenerAdapter {
             }
             else {
                 repoManager.shutdown();
+                Utilities.saveQuotes();
                 for (dUser duser : dUsers.values()) {
                     try {
                         duser.saveAll();
@@ -1558,7 +1563,7 @@ public class Spazz extends ListenerAdapter {
                 String[] quotes = {"Ain't nobody got time for that...", "I'm backin' up, backin' up...", "Hide yo kids, hide yo wife..."};
                 bot.sendMessage(chnl, chatColor + quotes[new Random().nextInt(quotes.length)]);
                 shuttingDown = true;
-                bot.disconnect();
+                bot.quitServer(senderNick + " said so.");
                 return;
             }
 		}
@@ -1618,38 +1623,6 @@ public class Spazz extends ListenerAdapter {
 			bot.sendNotice(usr, "If you need help with a Denizen issue, type " + Colors.BOLD + ".help");
 			return;
 		}
-
-        else if (msgLwr.startsWith(".save-all")) {
-            for (dUser dusr2 : dUsers.values()) {
-                if (debugMode) System.out.println("Saving dUser: " + dusr2.getNick() + "...");
-                try {
-                    dusr2.saveAll();
-                } catch (Exception e) {
-                    bot.sendNotice(usr, Colors.RED + "ERROR. Failed to save user information: " + defaultColor + dusr2.getNick());
-                    if (debugMode) e.printStackTrace();
-                    else
-                        System.out.println("An error has occured while using .save-all for user " + dusr2.getNick() + "... Turn on debug for more information.");
-                    return;
-                }
-            }
-            bot.sendNotice(usr, chatColor + "Successfully saved all user information.");
-        }
-		
-		else if (msgLwr.startsWith(".load")) {
-		    for (dUser dusr2 : dUsers.values()) {
-		        if (debugMode) System.out.println("Loading dUser information: " + dusr2.getNick() + "...");
-		        try {
-                    dusr2.loadAll();
-                } catch (Exception e) {
-                    bot.sendNotice(usr, Colors.RED + "ERROR. Failed to load user information: " + defaultColor + dusr2.getNick());
-                    if (debugMode) e.printStackTrace();
-                    else
-                        System.out.println("An error has occured while using .load for user " + dusr2.getNick() + "... Turn on debug for more information.");
-                    return;
-                }
-		    }
-		    bot.sendNotice(usr, chatColor + "Successfully loaded all user information.");
-		}
 		
 		else if (msgLwr.startsWith(".rate")) {
 		    bot.sendNotice(usr, chatColor + "Max rate limit: " + github.getMaxRateLimit());
@@ -1669,24 +1642,64 @@ public class Spazz extends ListenerAdapter {
 		}
 		
 		else if (msgLwr.startsWith(".add")) {
-		    if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
-		        bot.sendMessage(chnl, chatColor + "Sorry, " + senderNick + ", that's only for the Dev Team.");
 		        
-		    String[] args = msgLwr.trim().split(" ", 3);
+		    String[] args = msgLwr.trim().split(" ");
+		    if (args.length < 2)
+                bot.sendMessage(chnl, chatColor + "That command is written as: .add [<object>]");
 		    
-		    if (args[1].startsWith("repo") && args.length > 2) {
-		        if (args[2].contains("/")) {
+		    if (args[1].startsWith("repo")) {
+	            if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
+	                bot.sendMessage(chnl, chatColor + "Sorry, " + senderNick + ", that's only for the Dev Team.");
+	            else if (args.length > 2 && args[2].contains("/")) {
 		            String[] proj = args[2].split("/", 2);
-		            repoManager.addRepository(proj[0], proj[1], 60, !msgLwr.contains("no_issues"));
-		        }
-		        else if (args.length > 3) {
-		            repoManager.addRepository(args[2], args[3], 60, !msgLwr.contains("no_issues"));
+		            if (repoManager.hasRepository(proj[1]))
+		                bot.sendMessage(chnl, chatColor + "I'm already tracking a \"" + proj[1] + "\" project!");
+		            else {
+		                double updateDelay = 60;
+		                for (String arg : args) {
+		                    if (arg.startsWith("delay:") && Double.valueOf(arg.split(":")[1]) != null)
+		                        updateDelay = Double.valueOf(arg.split(":")[1]);
+		                }
+		                if (repoManager.addRepository(proj[0], proj[1], updateDelay, !msgLwr.contains("no_issues")))
+		                    bot.sendMessage(chnl, chatColor + "I am now tracking " + proj[1]
+		                            + " with a delay of " + updateDelay + (msgLwr.contains("no_issues") ? " and no issues" : "") + ".");
+		                else
+	                        bot.sendMessage(chnl, chatColor + "Error while adding repository " + args[2] + "...");
+		            }
 		        }
 		        else
-		            bot.sendMessage(chnl, chatColor + "That command is written as: .add repo [<<author>/<project>>] (no_issues)");
+		            bot.sendMessage(chnl, chatColor + "That command is written as: "
+		                    + parseUsage(".add repo [<author>/<project>] (no_issues) (delay:<#.#>)"));
+		    }
+		    else if (args[1].startsWith("quote")) {
+		        if (args.length > 2) {
+		            String quoteMsg = msg.substring(args[0].length()+args[1].length()+2);
+		            if (quoteMsg.length() < 5)
+		                bot.sendMessage(chnl, chatColor + "Quote must have at least 5 characters.");
+		            else
+		                bot.sendMessage(chnl, chatColor + "Added quote as #" + Utilities.addQuote(quoteMsg) + ".");
+		        }
+		        else
+		            bot.sendMessage(chnl, chatColor + "That command is written as: .add quote [<message>]");
+		    }
+		    else if (args[1].startsWith("toquote")) {
+		        if (args.length > 3) {
+		            try {
+		                int number = Integer.valueOf(args[2]);
+	                    String quoteMsg = msg.substring(args[0].length()+args[1].length()+args[2].length()+3);
+	                    if (quoteMsg.length() < 5)
+	                        bot.sendMessage(chnl, chatColor + "Quote must have at least 5 characters.");
+	                    else {
+	                        Utilities.addToQuote(number, quoteMsg);
+	                        bot.sendMessage(chnl, chatColor + "Added line to quote #" + number);
+	                    }
+		            } catch(Exception e) {
+		                bot.sendMessage(chnl, chatColor + "That command is written as: .add toquote [<#>] [<message>]");
+		            }
+		        }
 		    }
 	        else
-	            bot.sendMessage(chnl, chatColor + "That command is written as: .add <object> <info>");
+	            bot.sendMessage(chnl, chatColor + "That command is written as: .add [<object>]");
 		}
 		
 		else if (msgLwr.startsWith(".remove")) {
@@ -1695,27 +1708,152 @@ public class Spazz extends ListenerAdapter {
                 
             String[] args = msgLwr.trim().split(" ");
             
-            if (args[1].startsWith("repo") && args.length > 2) {
-                if (args.length > 2)
-                    repoManager.removeRepository(args[2]);
+            if (args[1].startsWith("repo")) {
+                if (args.length > 2) {
+                    if (!repoManager.hasRepository(args[2]))
+                        bot.sendMessage(chnl, chatColor + "I am not tracking any projects by that name.");
+                    else if (repoManager.removeRepository(args[2]))
+                        bot.sendMessage(chnl, chatColor + "I am now no longer tracking " + args[2] + ".");
+                    else
+                        bot.sendMessage(chnl, chatColor + "Error while removing repository " + args[2] + "...");
+                }
                 else
                     bot.sendMessage(chnl, chatColor + "That command is written as: .remove repo [<project>]");
             }
+            else if (args[1].startsWith("quote")) {
+                if (args.length > 2) {
+                    try {
+                        int number = Integer.valueOf(args[2]);
+                        if (Utilities.hasQuote(number)) {
+                            Utilities.removeQuote(number);
+                            bot.sendMessage(chnl, chatColor + "Quote #" + number + " removed.");
+                        }
+                        else
+                            bot.sendMessage(chnl, chatColor + "That quote doesn't exist.");
+                    } catch(Exception e) {
+                        bot.sendMessage(chnl, chatColor + "That command is written as: .remove quote [<#>]");
+                    }
+                }
+                else
+                    bot.sendMessage(chnl, chatColor + "That command is written as: .remove quote [<#>]");
+            }
             else
-                bot.sendMessage(chnl, chatColor + "That command is written as: .remove <object>");
+                bot.sendMessage(chnl, chatColor + "That command is written as: .remove [<object>]");
 		}
 		
-		else if (msgLwr.startsWith(".list")) {
+		else if (msgLwr.startsWith(".info")) {
+		    String[] args = msgLwr.trim().split(" ");
+            
+            if (args[1].startsWith("repo")) {
+                if (args.length > 2) {
+                    if (!repoManager.hasRepository(args[2]))
+                        bot.sendMessage(chnl, chatColor + "I am not tracking any projects by that name.");
+                    else {
+                        Repository repo = repoManager.getRepository(args[2]);
+                        bot.sendMessage(chnl, chatColor + repo.getFullName() + ": Delay(" 
+                                + repo.getUpdateDelay() + ") Issues(" + repo.hasIssues() + ")");
+                    }
+                }
+                else
+                    bot.sendMessage(chnl, chatColor + "That command is written as: .info repo [<project>]");
+            }
+            else if (args[1].startsWith("user")) {
+                if (args.length > 2) {
+                    if (dUsers.containsKey(args[2])) {
+                        dUser dusr2 = dUsers.get(args[2]);
+                        bot.sendMessage(chnl, chatColor + args[2] + ": LastSeen(" + dusr2.getLastSeen() 
+                                + ") Depenizen(" + dusr2.getDepenizen() + ")");
+                    }
+                }
+            }
+            else
+                bot.sendMessage(chnl, chatColor + "That command is written as: .info [<object>]");
+		}
+		
+		else if (msgLwr.startsWith(".list") || msgLwr.startsWith(".count")) {
 		    String[] args = msgLwr.trim().split(" ");
 		    if (args.length < 2)
-		        bot.sendMessage(chnl, chatColor + "That command is written as: .list <object>");
+                bot.sendMessage(chnl, chatColor + "That command is written as: .list [<object>]");
 		    
 		    if (args[1].startsWith("repo")) {
 		        Set<String> repos = repoManager.getRepositories();
 		        bot.sendMessage(chnl, chatColor + "I'm currently watching " + repos.size() + " repositories...");
-		        bot.sendMessage(usr, chatColor + repos.toString());
+		        bot.sendMessage(chnl, chatColor + repos.toString());
 		    }
+		    else if (args[1].startsWith("quote")) {
+		        bot.sendMessage(chnl, chatColor + "I currently have " + Utilities.getQuoteCount() + " quotes listed.");
+		    }
+		    else
+                bot.sendMessage(chnl, chatColor + "That command is written as: .list [<object>]");
 		}
+		
+		else if (msgLwr.startsWith(".save")) {
+            String[] args = msgLwr.trim().split(" ");
+            if (args.length < 2)
+                bot.sendMessage(chnl, chatColor + "That command is written as: .save [<object>]");
+            
+            if (args[1].startsWith("repo")) {
+                try {
+                    repoManager.saveAll();
+                    bot.sendMessage(chnl, chatColor + "Successfully saved all repository information.");
+                } catch(Exception e) {
+                    bot.sendMessage(chnl, chatColor + "Error while saving repository information...");
+                }
+            }
+            else if (args[1].startsWith("quote")) {
+                Utilities.saveQuotes();
+                bot.sendMessage(chnl, chatColor + "Successfully saved all quotes.");
+            }
+            else if (args[1].startsWith("user")) {
+                for (dUser dusr2 : dUsers.values()) {
+                    if (debugMode) System.out.println("Saving dUser: " + dusr2.getNick() + "...");
+                    try {
+                        dusr2.saveAll();
+                    } catch (Exception e) {
+                        bot.sendMessage(chnl, Colors.RED + "ERROR. Failed to save user information: " + defaultColor + dusr2.getNick());
+                        if (debugMode) e.printStackTrace();
+                        else
+                            System.out.println("An error has occured while using .save-all for user " + dusr2.getNick() + "... Turn on debug for more information.");
+                        return;
+                    }
+                }
+                bot.sendMessage(chnl, chatColor + "Successfully saved all user information.");
+            }
+        }
+		
+		else if (msgLwr.startsWith(".load")) {
+            String[] args = msgLwr.trim().split(" ");
+            if (args.length < 2)
+                bot.sendMessage(chnl, chatColor + "That command is written as: .load [<object>]");
+            
+            if (args[1].startsWith("repo")) {
+                try {
+                    repoManager.loadAll();
+                    bot.sendMessage(chnl, chatColor + "Successfully loaded all repository information.");
+                } catch(Exception e) {
+                    bot.sendMessage(chnl, chatColor + "Error while loading repository information...");
+                }
+            }
+            else if (args[1].startsWith("quote")) {
+                Utilities.loadQuotes();
+                bot.sendMessage(chnl, chatColor + "Successfully loaded all quotes.");
+            }
+            else if (args[1].startsWith("user")) {
+                for (dUser dusr2 : dUsers.values()) {
+                    if (debugMode) System.out.println("Loading dUser information: " + dusr2.getNick() + "...");
+                    try {
+                        dusr2.loadAll();
+                    } catch (Exception e) {
+                        bot.sendMessage(chnl, Colors.RED + "ERROR. Failed to load user information: " + defaultColor + dusr2.getNick());
+                        if (debugMode) e.printStackTrace();
+                        else
+                            System.out.println("An error has occured while using .load for user " + dusr2.getNick() + "... Turn on debug for more information.");
+                        return;
+                    }
+                }
+                bot.sendMessage(chnl, chatColor + "Successfully loaded all user information.");
+            }
+        }
         
         dusr.checkMessages(chnl);
         

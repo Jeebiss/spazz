@@ -1,0 +1,27 @@
+Bukkit:
+  Bukkit:
+    has_issues: false
+    delay: 600.0
+aufdemrand:
+  Denizen:
+    has_issues: true
+    delay: 20.0
+CitizensDev:
+  Citizens2:
+    has_issues: false
+    delay: 20.0
+  CitizensAPI:
+    has_issues: false
+    delay: 30.0
+Morphan1:
+  Depenizen:
+    has_issues: true
+    delay: 30.0
+jrbudda:
+  Sentry:
+    has_issues: true
+    delay: 100.0
+Jeebiss:
+  spazz:
+    has_issues: true
+    delay: 60.0

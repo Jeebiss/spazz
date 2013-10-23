@@ -63,6 +63,14 @@ public class Repository {
         return root;
     }
     
+    public double getUpdateDelay() {
+        return updateDelay/1000;
+    }
+    
+    public boolean hasIssues() {
+        return hasIssues;
+    }
+    
     public int getOpenIssueCount() {
         return (int) information.get("open_issues_count");
     }
@@ -149,56 +157,62 @@ public class Repository {
     }
     
     private void reloadComments() {
-        HashMap<Integer, Comment> newComments = getComments();
-        for (Comment newComment : newComments.values()) {
-            if (!comments.containsKey(newComment.getCommentId())) {
-                new CommentEvent(root, this, newComment);
+        try {
+            HashMap<Integer, Comment> newComments = getComments();
+            for (Comment newComment : newComments.values()) {
+                if (!comments.containsKey(newComment.getCommentId())) {
+                    new CommentEvent(root, this, newComment);
+                }
             }
-        }
-        comments = newComments;
+            comments = newComments;
+        } catch(Exception e) {}
     }
     
     private void reloadIssues() {
-        HashMap<Integer, Issue> newOpenIssues = getIssues(true);
-        HashMap<Integer, Issue> newClosedIssues = getIssues(false);
-        for (Issue newClosedIssue : newClosedIssues.values()) {
-            if (openIssues.containsKey(newClosedIssue.getNumber()) && !committedPullRequests.contains(newClosedIssue.getNumber())) {
-                new IssueEvent(root, newClosedIssue, IssueEvent.State.CLOSED);
-                continue;
+        try {
+            HashMap<Integer, Issue> newOpenIssues = getIssues(true);
+            HashMap<Integer, Issue> newClosedIssues = getIssues(false);
+            for (Issue newClosedIssue : newClosedIssues.values()) {
+                if (openIssues.containsKey(newClosedIssue.getNumber()) && !committedPullRequests.contains(newClosedIssue.getNumber())) {
+                    new IssueEvent(root, newClosedIssue, IssueEvent.State.CLOSED);
+                    continue;
+                }
             }
-        }
-        for (Issue newOpenIssue : newOpenIssues.values()) {
-            if (closedIssues.containsKey(newOpenIssue.getNumber())) {
-                new IssueEvent(root, newOpenIssue, IssueEvent.State.REOPENED);
-                continue;
+            for (Issue newOpenIssue : newOpenIssues.values()) {
+                if (closedIssues.containsKey(newOpenIssue.getNumber())) {
+                    new IssueEvent(root, newOpenIssue, IssueEvent.State.REOPENED);
+                    continue;
+                }
+                if (!openIssues.containsKey(newOpenIssue.getNumber())) {
+                    new IssueEvent(root, newOpenIssue, IssueEvent.State.OPENED);
+                    continue;
+                }
             }
-            if (!openIssues.containsKey(newOpenIssue.getNumber())) {
-                new IssueEvent(root, newOpenIssue, IssueEvent.State.OPENED);
-                continue;
-            }
-        }
-        openIssues = newOpenIssues;
-        closedIssues = newClosedIssues;
+            openIssues = newOpenIssues;
+            closedIssues = newClosedIssues;
+        } catch(Exception e) {}
     }
     
     private ArrayList<Integer> committedPullRequests = new ArrayList<Integer>();
     
     private void reloadCommits() {
-        HashMap<String, Commit> newCommits = getCommits();
-        ArrayList<Commit> eventCommits = new ArrayList<Commit>();
-        for (Commit newCommit : newCommits.values()) {
-            if (!commits.containsKey(newCommit.getCommitId())) {
-                eventCommits.add(newCommit);
-                Matcher m = Pattern.compile("^Merge pull request #(\\d+) from .+$").matcher(newCommit.getMessage());
-                if (m.matches()) {
-                    committedPullRequests.add(Integer.valueOf(m.group(1)));
+        try {
+            HashMap<String, Commit> newCommits = getCommits();
+            ArrayList<Commit> eventCommits = new ArrayList<Commit>();
+            for (Commit newCommit : newCommits.values()) {
+                if (!commits.containsKey(newCommit.getCommitId())) {
+                    eventCommits.add(newCommit);
+                    Matcher m = Pattern.compile("^Merge pull request #(\\d+) from .+$").matcher(newCommit.getMessage());
+                    if (m.matches()) {
+                        committedPullRequests.add(Integer.valueOf(m.group(1)));
+                    }
                 }
             }
-        }
-        if (!eventCommits.isEmpty()) {
-            new CommitEvent(root, this, eventCommits);
-        }
-        commits = newCommits;
+            if (!eventCommits.isEmpty()) {
+                new CommitEvent(root, this, eventCommits);
+            }
+            commits = newCommits;
+        } catch(Exception e) {}
     }
     
     public class RepositoryChecker implements Runnable {

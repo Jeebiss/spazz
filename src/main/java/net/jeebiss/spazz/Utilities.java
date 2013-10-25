@@ -61,7 +61,12 @@ public class Utilities {
         HashMap<Integer, Object> newQuote = new HashMap<Integer, Object>();
         newQuote.put(0, quote);
         quotes.add(newQuote);
-        return quotes.size() - 1;
+        return quotes.size()-1;
+    }
+    
+    public static int addQuote(HashMap<Integer, Object> quote) {
+        quotes.add(quote);
+        return quotes.size()-1;
     }
     
     public static void addToQuote(int number, String quote) {
@@ -112,9 +117,9 @@ public class Utilities {
     public static String getShortUrl(String url) {
         String shortened = null;
         try {
-            JSONObject json = (JSONObject) JSONValue.parse(getStringFromUrl("https://api-ssl.bitly.com/v3/shorten?login=spazzmatic&apiKey=" 
-                    + System.getProperty("spazz.bitly") + "&longUrl=" + url));
-            shortened = (String) getJSONFromMap((Map<String, Object>) json.get("data")).get("url");
+            shortened = (String) ((Map<String, Object>) getJSONFromMap((JSONObject) JSONValue.parse(
+                    getStringFromUrl("https://api-ssl.bitly.com/v3/shorten?login=spazzmatic&apiKey=" 
+                    + System.getProperty("spazz.bitly") + "&longUrl=" + url))).get("data")).get("url");
         } catch (Exception e) {
             e.printStackTrace();
         }

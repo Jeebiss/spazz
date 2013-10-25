@@ -645,7 +645,7 @@ public class Spazz extends ListenerAdapter {
     		        
     		    default:
     		        if (bot.channelExists(chatChannel))
-    		            bot.sendMessage(chatChannel, chatColor + commandArgs);
+    		            bot.sendMessage(chatChannel, chatColor + rawInput);
     		        else
                         System.out.println("Not connected to channel \"" + chatChannel + "\".");
     		        break;
@@ -1081,7 +1081,7 @@ public class Spazz extends ListenerAdapter {
 		    msg = msg.replaceFirst(args[0] + " " + args[1] + " ", "");
 		    if (!dUsers.containsKey(args[1].toLowerCase()))
 		        dUsers.put(args[1].toLowerCase(), new dUser(args[1]));
-            dUsers.get(args[1].toLowerCase()).addMessage(new Message(senderNick, Calendar.getInstance().getTime(), msg));
+            dUsers.get(args[1].toLowerCase()).addMessage(new Message(senderNick, msg));
 		    bot.sendMessage((chnl != null ? chnl.getName() : senderNick), chatColor + "Message sent to: " + defaultColor + args[1] + chatColor + ".");
 		    return;
 		}
@@ -1676,8 +1676,13 @@ public class Spazz extends ListenerAdapter {
 		            String quoteMsg = msg.substring(args[0].length()+args[1].length()+2);
 		            if (quoteMsg.length() < 5)
 		                bot.sendMessage(chnl, chatColor + "Quote must have at least 5 characters.");
-		            else
-		                bot.sendMessage(chnl, chatColor + "Added quote as #" + Utilities.addQuote(quoteMsg) + ".");
+		            else {
+		                HashMap<Integer, Object> quote = new HashMap<Integer, Object>();
+		                for (String line : quoteMsg.split("\\\n"))
+		                    quote.put(quote.size(), line);
+		                    
+		                bot.sendMessage(chnl, chatColor + "Added quote as #" + Utilities.addQuote(quote) + ".");
+		            }
 		        }
 		        else
 		            bot.sendMessage(chnl, chatColor + "That command is written as: .add quote [<message>]");
@@ -2331,10 +2336,8 @@ public class Spazz extends ListenerAdapter {
             if (map.get("messages") instanceof HashMap<?, ?>) {
                 for (Map.Entry<String, ArrayList<String>> msgs : ((HashMap<String, ArrayList<String>>) map.get("messages")).entrySet()) {
                     for (String msg : msgs.getValue()) {
-                        if (!this.messages.getMessagesFrom(msgs.getKey()).contains(msg)) {
-                            String[] split = msg.split("_", 2);
-                            addMessage(new Message(msgs.getKey(), dateFormat.parse(split[0]), split[1]));
-                        }
+                        String[] split = msg.split("_", 2);
+                        addMessage(new Message(split[0], split[1]));
                     }
                 }
             }
@@ -2347,13 +2350,13 @@ public class Spazz extends ListenerAdapter {
             f.mkdirs();
             InputStream is = f.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
-            // Keep string checker so we can edit a YAML file with text and have Spazz translate it later
-            if (map.get("lastseen") instanceof String) {
-                this.lastSeen = ((String) map.get("lastseen")).replace("`````", "#").replace("````", "|");
+            if (map.get("lastseen") instanceof byte[]) {
+                this.lastSeen = new String((byte[]) map.get("lastseen"));
                 this.lastSeenTime = dateFormat.parse((String) map.get("lasttime"));
             }
-            else if (map.get("lastseen") instanceof byte[]) {
-                this.lastSeen = new String((byte[]) map.get("lastseen"));
+            // Keep string checker so we can edit a YAML file from a program and have Spazz translate it later
+            else if (map.get("lastseen") instanceof String) {
+                this.lastSeen = ((String) map.get("lastseen")).replace("`````", "#").replace("````", "|");
                 this.lastSeenTime = dateFormat.parse((String) map.get("lasttime"));
             }
             else
@@ -2405,34 +2408,16 @@ public class Spazz extends ListenerAdapter {
 		
 		public void checkMessages(Channel chnl) {
 		    if (this.messages.isEmpty() || chnl == null) return;
-		    ArrayList<String> toSend = new ArrayList<String>();
-		    for (Map.Entry<String, ArrayList<String>> msgs : this.messages.getMessages().entrySet()) {
-		        for (String time_msg : msgs.getValue()) {
-		            toSend.add(time_msg + "_" + msgs.getKey());
-		        }
-		    }
-		    Collections.sort(toSend, new Comparator<String>() {
-		        public int compare(String o1, String o2) {
-                    try {
-                        return dateFormat.parse(o1.split("_")[0]).compareTo(dateFormat.parse(o2.split("_")[0]));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        return 0;
-                    }
-                }
-	        });
             bot.sendMessage(chnl, getNick() + ": " + chatColor + "You have messages waiting for you...");
-            String user = null;
-            for (String time_msg_user : toSend) {
-                String[] args = time_msg_user.split("_", 3);
-                String subUser = args[2];
-                if (user == null || !user.equalsIgnoreCase(subUser)) {
-                    user = subUser;
-                    bot.sendNotice(getNick(), defaultColor + user + chatColor + ":");
-                }
-                String msg = args[1];
-                bot.sendNotice(getNick(), chatColor + "  " + msg);
-            }
+            String lastNick = null;
+		    for (String msg : this.messages.getMessages().values()) {
+		        String[] split = msg.split("_", 2);
+		        if (!split[0].equals(lastNick)) {
+		            lastNick = split[0];
+		            bot.sendNotice(getNick(), defaultColor + lastNick + chatColor + ":");
+		        }
+		        bot.sendNotice(getNick(), chatColor + "  " + split[1]);
+		    }
 		    this.messages.clear();
 		    try {
                 saveAll();
@@ -2459,19 +2444,17 @@ public class Spazz extends ListenerAdapter {
 	
     public static class MessageList {
 	    
-	    HashMap<String, ArrayList<String>> messages;
+	    HashMap<Integer, String> messages;
 	    
 	    public MessageList(ArrayList<Message> messages) {
-	        this.messages = new HashMap<String, ArrayList<String>>();
+	        this.messages = new HashMap<Integer, String>();
 	        for (Message message : messages) {
-	            if (!this.messages.containsKey(message.getUser()))
-	                this.messages.put(message.getUser(), new ArrayList<String>());
-	            this.messages.get(message.getUser()).add(dateFormat.format(message.getTime()) + "_" + message.getMessage());
+	            this.messages.put(messages.size(), message.getUser() + "_" + message.getMessage());
 	        }
 	    }
 	    
 	    public MessageList() {
-            this.messages = new HashMap<String, ArrayList<String>>();
+            this.messages = new HashMap<Integer, String>();
         }
 	    
 	    public boolean isEmpty() {
@@ -2482,21 +2465,12 @@ public class Spazz extends ListenerAdapter {
 	        this.messages.clear();
 	    }
 
-        public HashMap<String, ArrayList<String>> getMessages() {
+        public HashMap<Integer, String> getMessages() {
 	        return messages;
 	    }
         
-        public ArrayList<String> getMessagesFrom(String user) {
-            if (messages.containsKey(user))
-                return messages.get(user);
-            else
-                return new ArrayList<String>();
-        }
-        
         public MessageList add(Message msg) {
-            if (!messages.containsKey(msg.getUser()))
-                messages.put(msg.getUser(), new ArrayList<String>());
-            messages.get(msg.getUser()).add(dateFormat.format(msg.getTime()) + "_" + msg.getMessage());
+            messages.put(messages.size(), msg.getUser() + "_" + msg.getMessage());
             return this;
         }
 	    
@@ -2505,12 +2479,10 @@ public class Spazz extends ListenerAdapter {
 	public static class Message {
 		
 		private String user;
-		private Date time;
 		private String message;
 		
-		public Message(String user, Date date, String message) {
+		public Message(String user, String message) {
 			this.user = user;
-			this.time = date;
 			this.message = message;
 		}
 		
@@ -2520,10 +2492,6 @@ public class Spazz extends ListenerAdapter {
 		
 		public String getMessage() {
 			return this.message;
-		}
-		
-		public Date getTime() {
-		    return this.time;
 		}
 		
 	}

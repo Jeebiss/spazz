@@ -2,15 +2,11 @@ package net.jeebiss.spazz;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.lang.System;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -32,6 +28,10 @@ import net.jeebiss.spazz.github.IssueComment;
 import net.jeebiss.spazz.github.IssueEvent;
 import net.jeebiss.spazz.github.Repository;
 import net.jeebiss.spazz.github.RepositoryManager;
+import net.jeebiss.spazz.github.meta.MetaHandler;
+import net.jeebiss.spazz.github.meta.objects.dCommand;
+import net.jeebiss.spazz.github.meta.objects.dEvent;
+import net.jeebiss.spazz.github.meta.objects.dTag;
 
 import org.pircbotx.Channel;
 import org.pircbotx.Colors;
@@ -70,6 +70,8 @@ public class Spazz extends ListenerAdapter {
 	
 	public static Map<String, dUser> dUsers = new HashMap<String, dUser>();
 	
+	public static List<String> depenizenTest = new ArrayList<String>();
+	
     String[] temp;
 	static String chatColor = Colors.TEAL;
 	static String optionalColor = Colors.DARK_GREEN;
@@ -86,396 +88,14 @@ public class Spazz extends ListenerAdapter {
 	Boolean confirmComment = false;
 	String confirmIssueUser = null;
 	public static boolean shuttingDown = false;
-	
-    private static void loadMeta() throws Exception {
-		dTags.clear();
-		dTagPrefixes.clear();
-		dTagByType.clear();
-		dCommands.clear();
-		dRequirements.clear();
-		dEvents.clear();
-		String pages = Utilities.getStringFromUrls(Arrays.asList("https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dList.java",
-		        "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/UtilTags.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/TextTags.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/ProcedureScriptTag.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/SpecialCharacterTags.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/ContextTags.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/tags/core/AnchorTags.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/Duration.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dCuboid.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dChunk.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/properties/EntityInfected.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/properties/EntityAge.java",
-				"https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dWorld.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dColor.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dItem.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dPlayer.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dNPC.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dEntity.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dScript.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dMaterial.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dInventory.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/Element.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/objects/dLocation.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/scripts/commands/core/YamlCommand.java",
-		        "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/scripts/commands/CommandRegistry.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/scripts/requirements/RequirementRegistry.java",
-                "https://raw.github.com/aufdemrand/Denizen/master/src/main/java/net/aufdemrand/denizen/scripts/containers/core/WorldScriptHelper.java"));
-		String[] split = pages.replace("\r", "").split("\n");
-        boolean indesc = false;
-        boolean inusage = false;
-        boolean inaltdesc = false;
-        boolean instable = false;
-        boolean inexample = false;
-        boolean indeprecated = false;
-        boolean flip = false;
-        String name = null;
-        String stable = null;
-        String returns = null;
-        String nname = "";
-        String usage = null;
-        String prefix = null;
-        String deprecated = null;
-        List<String> descs = new ArrayList<String>();
-        List<String> example = new ArrayList<String>();
-        List<String> altUsage = new ArrayList<String>();
-        List<String> altDesc = new ArrayList<String>();
-        String type = null;
-        for (int i = 0; i < split.length; i++) {
-            String curline = split[i].trim();
-            if (curline.startsWith("// <--")) {
-                type = curline.substring(6+1, curline.length()-1).toLowerCase();
-                descs.clear();
-                example.clear();
-                altUsage.clear();
-                altDesc.clear();
-                indeprecated = false;
-            }
-            if (curline.toLowerCase().startsWith("// @deprecated")) {
-                if (curline.substring(14).length() > 0) {
-                    deprecated = curline.substring(14).trim();
-                }
-                indeprecated = true;
-            }
-            if (type != null && type.equals("tag")) {
-                if (curline.toLowerCase().startsWith("// @attribute")) {
-                    indesc = false;
-                    name = curline.substring(13).trim().substring(curline.substring(13).trim().indexOf('<')+1, curline.substring(13).trim().lastIndexOf('>'));
-                    if (name.contains(".")) {
-                        prefix = name.substring(0, name.indexOf('.'));
-                        if (!dTagPrefixes.contains(prefix)) {
-                            dTagPrefixes.add(prefix);
-                        }
-                    }
-                    else {
-                    }
-                    for (int f = 0; f < name.length(); f++) {
-                        if (name.charAt(f) == '[')
-                            flip = true;
-                        if (!flip)
-                            nname += String.valueOf(name.charAt(f));
-                        if (name.charAt(f) == ']')
-                            flip = false;
-                    }
-                    if (nname.contains("@")) {
-                        nname = nname.substring(nname.indexOf('@') + 1);
-                    }
-                }
-                else if (curline.toLowerCase().startsWith("// @returns")) {
-                    indesc = false;
-                    returns = curline.substring(11).trim();
-                }
-                else if (curline.toLowerCase().startsWith("// @description")) {
-                    if (curline.substring(15).length() > 0) {
-                        descs.add(curline.substring(15).trim());
-                    }
-                    indesc = true;
-                }
-                else if (curline.startsWith("// -->")) {
-                    if (descs.size() < 1 || returns == null || name == null) {
-                        if (debugMode) System.out.println("Bad tag meta at " + String.valueOf(i) + "!");
-                        continue;
-                    }
-                    String tagdesc = "";
-                    for (String desc : descs) {
-                        tagdesc += desc + "\n";
-                    }
-                    if (debugMode) {
-                        if (debugMode) System.out.println("Adding tag " + name + " AKA " + nname + "...");
-                        if (debugMode) System.out.println("...with description: " + tagdesc);
-                    }
-                    dTag tag = new dTag(name, tagdesc, nname, returns, deprecated);
-                    dTags.add(tag);
-                    if (!dTagByType.containsKey((prefix.contains("@") ? prefix.split("@")[1] : prefix))) {
-                        dTagByType.put((prefix.contains("@") ? prefix.split("@")[1] : prefix), new ArrayList<dTag>());
-                        if (debugMode) System.out.println("Adding tag type: " + (prefix.contains("@") ? prefix.split("@")[1] : prefix));
-                    }
-                    dTagByType.get((prefix.contains("@") ? prefix.split("@")[1] : prefix)).add(tag);
-                    indesc = false;
-                    type = null;
-                    name = null;
-                    returns = null;
-                    nname = "";
-                    deprecated = null;
-                }
-                else if (indesc && curline.startsWith("// ")) {
-                    if (curline.substring(3).startsWith("@")) {
-                        indesc = false;
-                        continue;
-                    }
-                    descs.add(curline.substring(3));
-                }
-            }
-            else if (type != null && (type.equals("command") || type.equals("requirement"))) {
-                if (curline.startsWith("// @")) {
-                    inusage = false;
-                    indesc = false;
-                    inaltdesc = false;
-                    instable = false;
-                    inexample = false;
-                }
-                if (curline.toLowerCase().startsWith("// @name")) {
-                    name = curline.substring(8).trim();
-                }
-                else if (curline.toLowerCase().startsWith("// @usage")) {
-                    if (usage != null) {
-                        inusage = true;
-                    }
-                    if (curline.substring(9).length() > 0) {
-                        if (usage == null) {
-                            usage = curline.substring(9).trim();
-                        }
-                        else {
-                            altUsage.add(curline.substring(9).trim());
-                        }
-                    }
-                }
-                else if (curline.toLowerCase().startsWith("// @description")) {
-                    if (curline.substring(15).length() > 0) {
-                        altDesc.add(curline.substring(15).trim());
-                    }
-                    inaltdesc = true;
-                }
-                else if (curline.toLowerCase().startsWith("// @stable")) {
-                    if (curline.substring(10).length() > 0) {
-                        stable = curline.substring(10).trim();
-                    }
-                    else {
-                        instable = true;
-                    }
-                }
-                else if (curline.toLowerCase().startsWith("// @example")) {
-                    if (curline.substring(11).length() > 0) {
-                        example.add(curline.substring(11).trim());
-                    }
-                    inexample = true;
-                }
-                else if (curline.toLowerCase().startsWith("// @short")) {
-                    if (curline.substring(9).length() > 0) {
-                        descs.add(curline.substring(9).trim());
-                    }
-                    indesc = true;
-                }
-                else if (curline.toLowerCase().startsWith("// @required")) {
-                }
-                else if (curline.startsWith("// -->")) {
-                    if (descs.size() < 1 || usage == null || name == null) {
-                        if (debugMode) System.out.println("Bad " + type + " meta at " + String.valueOf(i) + "!");
-                        continue;
-                    }
-                    String fulldesc = "";
-                    for (String desc : descs) {
-                        fulldesc += desc + "\n";
-                    }
-                    String alt = "";
-                    for (String u : altUsage) {
-                        alt += u + "\n";
-                    }
-                    String descAlt = "";
-                    for (String d : altDesc) {
-                        descAlt += d + "\n";
-                    }
-                    String fullExample = "";
-                    for (String e : example) {
-                        fullExample += e + "\n";
-                    }
-                    if (debugMode) {
-                        if (debugMode) System.out.println("Adding " + type + " " + name + ": " + usage + "...");
-                        if (debugMode) System.out.println("...with description: " + fulldesc);
-                        if (debugMode) System.out.println();
-                    }
-                    String realname = name.split(", ")[0];
-                    for (String alias : name.split(", ")) {
-                        if (type.startsWith("c")) {
-                            dCommands.add(new dCommand(Utilities.capitalize(alias), Utilities.capitalize(realname),
-                                    fulldesc, usage.replaceFirst(realname.toLowerCase(), name.toLowerCase()),
-                                    alt, descAlt, stable, fullExample, deprecated));
-                        }
-                        else if (type.startsWith("r")) {
-                            dRequirements.add(new dCommand(Utilities.capitalize(alias), Utilities.capitalize(realname),
-                                    fulldesc, usage.replaceFirst(realname.toLowerCase(), name.toLowerCase()),
-                                    alt, descAlt, stable, fullExample, deprecated));
-                        }
-                    }
-                    indesc = false;
-                    inusage = false;
-                    inaltdesc = false;
-                    instable = false;
-                    inexample = false;
-                    type = null;
-                    name = null;
-                    usage = null;
-                    deprecated = null;
-                }
-                else if (curline.startsWith("// ")) {
-                    if (indesc) {
-                        descs.add(curline.substring(3));
-                    }
-                    if (inusage) {
-                        altUsage.add(curline.substring(3));
-                    }
-                    if (inaltdesc) {
-                        altDesc.add(curline.substring(3));
-                    }
-                    if (instable) {
-                        stable = curline.substring(3);
-                    }
-                    if (inexample) {
-                        example.add(curline.substring(3));
-                    }
-                }
-                else if (curline.startsWith("//")) {
-                    indesc = false;
-                    inusage = false;
-                    inaltdesc = false;
-                    instable = false;
-                    inexample = false;
-                }
-            }
-            else if (type != null && type.equals("event")) {
-                if (curline.startsWith("// @")) {
-                    indesc = false;
-                    inusage = false;
-                    inaltdesc = false;
-                    inexample = false;
-                }
-                if (curline.toLowerCase().startsWith("// @events")) {
-                    if (curline.substring(10).length() > 0) {
-                        altUsage.add(curline.substring(10).trim());
-                    }
-                    inusage = true;
-                }
-                else if (curline.toLowerCase().startsWith("// @triggers")) {
-                    if (curline.substring(12).length() > 0) {
-                        descs.add(curline.substring(12).trim());
-                    }
-                    indesc = true;
-                }
-                else if (curline.toLowerCase().startsWith("// @context")) {
-                    if (curline.substring(11).length() > 0) {
-                        altDesc.add(curline.substring(11).trim());
-                    }
-                    inaltdesc = true;
-                }
-                else if (curline.toLowerCase().startsWith("// @determine")) {
-                    if (curline.substring(13).length() > 0) {
-                        example.add(curline.substring(13).trim());
-                    }
-                    inexample = true;
-                }
-                else if (curline.startsWith("// -->")) {
-                    if (descs.isEmpty() || altUsage.isEmpty()) {
-                        if (debugMode) System.out.println("Bad " + type + " meta at " + String.valueOf(i) + "!");
-                        continue;
-                    }
-                    String triggers = "";
-                    for (String desc : descs) {
-                        triggers += desc + "\n";
-                    }
-                    String context = "";
-                    for (String desc : altDesc) {
-                        context += desc + "\n";
-                    }
-                    String determine = "";
-                    for (String e : example) {
-                        determine += e + "\n";
-                    }
-                    String events = "";
-                    for (String event : altUsage) {
-                        events += event + ", ";
-                    }
-                    if (debugMode) {
-                        if (debugMode) System.out.println("Adding event " + altUsage.get(0) + ": " + triggers + "...");
-                        if (debugMode) System.out.println("...with aliases: " + events);
-                        if (debugMode) System.out.println();
-                    }
-                    dEvents.add(new dEvent(events.substring(0,events.length()-2), triggers, context, determine, deprecated));
-                    indesc = false;
-                    inusage = false;
-                    inaltdesc = false;
-                    inexample = false;
-                    type = null;
-                    deprecated = null;
-                }
-                else if (curline.startsWith("// ")) {
-                    if (indesc) {
-                        descs.add(curline.substring(3));
-                    }
-                    if (inusage) {
-                        altUsage.add(curline.substring(3));
-                    }
-                    if (inaltdesc) {
-                        altDesc.add(curline.substring(3));
-                    }
-                    if (instable) {
-                        stable = curline.substring(3);
-                    }
-                    if (inexample) {
-                        example.add(curline.substring(3));
-                    }
-                }
-                else if (curline.startsWith("//")) {
-                    indesc = false;
-                    inusage = false;
-                    inaltdesc = false;
-                    inexample = false;
-                }
-            }
-            if (curline.startsWith("// ")) {
-                if (indeprecated) {
-                    if (!curline.substring(3).startsWith("@"))
-                        deprecated = curline.substring(3);
-                    else
-                        indeprecated = false;
-                }
-            }
-        }
-        Collections.sort(dTags, new Comparator<dTag>() {
-            public int compare(dTag tag1, dTag tag2) {
-                return tag1.getName().compareTo(tag2.getName());
-            }
-        });
-        Collections.sort(dEvents, new Comparator<dEvent>() {
-            public int compare(dEvent e1, dEvent e2) {
-                return e1.getEvent().compareTo(e2.getEvent());
-            }
-        });
-        Collections.sort(dCommands, new Comparator<dCommand>() {
-            public int compare(dCommand c1, dCommand c2) {
-                return c1.getName().compareTo(c2.getName());
-            }
-        });
-        Collections.sort(dRequirements, new Comparator<dCommand>() {
-            public int compare(dCommand r1, dCommand r2) {
-                return r1.getName().compareTo(r2.getName());
-            }
-        });
-    }
     
     public static boolean debugMode = false;
     public static String chatChannel = "#denizen-dev";
     public static GitHub github = null;
     public static RepositoryManager repoManager = null;
+
+    public static MetaHandler denizenMH;
+    public static MetaHandler depenizenMH;
     
 	public static void main(String[] args) {
         
@@ -504,13 +124,11 @@ public class Spazz extends ListenerAdapter {
 	    
 	    github = GitHub.connect("spazzmatic", System.getProperty("spazz.password"));
 	    repoManager = new RepositoryManager(github);
+	    denizenMH = new MetaHandler(repoManager.getRepository("Denizen"));
+        depenizenMH = new MetaHandler(repoManager.getRepository("Depenizen"));
+	    
 	    Utilities.loadQuotes();
-        
-        try {
-            reloadSites(debugMode);
-        } catch (Exception e) {
-            System.out.println("Failed to load resources. CMD, REQ, TAG, and EVENT commands may not function correctly.");
-        }
+        reloadSites(debugMode);
         
 		bot.getListenerManager().addListener(spazz);
 		/*
@@ -546,6 +164,7 @@ public class Spazz extends ListenerAdapter {
                     }
                 }
                 for (String usr : findUserFiles()) {
+                    usr = usr.replace(".yml", "");
                     if (dUsers.containsKey(usr)) continue;
                     dUsers.put(usr, new dUser(usr));
                 }
@@ -941,7 +560,10 @@ public class Spazz extends ListenerAdapter {
                 } catch (Exception e) {
                     System.out.println("An error has occured while reloading resources... Turn on debug for more information.");
                 }
-			bot.sendMessage(send, address + chatColor + "Reloaded data. I now have " + defaultColor + dCommands.size() + chatColor + " commands, " + defaultColor + dRequirements.size() + chatColor + " requirements, " + defaultColor + dEvents.size() + chatColor + " world events, and " + defaultColor + dTags.size() + chatColor + " tags loaded.");
+	        bot.sendMessage(send, chatColor + "Reloaded. I now have " + (denizenMH.commandCount()+depenizenMH.commandCount()) + " commands, "
+	                + (denizenMH.requirementCount()+depenizenMH.requirementCount()) + " requirements, "
+	                + (denizenMH.eventCount()+depenizenMH.eventCount()) + " events, and "
+	                + (denizenMH.tagCount()+depenizenMH.tagCount()) + " tags.");
 			return;
 		} else if (msgLwr.startsWith(".repo")) {
 			bot.sendMessage(send, address + chatColor + "Check out scripts made by other users! - http://bit.ly/14o43eF");
@@ -998,13 +620,10 @@ public class Spazz extends ListenerAdapter {
 		} else if (msgLwr.startsWith(".tags")) {
 			bot.sendMessage(send, chatColor +  "Here's every replaceable tag in Denizen! - http://bit.ly/164DlSE");
 		} else if (msgLwr.startsWith(".tag ")) {
-			String arg = msgLwr.split(" ")[1].replaceAll("(\\[.+\\]|\\[|\\])", "");
-			List<dTag> found = null;
-			if (arg.contains(".")) {
-			    found = FindTags(arg.endsWith("."), arg.split("\\."));
-			}
-			else {
-			    found = FindTags(false, arg);
+			String arg = msgLwr.split(" ")[1];
+			List<dTag> found = denizenMH.searchTags(arg);
+			if (dusr.getDepenizen()) {
+			    found.addAll(depenizenMH.searchTags(arg));
 			}
 			if (found.size() > 1) {
                 String list = "";
@@ -1012,8 +631,8 @@ public class Spazz extends ListenerAdapter {
                 bot.sendMessage(send, address + chatColor + "I found " + defaultColor + (size == 50 ? "50+" : size)
                         + chatColor + " matches...");
                 for (int x = 0; x < size; x++) {
-                    if ((list + found.get(x).getName()).length() + 2 < 400) {
-                        list += found.get(x).getName() + ", ";
+                    if ((list + found.get(x).getAttribute()).length() + 2 < 400) {
+                        list += found.get(x).getAttribute() + ", ";
                         if (x != 0 && x%10 == 0 && x+1 != size) {
                             if (x > 10) {
                                 bot.sendNotice((address == "" ? senderNick : address.substring(0, address.length()-2)), optionalColor + list);
@@ -1049,12 +668,17 @@ public class Spazz extends ListenerAdapter {
                 return;
             }
             else if (found.size() == 1) {
-                bot.sendMessage(send, address + chatColor + "Tag found: " + optionalColor + found.get(0).getName() + chatColor 
-                        + ", which is a " + optionalColor + found.get(0).getReturn());
-                if (found.get(0).getDeprecated() != null) {
-                    bot.sendMessage(send, chatColor + "  This tag is " + defaultColor + "deprecated" + chatColor + ": " + found.get(0).getDeprecated());
+                dTag match = found.get(0);
+                bot.sendMessage(send, address + chatColor + "Tag found: " + optionalColor + match.getFullTag() + chatColor 
+                        + ", which is a " + optionalColor + match.getReturns());
+                if (match.isDepenizen()) {
+                    bot.sendMessage(send, chatColor + "  This tag is from Depenizen. It depends on the plugin "
+                            + defaultColor + match.getPlugin() + chatColor + ".");
                 }
-                for (String line : found.get(0).getDesc().split("\n")) {
+                if (match.isDeprecated()) {
+                    bot.sendMessage(send, chatColor + "  This tag is " + defaultColor + "deprecated" + chatColor + ": " +  match.getDepReason());
+                }
+                for (String line : match.getDescription()) {
                     bot.sendMessage(send, chatColor + "  " + line);
                 }
                 return;
@@ -1143,54 +767,44 @@ public class Spazz extends ListenerAdapter {
 					x++;
 				}
 			}
-		} else if (msgLwr.startsWith(".reqs") || msgLwr.startsWith(".requirements")
-		        || msgLwr.startsWith(".cmds") || msgLwr.startsWith(".commands")) {
-		    String type = null;
-            if (msgLwr.startsWith(".r")) {
-                type = "req";
-            }
-            else if (msgLwr.startsWith(".c")) {
-                type = "cmd";
-            }
-            List<dCommand> found = FindType(type, "");
-            String list = "";
-            bot.sendMessage(send, address + chatColor + "I found " + defaultColor + found.size() + chatColor + " matches...");
-            for (int x = 0; x < found.size();  x++) {
-                list += found.get(x).getName() + ", ";
-                if (x != 0 && x%40 == 0 && x+1 != x) {
-                    bot.sendMessage(send, optionalColor + list);
-                    list = "";
-                }
-            }
-            list = list.substring(0, list.length()-2) + ".";
-            bot.sendMessage(send, optionalColor + list);
 		} else if (msgLwr.startsWith(".req") || msgLwr.startsWith(".requirement") 
 		        || msgLwr.startsWith(".cmd") || msgLwr.startsWith(".command")) {
-		    String shortened = null;
-		    String full = null;
-		    String fullCap = null;
-		    if (msgLwr.startsWith(".r")) {
-		        shortened = "req";
-		        full = "requirement";
-		        fullCap = "Requirement";
-		    }
-		    else if (msgLwr.startsWith(".c")) {
+            String [] args = msg.split(" ");
+            String arg = args[1].toLowerCase();
+            if (arg.equals("all"))
+                arg = "";
+            String shortened = null;
+            String full = null;
+            String fullCap = null;
+            ArrayList<dCommand> found = null;
+            if (msgLwr.startsWith(".c")) {
                 shortened = "cmd";
                 full = "command";
                 fullCap = "Command";
+                found = denizenMH.searchCommands(arg);
+                if (dusr.getDepenizen()) {
+                    found.addAll(depenizenMH.searchCommands(arg));
+                }
             }
-			String [] args = msg.split(" ");
-			if (args.length < 2) {
-				bot.sendMessage(send, address + chatColor + "Check your argument count. Command format: ." + shortened +" [<" + full + ">] (stability) (usage) (description)");
-				return;
-			}
+            if (msgLwr.startsWith(".r")) {
+                shortened = "req";
+                full = "requirement";
+                fullCap = "Requirement";
+                found = denizenMH.searchRequirements(arg);
+                if (dusr.getDepenizen()) {
+                    found.addAll(depenizenMH.searchRequirements(arg));
+                }
+            }
+            if (args.length < 2) {
+                bot.sendMessage(send, address + chatColor + "Check your argument count. Command format: ." + shortened + " [<" + full + ">] (stability) (usage) (description)");
+                return;
+            }
             List<String> argList = new ArrayList<String>();
             if (args.length > 2) {
                 for (int i = 2; i < args.length; i++) {
                     argList.add(args[i].toLowerCase().substring(0, 1));
                 }
             }
-			String arg = args[1].toLowerCase();
             String extra = "";
             if (!argList.isEmpty()) {
                 if (argList.contains("s")) {
@@ -1203,36 +817,46 @@ public class Spazz extends ListenerAdapter {
                     extra += "d";
                 }
             }
-            
-            List<dCommand> found = FindType(shortened, arg);
             if (found.size() > 1) {
                 bot.sendMessage(send, address + chatColor + "I found " + defaultColor + found.size() + chatColor + " matches...");
                 String list = "";
-                for (dCommand cmd : found) {
-                    list += cmd.getName() + ", ";
+                for (int x = 0; x < found.size(); x++) {
+                    if (x > 0 && x%30 == 0) {
+                        bot.sendMessage(send, optionalColor + list.substring(0, list.length()-2)
+                                + (found.size() > x+1 ? "..." : "."));
+                        list = "";
+                    }
+                    list += found.get(x).getName() + ", ";
                 }
-                list = list.substring(0, list.length()-2) + ".";
-                bot.sendMessage(send, optionalColor + list);
+                if (!list.isEmpty()) {
+                    list = list.substring(0, list.length()-2) + ".";
+                    bot.sendMessage(send, optionalColor + list);
+                }
                 return;
             }
             else if (found.size() == 1) {
                 int messageCount = 0;
                 dCommand match = found.get(0);
                 bot.sendMessage(send, address + chatColor + fullCap + " found: " + optionalColor + match.getName());
-                if (found.get(0).getDeprecated() != null) {
-                    bot.sendMessage(send, chatColor + "  This " + full + " is " + defaultColor + "deprecated" + chatColor + ": " + found.get(0).getDeprecated());
+                messageCount++;
+                if (match.isDepenizen()) {
+                    bot.sendMessage(send, chatColor + "  This " + full + " is from Depenizen. It depends on the plugin "
+                            + defaultColor + match.getPlugin() + chatColor + ".");
                     messageCount++;
                 }
-                messageCount++;
-                String[] desc = match.getDesc().split("\n");
-                for (int i = 0; i < desc.length; i++) {
-                    if (i == 0) {
-                        bot.sendMessage(send, defaultColor + "  Summary" + chatColor + ": " + desc[i]);
-                    }
-                    else {
-                        bot.sendMessage(send, chatColor + "           " + desc[i]);
-                    }
+                if (match.isDeprecated()) {
+                    bot.sendMessage(send, chatColor + "  This " + full + " is " + defaultColor + "deprecated" 
+                            + chatColor + ": " + match.getDepReason());
                     messageCount++;
+                }
+                ArrayList<String> desc = match.getDescription();
+                bot.sendMessage(send, defaultColor + "  Summary" + chatColor + ": " + desc.get(0));
+                messageCount++;
+                if (desc.size() > 1) {
+                    for (int i = 1; i < desc.size(); i++) {
+                        bot.sendMessage(send, chatColor + "           " + desc.get(i));
+                        messageCount++;
+                    }
                 }
                 bot.sendMessage(send, defaultColor + "  Syntax" + chatColor + ": - " + match.getUsage());
                 messageCount++;
@@ -1241,49 +865,40 @@ public class Spazz extends ListenerAdapter {
                     messageCount++;
                 }
                 if (extra.contains("u")) {
-                    String[] usage = match.getAltUsage().split("\n");
-                    for (int i = 0; i < usage.length; i++) {
-                        if (i == 0) {
-                            if (messageCount > 5) {
-                                bot.sendNotice(usr, defaultColor + "  Usage" + chatColor + ": " + usage[i]);
-                            }
-                            else {
-                                bot.sendMessage(send, defaultColor + "  Usage" + chatColor + ": " + usage[i]);
-                                messageCount++;
-                            }
+                    ArrayList<String> usage = match.getUsage();
+                    if (messageCount > 5) {
+                        bot.sendNotice(usr, defaultColor + "  Usage" + chatColor + ": " + usage.get(0));
+                    }
+                    else {
+                        bot.sendMessage(send, defaultColor + "  Usage" + chatColor + ": " + usage.get(0));
+                        messageCount++;
+                    }
+                    for (int i = 1; i < usage.size(); i++) {
+                        if (messageCount > 5) {
+                            bot.sendNotice(usr, chatColor + "         " + usage.get(i));
                         }
                         else {
-                            if (messageCount > 5) {
-                                bot.sendNotice(usr, chatColor + "         " + usage[i]);
-                            }
-                            else {
-                                bot.sendMessage(send, chatColor + "         " + usage[i]);
-                                messageCount++;
-                            }
+                            bot.sendMessage(send, chatColor + "         " + usage.get(i));
+                            messageCount++;
                         }
                     }
                 }
                 if (extra.contains("d")) {
-                    String[] altDesc = match.getAltDesc().split("\n");
-                    for (int i = 0; i < altDesc.length; i++) {
-                        if (i == 0) {
-                            if (messageCount > 5) {
-                                bot.sendNotice(usr, defaultColor + "  Description" + chatColor + ": " + altDesc[i]);
-                            }
-                            else {
-                                bot.sendMessage(send, defaultColor + "  Description" + chatColor + ": " + altDesc[i]);
-                                messageCount++;
-                            }
+                    ArrayList<String> description = match.getDescription();
+                    if (messageCount > 5) {
+                        bot.sendNotice(usr, defaultColor + "  Description" + chatColor + ": " + description.get(0));
+                    }
+                    else {
+                        bot.sendMessage(send, defaultColor + "  Description" + chatColor + ": " + description.get(0));
+                        messageCount++;
+                    }
+                    for (int i = 1; i < description.size(); i++) {
+                        if (messageCount > 5) {
+                            bot.sendNotice(usr, chatColor + "               " + description.get(i));
                         }
                         else {
-                            if (messageCount > 5) {
-                                bot.sendNotice(usr, chatColor + "               " + altDesc[i]);
-                                messageCount++;
-                            }
-                            else {
-                                bot.sendMessage(send, chatColor + "               " + altDesc[i]);
-                                messageCount++;
-                            }
+                            bot.sendMessage(send, chatColor + "               " + description.get(i));
+                            messageCount++;
                         }
                     }
                 }
@@ -1294,49 +909,7 @@ public class Spazz extends ListenerAdapter {
                 return;
             }
 			
-		} else if (msgLwr.startsWith(".events")) {
-            List<dEvent> found = FindEvents("");
-            String list = "";
-            int size = found.size();
-            bot.sendMessage(send, address + chatColor + "I found " + defaultColor + (size == 50 ? "50+" : size)
-                    + chatColor + " matches...");
-            for (int x = 0; x < size; x++) {
-                if ((list + found.get(x).getEvent()).length() + 2 < 400) {
-                    list += found.get(x).getEvent() + ", ";
-                    if (x != 0 && x%10 == 0 && x+1 != size) {
-                        if (x > 10) {
-                            bot.sendNotice((address == "" ? senderNick : address.substring(0, address.length()-2)), optionalColor + list);
-                        }
-                        else {
-                            bot.sendMessage(send, optionalColor 
-                                    + list.substring(0, (x == 10 ? list.length()-2 : list.length()))
-                                    + (x == 10 ? "..." : ""));
-                        }
-                        list = "";
-                    }
-                }
-                else {
-                    x--;
-                    if (x > 10) {
-                        bot.sendNotice((address == "" ? senderNick : address.substring(0, address.length()-2)), optionalColor + list);
-                    }
-                    else {
-                        bot.sendMessage(send, optionalColor 
-                                + list.substring(0, (x == 10 ? list.length()-2 : list.length()))
-                                + (x == 10 ? "..." : ""));
-                    }
-                    list = "";
-                }
-            }
-            if (size > 10) {
-                bot.sendNotice((address == "" ? senderNick : address.substring(0, address.length()-2)),
-                        optionalColor + list.substring(0, list.length()-2) + ".");
-            }
-            else {
-                bot.sendMessage(send, optionalColor + list.substring(0, list.length()-2) + ".");
-            }
-            return;
-        } else if (msgLwr.startsWith(".event")) {
+		} else if (msgLwr.startsWith(".event")) {
 		    String[] args = msg.split(" ");
 		    int argSize = args.length;
 		    if (args[args.length-1].endsWith("@@")) {
@@ -1351,82 +924,77 @@ public class Spazz extends ListenerAdapter {
 		        arg += args[i] + " ";
 		    }
             arg = arg.substring(0, arg.length()-1);
+            
             if (debugMode) System.out.println("Finding events for " + arg);
-            List<dEvent> found = FindEvents(arg);
+            ArrayList<dEvent> found = denizenMH.searchEvents(arg);
+            if (dusr.getDepenizen()) {
+                found.addAll(depenizenMH.searchEvents(arg));
+            }
+            
             if (found.size() > 1) {
-                bot.sendMessage(send, address + chatColor + "I found " + defaultColor + found.size() + chatColor + " matches...");
-                String list = "";
-                if (found.get(0).getDeprecated() != null) {
-                    bot.sendMessage(send, chatColor + "  This event is " + defaultColor + "deprecated" + chatColor + ": " + found.get(0).getDeprecated());
-                }
+                bot.sendMessage(send, chatColor + "I found " + defaultColor + found.size() + chatColor + " matches...");
+                String events = "";
+                boolean notice = false;
                 for (int x = 0; x < found.size(); x++) {
-                    list += found.get(x).getMatchedWith() + ", ";
-                    if (x != 0 && x%10 == 0 && x+1 != found.size()) {
-                        if (x > 10) {
-                            bot.sendNotice((address == "" ? senderNick : address.substring(0, address.length()-2)), optionalColor + list);
+                    if (x > 0 && x%10 == 0) {
+                        if (notice) {
+                            bot.sendNotice(usr, optionalColor + events.substring(0, events.length()-2)
+                                    + (found.size() > x+1 ? "..." : "."));
                         }
                         else {
-                            bot.sendMessage(send, optionalColor 
-                                    + list.substring(0, (x == 10 ? list.length()-2 : list.length()))
-                                    + (x == 10 ? "..." : ""));
+                            bot.sendMessage(send, optionalColor + events.substring(0, events.length()-2)
+                                    + (found.size() > x+1 ? "..." : "."));
+                            notice = true;
                         }
-                        list = "";
+                        events = "";
                     }
+                    events += found.get(x).getEventBase() + ", ";
                 }
-                if (found.size() > 10) {
-                    bot.sendNotice((address == "" ? senderNick : address.substring(0, address.length()-2)),
-                            optionalColor + list.substring(0, list.length()-2) + ".");
+                if (!events.isEmpty()) {
+                    if (notice)
+                        bot.sendNotice(usr, optionalColor + events.substring(0, events.length()-2) + ".");
+                    else
+                        bot.sendMessage(send, optionalColor + events.substring(0, events.length()-2) + ".");
                 }
-                else {
-                    bot.sendMessage(send, optionalColor + list.substring(0, list.length()-2) + ".");
-                }
-                return;
             }
             else if (found.size() == 1) {
-                dEvent match = found.get(0);
-                bot.sendMessage(send, address + chatColor + "Event found: " + optionalColor + match.getMatchedWith());
-                bot.sendMessage(send, defaultColor + "  Aliases" + chatColor + ": " + match.getEvent()); 
-                String[] trigger = match.getTrigger().split("\n");
-                for (int i = 0; i < trigger.length; i++) {
-                    if (i == 0) {
-                        bot.sendMessage(send, defaultColor + "  Triggered" + chatColor + ": " + trigger[i]);
-                    }
-                    else {
-                        bot.sendMessage(send, chatColor + "  " + trigger[i]);
-                    }
+                dEvent found_event = found.get(0);
+                bot.sendMessage(send, chatColor + "Event found: " + optionalColor + found_event.getEventBase());
+                if (found_event.isDepenizen()) {
+                    bot.sendMessage(send, chatColor + "  This event is from Depenizen. It depends on the plugin "
+                            + defaultColor + found_event.getPlugin() + chatColor + ".");
                 }
-                if (!match.getContext().isEmpty()) {
-                    String[] context = match.getContext().split("\n");
-                    for (int i = 0; i < context.length; i++) {
-                        if (i == 0) {
-                            bot.sendMessage(send, defaultColor + "  Contexts" + chatColor + ": " + context[i]);
-                        }
-                        else {
-                            bot.sendMessage(send, chatColor + "            " + context[i]);
-                        }
+                if (found_event.hasAliases()) {
+                    bot.sendMessage(send, defaultColor + "  Aliases" + chatColor + ": " + found_event.getAliases());
+                }
+                ArrayList<String> triggers = found_event.getTriggers();
+                bot.sendMessage(send, defaultColor + "  Triggered" + chatColor + ": " + triggers.get(0));
+                if (triggers.size() > 1) {
+                    for (int x = 1; x < triggers.size(); x++) {
+                        bot.sendMessage(send, chatColor + "             " + triggers.get(x));
                     }
                 }
-                else {
-                    bot.sendMessage(send, chatColor + "  There are no " + defaultColor + "contexts" + chatColor + " for this event.");
-                }
-                if (!match.getDetermine().isEmpty()) {
-                    String[] determine = match.getDetermine().split("\n");
-                    for (int i = 0; i < determine.length; i++) {
-                        if (i == 0) {
-                            bot.sendMessage(send, defaultColor + "  Determine" + chatColor + ": " + determine[i]);
-                        }
-                        else {
-                            bot.sendMessage(send, chatColor + "             " + determine[i]);
+                if (found_event.hasContext()) {
+                    ArrayList<String> context = found_event.getContext();
+                    bot.sendMessage(send, defaultColor + "  Context" + chatColor + ": " + context.get(0));
+                    if (context.size() > 1) {
+                        for (int x = 1; x < context.size(); x++) {
+                            bot.sendMessage(send, chatColor + "           " + context.get(x));
                         }
                     }
                 }
-                else {
-                    bot.sendMessage(send, chatColor + "  There are no " + defaultColor + "determinations" + chatColor + " for this event.");
+                if (found_event.hasDetermine()) {
+                    ArrayList<String> determine = found_event.getDetermine();
+                    bot.sendMessage(send, defaultColor + "  Determine" + chatColor + ": " + determine.get(0));
+                    if (determine.size() > 1) {
+                        for (int x = 1; x < determine.size(); x++) {
+                            bot.sendMessage(send, chatColor + "             " + determine.get(x));
+                        }
+                    }
                 }
             }
             else {
                 bot.sendMessage(send, chatColor + "Event \"" + arg + "\" not found.");
-                return;
             }
 		}
 		
@@ -1447,9 +1015,9 @@ public class Spazz extends ListenerAdapter {
 		    for (int x = 0; x < String.valueOf(number).length(); x++)
 		        spacing += " ";
 		    
-		    for (Entry<Integer, Object> quote : Utilities.getQuote(number).entrySet()) {
+		    for (Entry<Object, Object> quote : Utilities.getQuote(number).entrySet()) {
 		        bot.sendMessage(send, chatColor
-		                + (quote.getKey() == 0 ? "[" + optionalColor + number + chatColor + "] " : spacing)
+		                + ((int) quote.getKey() == 0 ? "[" + optionalColor + number + chatColor + "] " : spacing)
 		                + quote.getValue());
 		    }
 		} 
@@ -1659,7 +1227,7 @@ public class Spazz extends ListenerAdapter {
 		    if (args.length < 2)
                 bot.sendMessage(send, chatColor + "That command is written as: .add [<object>]");
 		    
-		    if (args[1].startsWith("repo")) {
+		    if (args[1].startsWith("r")) {
 	            if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
 	                bot.sendMessage(send, chatColor + "Sorry, " + senderNick + ", that's only for the Dev Team.");
 	            else if (args.length > 2 && args[2].contains("/")) {
@@ -1683,23 +1251,23 @@ public class Spazz extends ListenerAdapter {
 		            bot.sendMessage(send, chatColor + "That command is written as: "
 		                    + parseUsage(".add repo [<author>/<project>] (no_issues) (delay:<#.#>)"));
 		    }
-		    else if (args[1].startsWith("quote")) {
+		    else if (args[1].startsWith("q")) {
 		        if (args.length > 2) {
 		            String quoteMsg = msg.substring(args[0].length()+args[1].length()+2);
 		            if (quoteMsg.length() < 5)
 		                bot.sendMessage(send, chatColor + "Quote must have at least 5 characters.");
 		            else {
-		                HashMap<Integer, Object> quote = new HashMap<Integer, Object>();
+		                HashMap<Object, Object> quote = new HashMap<Object, Object>();
 		                for (String line : quoteMsg.split("\\\n"))
 		                    quote.put(quote.size(), line);
 		                    
-		                bot.sendMessage(send, chatColor + "Added quote as #" + Utilities.addQuote(quote) + ".");
+		                bot.sendMessage(send, chatColor + "Added quote as #" + Utilities.addQuote(quote, senderNick) + ".");
 		            }
 		        }
 		        else
 		            bot.sendMessage(send, chatColor + "That command is written as: .add quote [<message>]");
 		    }
-		    else if (args[1].startsWith("toquote")) {
+		    else if (args[1].startsWith("toq")) {
 		        if (args.length > 3) {
 		            try {
 		                int number = Integer.valueOf(args[2]);
@@ -1725,7 +1293,7 @@ public class Spazz extends ListenerAdapter {
 		    
             if (!hasOp(usr, chnl) && !hasVoice(usr, chnl) && !usr.getLogin().equalsIgnoreCase("mcmonkey"))
                 bot.sendMessage(send, chatColor + "Sorry, " + senderNick + ", that's only for the Dev Team.");
-            else if (args[1].startsWith("repo")) {
+            else if (args[1].startsWith("r")) {
                 if (args.length > 2) {
                     if (!repoManager.hasRepository(args[2]))
                         bot.sendMessage(send, chatColor + "I am not tracking any projects by that name.");
@@ -1737,7 +1305,7 @@ public class Spazz extends ListenerAdapter {
                 else
                     bot.sendMessage(send, chatColor + "That command is written as: .remove repo [<project>]");
             }
-            else if (args[1].startsWith("quote")) {
+            else if (args[1].startsWith("q")) {
                 if (args.length > 2) {
                     try {
                         int number = Integer.valueOf(args[2]);
@@ -1761,7 +1329,7 @@ public class Spazz extends ListenerAdapter {
 		else if (msgLwr.startsWith(".info")) {
 		    String[] args = msgLwr.trim().split(" ");
             
-            if (args[1].startsWith("repo")) {
+            if (args[1].startsWith("r")) {
                 if (args.length > 2) {
                     if (!repoManager.hasRepository(args[2]))
                         bot.sendMessage(send, chatColor + "I am not tracking any projects by that name.");
@@ -1774,12 +1342,23 @@ public class Spazz extends ListenerAdapter {
                 else
                     bot.sendMessage(send, chatColor + "That command is written as: .info repo [<project>]");
             }
-            else if (args[1].startsWith("user")) {
+            else if (args[1].startsWith("u")) {
                 if (args.length > 2) {
                     if (dUsers.containsKey(args[2])) {
                         dUser dusr2 = dUsers.get(args[2]);
                         bot.sendMessage(send, chatColor + args[2] + ": LastSeen(" + dusr2.getLastSeen() 
                                 + ") Depenizen(" + dusr2.getDepenizen() + ")");
+                    }
+                }
+            }
+            else if (args[1].startsWith("q")) {
+                if (args.length > 2) {
+                    try {
+                        int number = Integer.valueOf(args[2]);
+                        HashMap<String, String> info = Utilities.getQuoteInfo(number);
+                        bot.sendMessage(send, chatColor + number + ": Added_by(" + info.get("added_by") + ")");
+                    } catch(Exception e) {
+                        bot.sendMessage(send, chatColor + "That command is written as: .info quote [<#>]");
                     }
                 }
             }
@@ -1792,12 +1371,12 @@ public class Spazz extends ListenerAdapter {
 		    if (args.length < 2)
                 bot.sendMessage(send, chatColor + "That command is written as: .list [<object>]");
 		    
-		    if (args[1].startsWith("repo")) {
+		    if (args[1].startsWith("r")) {
 		        Set<String> repos = repoManager.getRepositories();
 		        bot.sendMessage(send, chatColor + "I'm currently watching " + repos.size() + " repositories...");
 		        bot.sendMessage(send, chatColor + repos.toString());
 		    }
-		    else if (args[1].startsWith("quote")) {
+		    else if (args[1].startsWith("q")) {
 		        bot.sendMessage(send, chatColor + "I currently have " + Utilities.getQuoteCount() + " quotes listed.");
 		    }
 		    else
@@ -1809,7 +1388,7 @@ public class Spazz extends ListenerAdapter {
             if (args.length < 2)
                 bot.sendMessage(send, chatColor + "That command is written as: .save [<object>]");
             
-            if (args[1].startsWith("repo")) {
+            if (args[1].startsWith("r")) {
                 try {
                     repoManager.saveAll();
                     bot.sendMessage(send, chatColor + "Successfully saved all repository information.");
@@ -1817,11 +1396,11 @@ public class Spazz extends ListenerAdapter {
                     bot.sendMessage(send, chatColor + "Error while saving repository information...");
                 }
             }
-            else if (args[1].startsWith("quote")) {
+            else if (args[1].startsWith("q")) {
                 Utilities.saveQuotes();
                 bot.sendMessage(send, chatColor + "Successfully saved all quotes.");
             }
-            else if (args[1].startsWith("user")) {
+            else if (args[1].startsWith("u")) {
                 for (dUser dusr2 : dUsers.values()) {
                     if (debugMode) System.out.println("Saving dUser: " + dusr2.getNick() + "...");
                     try {
@@ -1843,7 +1422,7 @@ public class Spazz extends ListenerAdapter {
             if (args.length < 2)
                 bot.sendMessage(send, chatColor + "That command is written as: .load [<object>]");
             
-            if (args[1].startsWith("repo")) {
+            if (args[1].startsWith("r")) {
                 try {
                     repoManager.loadAll();
                     bot.sendMessage(send, chatColor + "Successfully loaded all repository information.");
@@ -1851,11 +1430,11 @@ public class Spazz extends ListenerAdapter {
                     bot.sendMessage(send, chatColor + "Error while loading repository information...");
                 }
             }
-            else if (args[1].startsWith("quote")) {
+            else if (args[1].startsWith("q")) {
                 Utilities.loadQuotes();
                 bot.sendMessage(send, chatColor + "Successfully loaded all quotes.");
             }
-            else if (args[1].startsWith("user")) {
+            else if (args[1].startsWith("u")) {
                 for (dUser dusr2 : dUsers.values()) {
                     if (debugMode) System.out.println("Loading dUser information: " + dusr2.getNick() + "...");
                     try {
@@ -1875,23 +1454,18 @@ public class Spazz extends ListenerAdapter {
         dusr.checkMessages(chnl);
         
 	}
-
-	private static void reloadSites(boolean debug) throws Exception {
+	
+	private static void reloadSites(boolean debug) {
 	    boolean original = debugMode;
 	    if (!debugMode)
 	        debugMode = debug;
-    	loadMeta();
+	    denizenMH.reload();
+    	depenizenMH.reload();
     	debugMode = original;
 	}
 	
 	private static ArrayList<String> findUserFiles() {
-	    ArrayList<String> ret = new ArrayList<String>();
-	    
-	    for (File file : usersFolder.listFiles(new FilenameFilter() {public boolean accept(File dir, String filename){return filename.endsWith(".yml");}})) {
-	        ret.add(file.getName().substring(0, file.getName().indexOf('.')));
-	    }
-	    
-	    return ret;
+	    return Utilities.findFileNamesByExtension(usersFolder.getPath(), ".yml");
 	}
 	
 	private boolean hasVoice(User chatter, Channel channel) {
@@ -2116,143 +1690,6 @@ public class Spazz extends ListenerAdapter {
 	    }
 	    return result.toString();
 	}
-	
-	public static List<dEvent> FindEvents(String input) {
-	    List<dEvent> found = new ArrayList<dEvent>();
-	    for (dEvent event : dEvents) {
-	        String[] events = event.getEvent().split(", ");
-	        for (String name : events) {
-	            if (name.toLowerCase().replaceAll("(\\(|\\)|<|>)", "").equals(input.replaceAll("(\\(|\\)|<|>)", ""))) {
-                    found.clear();
-                    found.add(event.clone().setMatched(name));
-                    if (debugMode) System.out.println("Adding event " + name);
-                    return found;
-                }
-                else if (name.toLowerCase().replaceAll("(\\(|\\)|<|>)", "").contains(input.replaceAll("(\\(|\\)|<|>)", ""))) {
-                    found.add(event.clone().setMatched(name));
-                    break;
-                }
-	        }
-	    }
-        return found;
-	}
-	
-	public static List<dCommand> FindType(String type, String input) {
-	    List<dCommand> found = new ArrayList<dCommand>();
-	    if (type.startsWith("r")) {
-	        for (dCommand cmd : dRequirements) {
-	            if (cmd.getName().toLowerCase().equals(input.toLowerCase())) {
-	                found.clear();
-	                found.add(cmd);
-	                return found;
-	            }
-	            if (cmd.getName().toLowerCase().contains(input.toLowerCase())) {
-	                found.add(cmd);
-	            }
-	        }
-	    }
-	    else if (type.startsWith("c")) {
-            for (dCommand cmd : dCommands) {
-                if (cmd.getName().toLowerCase().equals(input.toLowerCase())) {
-                    found.clear();
-                    found.add(cmd);
-                    return found;
-                }
-                if (cmd.getName().toLowerCase().contains(input.toLowerCase())) {
-                    found.add(cmd);
-                }
-            }
-        }
-	    return found;
-	}
-	
-	public static List<dTag> FindTags(boolean endDot, String... input) {
-        List<dTag> found = new ArrayList<dTag>();
-        List<dTag> foundChains = new ArrayList<dTag>();
-        List<String> foundNames = new ArrayList<String>();
-	    List<String> possible = new ArrayList<String>();
-	    boolean entity = false;
-	    String root = input[0].toLowerCase();
-	    String subtags = "";
-	    if (input.length > 1) {
-	        for (int i = 1; i < input.length; i++) {
-	            subtags += "." + input[i].toLowerCase();
-	        }
-	    }
-        if ("p@player".contains(root)) {
-            root = "p@player";
-            entity = true;
-        }
-        else if ("n@npc".contains(root)) {
-            root = "n@npc";
-            entity = true;
-        }
-        else if ("e@entity".contains(root)) {
-            root = "e@entity";
-        }
-        else {
-            for (String pre : dTagPrefixes) {
-                if (root.contains(pre.toLowerCase())) {
-                    root = pre;
-                    break;
-                }
-            }
-        }
-	    if (entity) {
-	        possible.add("e@entity" + subtags);
-	    }
-	    possible.add(root + subtags);
-		for (dTag tag : dTags) {
-		    for (String name : possible) {
-		        tag = tag.clone();
-                if (entity) {
-                    tag.setName(tag.getName().replaceFirst("e@entity", root)).setDesc(tag.getDesc().replace("entity", root.split("@")[1]));
-                }
-		        if (!endDot && (tag.getName().equalsIgnoreCase(name) || tag.getAlt().equalsIgnoreCase(name))) {
-		            found.clear();
-		            found.add(tag);
-	                if (debugMode) System.out.println("Returning found");
-		            return found;
-		        }
-		        if (tag.getName().toLowerCase().contains(name + (endDot ? "." : "")) || tag.getAlt().toLowerCase().contains(name + (endDot ? "." : ""))) {
-		            if (!foundNames.contains(tag.getName())) {
-		                found.add(tag);
-		                foundNames.add(tag.getName());
-	                    if (found.size() + foundChains.size() == 50) {
-	                        if (debugMode) System.out.println("Returning found");
-                            found.addAll(foundChains);
-	                        return found;
-	                    }
-		            }
-		        }
-                if (endDot && tag.getName().toLowerCase().contains(name) || tag.getAlt().toLowerCase().contains(name)) {
-                    if (debugMode) System.out.println("Searching for chains");
-                    if (dTagByType.containsKey((tag.getReturn().startsWith("d") ? tag.getReturn().substring(1).toLowerCase() : tag.getReturn().toLowerCase()))) {
-                        if (debugMode) System.out.println("Type found");
-                        for (dTag retTag : dTagByType.get((tag.getReturn().startsWith("d") ? tag.getReturn().substring(1).toLowerCase() : tag.getReturn().toLowerCase()))) {
-                            retTag = retTag.clone();
-                            if (entity) {
-                                retTag.setName(tag.getName().replaceFirst("e@entity", root)).setDesc(tag.getDesc().replace("entity", root.split("@")[1]));
-                            }
-                            if (!foundNames.contains(retTag.getName())) {
-                                foundChains.add(retTag);
-                                foundNames.add(retTag.getName());
-                                if (debugMode) System.out.println("Adding tag: " + (entity ? tag.getName().replaceFirst("e@entity", root) : tag.getName()) + retTag.getName().substring(retTag.getName().indexOf('.')));
-                                if (found.size() + foundChains.size() == 50) {
-                                    if (debugMode) System.out.println("Returning found");
-                                    found.addAll(foundChains);
-                                    return found;
-                                }
-                            }
-                        }
-                    }
-                }
-		    }
-		}
-        if (debugMode) System.out.println("Returning found");
-        found.addAll(foundChains);
-		return found;
-    }
 	
 	public static class dUser {
 		
@@ -2506,166 +1943,6 @@ public class Spazz extends ListenerAdapter {
 			return this.message;
 		}
 		
-	}
-	
-	public static class dTag {
-		public String name;
-        public String desc;
-        public String alt;
-        public String returnType;
-        public String deprecated;
-        
-        public dTag(String name, String desc, String alt, String returnType, String deprecated) {
-            this.name = name;
-            this.desc = desc;
-            this.alt = alt;
-            this.returnType = returnType;
-            this.deprecated = deprecated;
-        }
-        
-        public String getName() {
-        	return name;
-        }
-        
-        public String getDesc() {
-        	return desc;
-        }
-        
-        public String getAlt() {
-        	return alt;
-        }
-        
-        public String getReturn() {
-        	return returnType;
-        }
-        
-        public String getDeprecated() {
-            return deprecated;
-        }
-        
-        public dTag clone() {
-            return new dTag(name, desc, alt, returnType, deprecated);
-        }
-        
-        public dTag setName(String name) {
-            this.name = name;
-            return this;
-        }
-        
-        public dTag setDesc(String desc) {
-            this.desc = desc;
-            return this;
-        }
-	}
-	
-	public static class dCommand {
-	    public String alias;
-	    public String name;
-	    public String desc;
-	    public String usage;
-        public String altUsage;
-        public String altDesc;
-        public String stable;
-        public String example;
-        public String deprecated;
-	    
-	    public dCommand(String alias, String name, String desc, String usage, String altUsage, String altDesc, String stable, String example, String deprecated) {
-	        this.alias = alias;
-	        this.name = name;
-	        this.desc = desc;
-	        this.usage = parseUsage(usage);
-            this.altUsage = altUsage;
-            this.altDesc = altDesc;
-            this.stable = stable;
-            this.example = example;
-            this.deprecated = deprecated;
-	    }
-	    
-	    public String getName() {
-	        return alias;
-	    }
-	    
-	    public String getRealName() {
-	        return name;
-	    }
-	    
-	    public String getDesc() {
-	        return desc;
-	    }
-	    
-	    public String getUsage() {
-	        return usage;
-	    }
-        
-        public String getAltUsage() {
-            return altUsage;
-        }
-        
-        public String getAltDesc() {
-            return altDesc;
-        }
-        
-        public String getStable() {
-            return stable;
-        }
-        
-        public String getExample() {
-            return example;
-        }
-        
-        public String getDeprecated() {
-            return deprecated;
-        }
-	}
-	
-	public static class dEvent {
-	    public String event;
-	    public String triggers;
-	    public String context;
-	    public String determine;
-	    public String matchedWith;
-        public String deprecated;
-	    
-	    public dEvent(String event, String triggers, String context, String determine, String deprecated) {
-	        this.event = event;
-	        this.triggers = triggers;
-	        this.context = context;
-	        this.determine = determine;
-            this.deprecated = deprecated;
-	    }
-	    
-	    public String getEvent() {
-	        return event;
-	    }
-	    
-	    public String getTrigger() {
-	        return triggers;
-	    }
-	    
-	    public String getContext() {
-	        return context;
-	    }
-	    
-	    public String getDetermine() {
-	        return determine;
-	    }
-	    
-	    public String getMatchedWith() {
-	        return matchedWith;
-	    }
-        
-        public String getDeprecated() {
-            return deprecated;
-        }
-	    
-	    public dEvent clone() {
-	        return new dEvent(event, triggers, context, determine, deprecated);
-	    }
-	    
-	    public dEvent setMatched(String matchedWith) {
-	        this.matchedWith = matchedWith;
-	        return this;
-	    }
 	}
 	
 }

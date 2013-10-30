@@ -33,8 +33,8 @@ public class RepositoryManager {
     }
     
     public Repository getRepository(String project) {
-        if (repositories.containsKey(project))
-            return repositories.get(project);
+        if (repositories.containsKey(project.toLowerCase()))
+            return repositories.get(project.toLowerCase());
         else
             return null;
     }
@@ -52,10 +52,10 @@ public class RepositoryManager {
     public void shutdown() {
         try {
             saveAll();
+            for (Repository repo : repositories.values()) {
+                repo.shutdown();
+            }
         } catch (Exception e) {}
-        for (Repository repo : repositories.values()) {
-            repo.shutdown();
-        }
     }
     
     public GitHub getGitHub() {

@@ -1,16 +1,24 @@
 package net.jeebiss.spazz;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -20,23 +28,27 @@ import net.minidev.json.JSONValue;
 public class Utilities {
     
     private static Random random = new Random();
-    private static ArrayList<HashMap<Integer, Object>> quotes;
+    private static ArrayList<HashMap<Object, Object>> quotes;
+    private static ArrayList<HashMap<String, String>> quotesInfo;
     
     @SuppressWarnings("unchecked")
     public static void loadQuotes() {
         try {
-            quotes = new ArrayList<HashMap<Integer, Object>>();
-            ArrayList<HashMap<Integer, Object>> map = null;
+            quotes = new ArrayList<HashMap<Object, Object>>();
+            quotesInfo = new ArrayList<HashMap<String, String>>();
+            ArrayList<HashMap<Object, Object>> map = null;
             Yaml yaml = new Yaml();
             File f = new File(System.getProperty("user.dir") + "/storage/quotes.yml");
             InputStream is = f.toURI().toURL().openStream();
-            map = (ArrayList<HashMap<Integer, Object>>) yaml.load(is);
+            map = (ArrayList<HashMap<Object, Object>>) yaml.load(is);
             for (int x = 0; x < map.size(); x++) {
-                HashMap<Integer, Object> quote = map.get(x);
+                HashMap<Object, Object> quote = map.get(x);
                 for (int y = 0; y < quote.size(); y++) {
                     if (quote.get(y) instanceof byte[])
                         quote.put(y, new String((byte[]) quote.get(y)));
                 }
+                quotesInfo.add(new HashMap<String, String>());
+                quotesInfo.get(quotes.size()).put("added_by", (String) quote.get("added_by"));
                 quotes.add(quote);
             }
         } catch(Exception e) {}
@@ -44,11 +56,21 @@ public class Utilities {
     
     public static void saveQuotes() {
         try {
+            ArrayList<HashMap<Object, Object>> allQuotes = new ArrayList<HashMap<Object, Object>>();
+            for (int x = 0; x < quotes.size(); x++) {
+                allQuotes.add(new HashMap<Object, Object>());
+                for (Object quote : quotes.get(x).values()) {
+                    allQuotes.get(x).put(x, quote);
+                }
+                for (Entry<String, String> quoteInfo : quotesInfo.get(x).entrySet()) {
+                    allQuotes.get(x).put(quoteInfo.getKey(), quoteInfo.getValue());
+                }
+            }
             DumperOptions options = new DumperOptions();
             options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
             Yaml yaml = new Yaml(options);
             FileWriter writer = new FileWriter(System.getProperty("user.dir") + "/storage/quotes.yml");
-            writer.write(yaml.dump(quotes));
+            writer.write(yaml.dump(allQuotes));
             writer.close();
         } catch (Exception e) {}
     }
@@ -57,14 +79,17 @@ public class Utilities {
         return quotes.get(number) != null;
     }
     
-    public static int addQuote(String quote) {
-        HashMap<Integer, Object> newQuote = new HashMap<Integer, Object>();
+    public static int addQuote(String quote, String adder) {
+        HashMap<Object, Object> newQuote = new HashMap<Object, Object>();
         newQuote.put(0, quote);
+        newQuote.put("added_by", adder);
         quotes.add(newQuote);
         return quotes.size()-1;
     }
     
-    public static int addQuote(HashMap<Integer, Object> quote) {
+    public static int addQuote(HashMap<Object, Object> quote, String adder) {
+        quotesInfo.add(new HashMap<String, String>());
+        quotesInfo.get(quotes.size()).put("added_by", adder);
         quotes.add(quote);
         return quotes.size()-1;
     }
@@ -77,8 +102,12 @@ public class Utilities {
         quotes.remove(number);
     }
     
-    public static HashMap<Integer, Object> getQuote(int number) {
+    public static HashMap<Object, Object> getQuote(int number) {
         return quotes.get(number);
+    }
+    
+    public static HashMap<String, String> getQuoteInfo(int number) {
+        return quotesInfo.get(number);
     }
     
     public static int getRandomNumber() {
@@ -111,6 +140,83 @@ public class Utilities {
         String r = s.hasNext() ? s.next() : "";
         s.close();
         return r;
+    }
+    
+    public static void unzipFileFromURL(String url, String outputFolder) {
+        byte[] buffer = new byte[1024];
+        try {
+           File folder = new File(outputFolder);
+           if (!folder.exists()) {
+               folder.mkdir();
+           }
+           ZipInputStream zis = new ZipInputStream(new URL(url).openStream());
+           ZipEntry ze = zis.getNextEntry();
+           while (ze != null) {
+               String fileName = ze.getName();
+               File newFile = new File(outputFolder + File.separator + fileName);
+               if (!newFile.getName().contains(".")) {
+                   newFile.mkdirs();
+                   ze = zis.getNextEntry();
+                   continue;
+               }
+               FileOutputStream fos = new FileOutputStream(newFile);         
+               int len;
+               while ((len = zis.read(buffer)) > 0) {
+                   fos.write(buffer, 0, len);
+               }
+               fos.close();
+               ze = zis.getNextEntry();
+           }
+           zis.closeEntry();
+           zis.close();
+       } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public static ArrayList<File> findFilesByExtension(String folder, final String fileExtension) {
+        return findAllFilesInFolder(new File(folder), fileExtension);
+    }
+    
+    public static ArrayList<String> findFileNamesByExtension(String folder, String fileExtension) {
+        ArrayList<String> ret = new ArrayList<String>();
+        for (File file : findFilesByExtension(folder, fileExtension)) {
+            ret.add(file.getName());
+        }
+        return ret;
+    }
+    
+    public static ArrayList<File> findAllFilesInFolder(File folder, String fileExtension) {
+        ArrayList<File> ret = new ArrayList<File>();
+        File[] fList = folder.listFiles();
+        for (File file : fList){
+            if (file.isFile() && file.getName().toLowerCase().endsWith(fileExtension.toLowerCase())){
+                ret.add(file);
+            } else if (file.isDirectory()){
+                ret.addAll(findAllFilesInFolder(file, fileExtension));
+            }
+        }
+        return ret;
+    }
+    
+    public static ArrayList<String> getFileComments(ArrayList<File> files) {
+        ArrayList<String> ret = new ArrayList<String>();
+        for (File file : files) {
+            try {
+                try (Scanner scanner =  new Scanner(new FileInputStream(file))) {
+                    while (scanner.hasNextLine()) {
+                        String next = scanner.nextLine().trim();
+                        System.out.println("     " + next);
+                        if (next.startsWith("//")) {
+                            ret.add(next);
+                        }
+                    }
+                  }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return ret;
     }
     
     @SuppressWarnings("unchecked")

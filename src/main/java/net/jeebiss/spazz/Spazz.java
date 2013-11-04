@@ -270,6 +270,10 @@ public class Spazz extends ListenerAdapter {
                     break;
     		        
     		    default:
+    		        if (rawInput.startsWith("/")) {
+    		            System.out.println("Invalid command: " + inputCommand);
+    		            break;
+    		        }
     		        if (bot.channelExists(chatChannel))
     		            bot.sendMessage(chatChannel, chatColor + rawInput);
     		        else
@@ -1015,10 +1019,10 @@ public class Spazz extends ListenerAdapter {
 		    for (int x = 0; x < String.valueOf(number).length(); x++)
 		        spacing += " ";
 		    
-		    for (Entry<Object, Object> quote : Utilities.getQuote(number).entrySet()) {
+		    for (Entry<Integer, String> quote : Utilities.getQuote(number).entrySet()) {
 		        bot.sendMessage(send, chatColor
-		                + ((int) quote.getKey() == 0 ? "[" + optionalColor + number + chatColor + "] " : spacing)
-		                + quote.getValue());
+		                + (quote.getKey() == 0 ? "[" + optionalColor + number + chatColor + "] " 
+		                : spacing) + quote.getValue());
 		    }
 		} 
 		
@@ -1228,7 +1232,7 @@ public class Spazz extends ListenerAdapter {
                 bot.sendMessage(send, chatColor + "That command is written as: .add [<object>]");
 		    
 		    if (args[1].startsWith("r")) {
-	            if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
+	            if (!hasOp(usr, bot.getChannel("#denizen-dev")) && !hasVoice(usr, bot.getChannel("#denizen-dev")))
 	                bot.sendMessage(send, chatColor + "Sorry, " + senderNick + ", that's only for the Dev Team.");
 	            else if (args.length > 2 && args[2].contains("/")) {
 		            String[] proj = args[2].split("/", 2);
@@ -1240,16 +1244,17 @@ public class Spazz extends ListenerAdapter {
 		                    if (arg.startsWith("delay:") && Double.valueOf(arg.split(":")[1]) != null)
 		                        updateDelay = Double.valueOf(arg.split(":")[1]);
 		                }
-		                if (repoManager.addRepository(proj[0], proj[1], updateDelay, !msgLwr.contains("no_issues")))
+		                if (repoManager.addRepository(proj[0], proj[1], updateDelay, !msgLwr.contains("no_issues"), !msgLwr.contains("no_comments")))
 		                    bot.sendMessage(send, chatColor + "I am now tracking " + proj[1]
-		                            + " with a delay of " + updateDelay + (msgLwr.contains("no_issues") ? " and no issues" : "") + ".");
+		                            + " with a delay of " + updateDelay + (msgLwr.contains("no_issues") ? (!msgLwr.contains("no_comments") 
+		                                    ? ", and no issues." : ", no issues" + ", and no comments.") : "."));
 		                else
 	                        bot.sendMessage(send, chatColor + "Error while adding repository " + args[2] + "...");
 		            }
 		        }
 		        else
 		            bot.sendMessage(send, chatColor + "That command is written as: "
-		                    + parseUsage(".add repo [<author>/<project>] (no_issues) (delay:<#.#>)"));
+		                    + parseUsage(".add repo [<author>/<project>] (no_issues) (no_comments) (delay:<#.#>)"));
 		    }
 		    else if (args[1].startsWith("q")) {
 		        if (args.length > 2) {
@@ -1257,11 +1262,7 @@ public class Spazz extends ListenerAdapter {
 		            if (quoteMsg.length() < 5)
 		                bot.sendMessage(send, chatColor + "Quote must have at least 5 characters.");
 		            else {
-		                HashMap<Object, Object> quote = new HashMap<Object, Object>();
-		                for (String line : quoteMsg.split("\\\n"))
-		                    quote.put(quote.size(), line);
-		                    
-		                bot.sendMessage(send, chatColor + "Added quote as #" + Utilities.addQuote(quote, senderNick) + ".");
+		                bot.sendMessage(send, chatColor + "Added quote as #" + Utilities.addQuote(quoteMsg, senderNick) + ".");
 		            }
 		        }
 		        else
@@ -1291,7 +1292,7 @@ public class Spazz extends ListenerAdapter {
             
 		    String[] args = msgLwr.trim().split(" ");
 		    
-            if (!hasOp(usr, chnl) && !hasVoice(usr, chnl) && !usr.getLogin().equalsIgnoreCase("mcmonkey"))
+            if (!hasOp(usr, bot.getChannel("#denizen-dev")) && !hasVoice(usr, bot.getChannel("#denizen-dev")) && !usr.getLogin().equalsIgnoreCase("mcmonkey"))
                 bot.sendMessage(send, chatColor + "Sorry, " + senderNick + ", that's only for the Dev Team.");
             else if (args[1].startsWith("r")) {
                 if (args.length > 2) {
@@ -1336,7 +1337,8 @@ public class Spazz extends ListenerAdapter {
                     else {
                         Repository repo = repoManager.getRepository(args[2]);
                         bot.sendMessage(send, chatColor + repo.getFullName() + ": Delay(" 
-                                + repo.getUpdateDelay() + ") Issues(" + repo.hasIssues() + ")");
+                                + repo.getUpdateDelay() + ") Issues(" + repo.hasIssues() + ") Comments("
+                                + repo.hasComments() + ")");
                     }
                 }
                 else
@@ -1355,8 +1357,14 @@ public class Spazz extends ListenerAdapter {
                 if (args.length > 2) {
                     try {
                         int number = Integer.valueOf(args[2]);
-                        HashMap<String, String> info = Utilities.getQuoteInfo(number);
-                        bot.sendMessage(send, chatColor + number + ": Added_by(" + info.get("added_by") + ")");
+                        String infoText = "";
+                        for (Entry<String, String> info : Utilities.getQuoteInfo(number).entrySet()) {
+                            infoText += " " + Utilities.capitalize(info.getKey()) + "(" + info.getValue() + ")";
+                        }
+                        for (Entry<Integer, String> quote : Utilities.getQuote(number).entrySet()) {
+                            infoText += " Quote#" + quote.getKey() + "(" + quote.getValue() + ")";
+                        }
+                        bot.sendMessage(send, chatColor + number + ":" + infoText);
                     } catch(Exception e) {
                         bot.sendMessage(send, chatColor + "That command is written as: .info quote [<#>]");
                     }

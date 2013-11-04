@@ -28,28 +28,31 @@ import net.minidev.json.JSONValue;
 public class Utilities {
     
     private static Random random = new Random();
-    private static ArrayList<HashMap<Object, Object>> quotes;
+    private static ArrayList<HashMap<Integer, String>> quotes;
     private static ArrayList<HashMap<String, String>> quotesInfo;
     
     @SuppressWarnings("unchecked")
     public static void loadQuotes() {
         try {
-            quotes = new ArrayList<HashMap<Object, Object>>();
+            quotes = new ArrayList<HashMap<Integer, String>>();
             quotesInfo = new ArrayList<HashMap<String, String>>();
             ArrayList<HashMap<Object, Object>> map = null;
             Yaml yaml = new Yaml();
             File f = new File(System.getProperty("user.dir") + "/storage/quotes.yml");
             InputStream is = f.toURI().toURL().openStream();
             map = (ArrayList<HashMap<Object, Object>>) yaml.load(is);
-            for (int x = 0; x < map.size(); x++) {
-                HashMap<Object, Object> quote = map.get(x);
-                for (int y = 0; y < quote.size(); y++) {
-                    if (quote.get(y) instanceof byte[])
-                        quote.put(y, new String((byte[]) quote.get(y)));
-                }
+            for (HashMap<Object, Object> quote : map) {
+                HashMap<Integer, String> endQuote = new HashMap<Integer, String>();
                 quotesInfo.add(new HashMap<String, String>());
-                quotesInfo.get(quotes.size()).put("added_by", (String) quote.get("added_by"));
-                quotes.add(quote);
+                for (Entry<Object, Object> entry : quote.entrySet()) {
+                    if (entry.getValue() instanceof byte[])
+                        entry.setValue(new String((byte[]) entry.getValue()));
+                    if (!(entry.getKey() instanceof Integer))
+                        quotesInfo.get(quotes.size()).put((String) entry.getKey(), (String) entry.getValue());
+                    else
+                        endQuote.put((int) entry.getKey(), (String) entry.getValue());
+                }
+                quotes.add(endQuote);
             }
         } catch(Exception e) {}
     }
@@ -59,7 +62,7 @@ public class Utilities {
             ArrayList<HashMap<Object, Object>> allQuotes = new ArrayList<HashMap<Object, Object>>();
             for (int x = 0; x < quotes.size(); x++) {
                 allQuotes.add(new HashMap<Object, Object>());
-                for (Object quote : quotes.get(x).values()) {
+                for (String quote : quotes.get(x).values()) {
                     allQuotes.get(x).put(x, quote);
                 }
                 for (Entry<String, String> quoteInfo : quotesInfo.get(x).entrySet()) {
@@ -76,18 +79,20 @@ public class Utilities {
     }
     
     public static boolean hasQuote(int number) {
-        return quotes.get(number) != null;
+        return (quotes.size() <= number);
     }
     
     public static int addQuote(String quote, String adder) {
-        HashMap<Object, Object> newQuote = new HashMap<Object, Object>();
+        HashMap<Integer, String> newQuote = new HashMap<Integer, String>();
+        HashMap<String, String> newQuoteInfo = new HashMap<String, String>();
         newQuote.put(0, quote);
-        newQuote.put("added_by", adder);
+        newQuoteInfo.put("added_by", adder);
         quotes.add(newQuote);
+        quotesInfo.add(newQuoteInfo);
         return quotes.size()-1;
     }
     
-    public static int addQuote(HashMap<Object, Object> quote, String adder) {
+    public static int addQuote(HashMap<Integer, String> quote, String adder) {
         quotesInfo.add(new HashMap<String, String>());
         quotesInfo.get(quotes.size()).put("added_by", adder);
         quotes.add(quote);
@@ -102,7 +107,7 @@ public class Utilities {
         quotes.remove(number);
     }
     
-    public static HashMap<Object, Object> getQuote(int number) {
+    public static HashMap<Integer, String> getQuote(int number) {
         return quotes.get(number);
     }
     

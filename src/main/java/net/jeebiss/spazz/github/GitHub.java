@@ -21,8 +21,8 @@ public class GitHub {
         return new GitHub(user, password);
     }
     
-    public Repository getRepository(String owner, String project, long updateDelay, boolean hasIssues) throws Exception {
-        return new Repository(this, updateDelay, hasIssues, retrieve().parse(GITHUB_URL + "/repos/" + owner + "/" + project));
+    public Repository getRepository(String owner, String project, long updateDelay, boolean hasIssues, boolean hasComments) throws Exception {
+        return new Repository(this, updateDelay, hasIssues, hasComments, retrieve().parse(GITHUB_URL + "/repos/" + owner + "/" + project));
     }
     
     public Requester retrieve() {

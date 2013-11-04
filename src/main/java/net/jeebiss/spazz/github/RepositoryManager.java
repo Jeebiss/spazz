@@ -23,12 +23,12 @@ public class RepositoryManager {
         try {
             loadAll();
         } catch(Exception e) {
-            addRepository("aufdemrand", "Denizen", 20, true);
-            addRepository("Morphan1", "Depenizen", 30, true);
-            addRepository("CitizensDev", "Citizens2", 20, false);
-            addRepository("CitizensDev", "CitizensAPI", 30, false);
-            addRepository("Jeebiss", "spazz", 60, true);
-            addRepository("jrbudda", "Sentry", 100, true);
+            addRepository("aufdemrand", "Denizen", 20, true, true);
+            addRepository("Morphan1", "Depenizen", 30, true, true);
+            addRepository("CitizensDev", "Citizens2", 20, false, false);
+            addRepository("CitizensDev", "CitizensAPI", 30, false, false);
+            addRepository("Jeebiss", "spazz", 60, true, true);
+            addRepository("jrbudda", "Sentry", 100, true, true);
         }
     }
     
@@ -62,9 +62,9 @@ public class RepositoryManager {
         return root;
     }
     
-    public boolean addRepository(String owner, String project, double updateDelay, boolean hasIssues) {
+    public boolean addRepository(String owner, String project, double updateDelay, boolean hasIssues, boolean hasComments) {
         try {
-            repositories.put(project.toLowerCase(), root.getRepository(owner, project, ((long)updateDelay)*1000, hasIssues));
+            repositories.put(project.toLowerCase(), root.getRepository(owner, project, ((long)updateDelay)*1000, hasIssues, hasComments));
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -103,6 +103,7 @@ public class RepositoryManager {
             data.get(proj[0]).put(proj[1], new HashMap<String, Object>());
             data.get(proj[0]).get(proj[1]).put("delay", repo.getUpdateDelay());
             data.get(proj[0]).get(proj[1]).put("has_issues", repo.hasIssues());
+            data.get(proj[0]).get(proj[1]).put("has_comments", repo.hasComments());
         }
 
         FileWriter writer = new FileWriter(System.getProperty("user.dir") + "/storage/repositories.yml");
@@ -120,7 +121,8 @@ public class RepositoryManager {
         for (Entry<String, HashMap<String, HashMap<String, Object>>> owner : map.entrySet()) {
             for (Entry<String, HashMap<String, Object>> repo : owner.getValue().entrySet()) {
                 addRepository(owner.getKey(), repo.getKey(),
-                        (double) repo.getValue().get("delay"), (boolean) repo.getValue().get("has_issues"));
+                        (double) repo.getValue().get("delay"), (boolean) repo.getValue().get("has_issues"),
+                        (boolean) repo.getValue().get("has_comments"));
             }
         }
     }

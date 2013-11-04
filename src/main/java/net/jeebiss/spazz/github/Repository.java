@@ -17,6 +17,7 @@ public class Repository {
 
     private long updateDelay;
     private boolean hasIssues = false;
+    private boolean hasComments = false;
     private JSONObject information;
     
     private boolean shutdown = false;
@@ -26,20 +27,21 @@ public class Repository {
     private HashMap<String, Commit> commits;
     private HashMap<Integer, Comment> comments;
     
-    public Repository(GitHub root, long updateDelay, boolean hasIssues, JSONObject information) {
+    public Repository(GitHub root, long updateDelay, boolean hasIssues, boolean hasComments, JSONObject information) {
         this.root = root;
         this.information = information;
-        if (updateDelay > 2000) {
+        if (updateDelay > 5000) {
             this.updateDelay = updateDelay;
             new Thread(new RepositoryChecker()).start();
         }
+        commits = getCommits();
         if (hasIssues) {
             this.hasIssues = true;
+            this.hasComments = true;
             openIssues = getIssues(true);
             closedIssues = getIssues(false);
+            comments = getComments();
         }
-        commits = getCommits();
-        comments = getComments();
     }
     
     public boolean reload() {
@@ -69,6 +71,10 @@ public class Repository {
     
     public boolean hasIssues() {
         return hasIssues;
+    }
+    
+    public boolean hasComments() {
+        return hasComments;
     }
     
     public int getOpenIssueCount() {

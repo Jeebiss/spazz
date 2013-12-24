@@ -21,6 +21,11 @@
 			<artifactId>json-smart-mini</artifactId>
 			<version>1.0.8</version>
 		</dependency>
+		<dependency>
+			<groupId>net.aufdemrand</groupId>
+			<artifactId>denizen</artifactId>
+			<version>0.9.3-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 	        
 	<repositories>

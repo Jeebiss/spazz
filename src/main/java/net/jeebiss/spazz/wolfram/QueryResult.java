@@ -1,7 +1,8 @@
 package net.jeebiss.spazz.wolfram;
 
 import java.util.HashMap;
-import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -9,6 +10,7 @@ import org.w3c.dom.NodeList;
 
 public class QueryResult {
 
+    private Pattern hasVars = Pattern.compile("[a-zA-Z]");
     private Document document;
     private HashMap<String, Element> podList;
     public QueryResult(Document doc) {
@@ -25,6 +27,10 @@ public class QueryResult {
         if (podList.containsKey("Substitution")) {
             String ret = ((Element) podList.get("Substitution").getElementsByTagName("subpod").item(0))
                     .getElementsByTagName("plaintext").item(0).getTextContent();
+            if (ret.contains("=")) {
+                String leftSide = ret.split(" = ")[0];
+                ret = ret.replace(leftSide, leftSide.replace(" ", "*"));
+            }
             HashMap<String, String> substitutions = new HashMap<String, String>();
             for (String sub : ((Element) podList.get("Input").getElementsByTagName("subpod").item(0))
                     .getTextContent().replaceAll("\\{|\\}", "").split(", ")) {
@@ -32,10 +38,10 @@ public class QueryResult {
                 String[] s = sub.split("=");
                 substitutions.put(s[0].trim(), s[1].trim());
             }
-            while (ret.matches(".*[a-zA-Z].*")) {
-                for (Entry<String, String> entry : substitutions.entrySet()) {
-                    ret = ret.replace(entry.getKey(), entry.getValue());
-                }
+            Matcher m = hasVars.matcher(ret);
+            while (m.find()) {
+                if (!substitutions.containsKey(m.group(0))) continue;
+                ret = ret.replace(m.group(0), substitutions.get(m.group(0)));
             }
             return ret;
         }

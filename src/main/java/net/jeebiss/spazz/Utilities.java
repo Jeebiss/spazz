@@ -4,12 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -128,7 +127,7 @@ public class Utilities {
     }
 
     public static String getStringFromUrl(String url) throws IOException {
-        return getStringFromStream(new URL(url).openStream());
+        return getStringFromStream(getStreamFromUrl(url));
     }
     
     public static String getStringFromUrls(List<String> urls) throws IOException {
@@ -139,42 +138,52 @@ public class Utilities {
         return returns;
     }
     
+    public static InputStream getStreamFromUrl(String url) throws IOException {
+        InputStream is;
+        HttpURLConnection httpConn = (HttpURLConnection) new URL(url).openConnection();
+        if (httpConn.getResponseCode() >= 400) {
+            is = httpConn.getErrorStream();
+        } else {
+            is = httpConn.getInputStream();
+        }
+        return is;
+    }
+    
     public static String getStringFromStream(InputStream is) {
-        Scanner s = new Scanner(is);
-        s.useDelimiter("\\A");
-        String r = s.hasNext() ? s.next() : "";
-        s.close();
-        return r;
+        Scanner sc = new Scanner(is);
+        String ret = sc.useDelimiter("\\A").next();
+        sc.close();
+        return ret;
     }
     
     public static void unzipFileFromURL(String url, String outputFolder) {
         byte[] buffer = new byte[1024];
         try {
-           File folder = new File(outputFolder);
-           if (!folder.exists()) {
-               folder.mkdir();
-           }
-           ZipInputStream zis = new ZipInputStream(new URL(url).openStream());
-           ZipEntry ze = zis.getNextEntry();
-           while (ze != null) {
-               String fileName = ze.getName();
-               File newFile = new File(outputFolder + File.separator + fileName);
-               if (!newFile.getName().contains(".")) {
-                   newFile.mkdirs();
-                   ze = zis.getNextEntry();
-                   continue;
-               }
-               FileOutputStream fos = new FileOutputStream(newFile);         
-               int len;
-               while ((len = zis.read(buffer)) > 0) {
-                   fos.write(buffer, 0, len);
-               }
-               fos.close();
-               ze = zis.getNextEntry();
-           }
-           zis.closeEntry();
-           zis.close();
-       } catch (Exception e) {
+            File folder = new File(outputFolder);
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+            ZipInputStream zis = new ZipInputStream(new URL(url).openStream());
+            ZipEntry ze = zis.getNextEntry();
+            while (ze != null) {
+                String fileName = ze.getName();
+                File newFile = new File(outputFolder + File.separator + fileName);
+                if (!newFile.getName().contains(".")) {
+                    newFile.mkdirs();
+                    ze = zis.getNextEntry();
+                    continue;
+                }
+                FileOutputStream fos = new FileOutputStream(newFile);         
+                int len;
+                while ((len = zis.read(buffer)) > 0) {
+                    fos.write(buffer, 0, len);
+                }
+                fos.close();
+                ze = zis.getNextEntry();
+            }
+            zis.closeEntry();
+            zis.close();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

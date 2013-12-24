@@ -50,12 +50,11 @@ public class Issue {
     }
     
     public Date getLastUpdated() {
-        try {
-            return GitHub.parseDate((String) information.get("updated_at"));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        return GitHub.parseDate((String) information.get("updated_at"));
+    }
+    
+    public String getLastUpdatedSimple() {
+        return GitHub.parseDateSimple((String) information.get("updated_at"));
     }
 
     @SuppressWarnings("unchecked")
@@ -83,12 +82,11 @@ public class Issue {
     }
     
     public Date getCreatedAt() {
-        try {
-            return GitHub.parseDate((String) information.get("created_at"));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        return GitHub.parseDate((String) information.get("created_at"));
+    }
+    
+    public String getCreatedAtSimple() {
+        return GitHub.parseDateSimple((String) information.get("created_at"));
     }
     
 }

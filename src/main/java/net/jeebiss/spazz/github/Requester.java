@@ -39,9 +39,14 @@ public class Requester {
         return json;
     }
     
+    public HttpURLConnection githubConnection() throws Exception {
+        return setupConnection(GitHub.GITHUB_URL);
+    }
+    
     private HttpURLConnection setupConnection(String url) throws Exception {
-        HttpURLConnection uc = (HttpURLConnection) new URL(url).openConnection();
-        uc.setRequestProperty("Authorization", "Basic " + root.authentication);
+        URL loc = new URL(url);
+        HttpURLConnection uc = (HttpURLConnection) loc.openConnection();
+        uc.setRequestProperty("Authorization", "token " + root.authentication);
         uc.setRequestMethod(method);
         return uc;
     }

@@ -67,7 +67,6 @@ public class RepositoryManager {
             repositories.put(project.toLowerCase(), root.getRepository(owner, project, ((long)updateDelay)*1000, hasIssues, hasComments));
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -84,6 +83,11 @@ public class RepositoryManager {
             e.printStackTrace();
             return false;
         }
+    }
+    
+    public boolean hasRepository(String author, String project) {
+        return (repositories.containsKey(project.toLowerCase()) 
+                && repositories.get(project).getOwner().getLogin().equalsIgnoreCase(author));
     }
     
     public boolean hasRepository(String project) {

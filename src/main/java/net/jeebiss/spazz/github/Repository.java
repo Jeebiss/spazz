@@ -24,6 +24,7 @@ public class Repository {
     
     private HashMap<Integer, Issue> openIssues;
     private HashMap<Integer, Issue> closedIssues;
+    private HashMap<Integer, Issue> allIssues;
     private HashMap<String, Commit> commits;
     private HashMap<Integer, Comment> comments;
     
@@ -36,10 +37,13 @@ public class Repository {
         }
         commits = getCommits();
         if (hasIssues) {
+            allIssues = new HashMap<Integer, Issue>();
             this.hasIssues = true;
             this.hasComments = true;
             openIssues = getIssues(true);
             closedIssues = getIssues(false);
+            allIssues.putAll(openIssues);
+            allIssues.putAll(closedIssues);
             comments = getComments();
         }
     }
@@ -53,7 +57,8 @@ public class Repository {
         reloadCommits();
         if (hasIssues)
             reloadIssues();
-        reloadComments();
+        if (hasComments)
+            reloadComments();
         return true;
     }
     
@@ -81,6 +86,10 @@ public class Repository {
         return (int) information.get("open_issues_count");
     }
     
+    public HashMap<Integer, Issue> getLoadedIssuesAll() {
+        return allIssues;
+    }
+    
     public HashMap<Integer, Issue> getLoadedIssues(boolean open) {
         if (open)
             return openIssues;
@@ -90,6 +99,22 @@ public class Repository {
     
     public HashMap<String, Commit> getLoadedCommits() {
         return commits;
+    }
+    
+    public Issue getIssue(int issueNumber) {
+        if (allIssues.containsKey(issueNumber)) {
+            return allIssues.get(issueNumber);
+        }
+        else {
+            try {
+                Issue issue = new Issue(root, this, root.retrieve().parse(((String) information.get("issues_url"))
+                        .replaceAll("\\{.+\\}", "") + "/" + issueNumber));
+                allIssues.put(issueNumber, issue);
+                return issue;
+            } catch (Exception e) {
+                return null;
+            }
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -196,6 +221,8 @@ public class Repository {
             }
             openIssues = newOpenIssues;
             closedIssues = newClosedIssues;
+            allIssues.putAll(openIssues);
+            allIssues.putAll(closedIssues);
         } catch(Exception e) {}
     }
     

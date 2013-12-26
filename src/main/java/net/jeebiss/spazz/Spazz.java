@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.aufdemrand.denizen.utilities.javaluator.DoubleEvaluator;
+import net.jeebiss.spazz.javaluator.DoubleEvaluator;
 import net.jeebiss.spazz.github.Comment;
 import net.jeebiss.spazz.github.CommentEvent;
 import net.jeebiss.spazz.github.Commit;
@@ -417,15 +417,16 @@ public class Spazz extends ListenerAdapter {
         if (!issue.isPullRequest()) {
             sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Issue " + event.getState().name().toLowerCase()
                     + ": [" + defaultColor + issue.getNumber() + chatColor + "] \"" + defaultColor + issue.getTitle()
-                    + chatColor + "\" by " + optionalColor + issue.getUser().getLogin() + chatColor + " - " + issue.getShortUrl());
+                    + chatColor + "\" by " + optionalColor + issue.getUser().getLogin() + chatColor + " -- " + issue.getShortUrl());
         }
         
         else {
             if (event.getState() == IssueEvent.State.OPENED) {
-                sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Pull request " + (event.getState().name().equals("CLOSED") ?
-                        "denied" : event.getState().name().toLowerCase()) + ": [" + defaultColor + issue.getNumber()
-                        + chatColor + "] \"" + defaultColor + issue.getTitle() + chatColor + "\" by " + optionalColor
-                        + issue.getUser().getLogin() + chatColor + " - " + issue.getShortUrl());
+                sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Pull request "
+                        + "opened: [" + defaultColor + issue.getNumber() + chatColor + "] \"" + defaultColor
+                        + issue.getTitle() + chatColor + "\" by " + optionalColor + issue.getUser().getLogin()
+                        + (issue.isPullRequest() ? Colors.GREEN + "+" + issue.getAdditions()
+                                + Colors.RED + " -" + issue.getDeletions() : "") + chatColor + " -- " + issue.getShortUrl());
             }
         }
         
@@ -452,7 +453,7 @@ public class Spazz extends ListenerAdapter {
                 message = message.substring(0, message.indexOf('\n'));
             }
             
-            sendToAllChannels(defaultColor + "  " + commit.getAuthor() + chatColor + ": " + message + " - " + shortenedUrl);
+            sendToAllChannels(defaultColor + "  " + commit.getAuthor() + chatColor + ": " + message + " -- " + shortenedUrl);
         }
         
     }
@@ -466,23 +467,23 @@ public class Spazz extends ListenerAdapter {
             IssueComment icomment = (IssueComment) comment;
             Issue issue = icomment.getIssue();
             String url = icomment.getShortUrl();
-            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor 
-                    + comment.getUser().getLogin() + chatColor + " commented on " 
-                    + issue.getState() + " issue: [" 
-                    + defaultColor + issue.getNumber() + chatColor + "] " + defaultColor 
-                    + issue.getTitle() + chatColor + " by " + defaultColor 
-                    + issue.getUser().getLogin() + chatColor 
-                    + (url != null ? " - " + url : ""));
+            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
+                    + comment.getUser().getLogin() + chatColor + " commented on "
+                    + issue.getState() + " issue: ["
+                    + defaultColor + issue.getNumber() + chatColor + "] " + defaultColor
+                    + issue.getTitle() + chatColor + " by " + defaultColor
+                    + issue.getUser().getLogin() + chatColor
+                    + (url != null ? " -- " + url : ""));
         }
         else if (comment instanceof CommitComment) {
             CommitComment ccomment = (CommitComment) comment;
             Commit commit = ccomment.getCommit();
             String url = ccomment.getShortUrl();
-            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor 
-                    + comment.getUser().getLogin() + chatColor + " commented on commit: " + defaultColor 
-                    + commit.getMessage() + chatColor + " by " + defaultColor 
+            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
+                    + comment.getUser().getLogin() + chatColor + " commented on commit: " + defaultColor
+                    + commit.getMessage() + chatColor + " by " + defaultColor
                     + commit.getAuthor() + chatColor
-                    + (url != null ? " - " + url : ""));
+                    + (url != null ? " -- " + url : ""));
         }
         
     }
@@ -548,6 +549,7 @@ public class Spazz extends ListenerAdapter {
 		        if (issue != null) {
 		            bot.sendMessage(send, chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
 		                    + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
+                            + " -- " + issue.getState() + " " + (issue.isPullRequest() ? "pull request" : "issue")
 		                    + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getCreatedAtSimple() + ".)");
 		        }
 		    }
@@ -561,7 +563,9 @@ public class Spazz extends ListenerAdapter {
 		        if (issue != null) {
                     bot.sendMessage(send, chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
                             + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
-                            + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getCreatedAtSimple() + ".)");
+                            + " -- " + issue.getState() + " " + (issue.isPullRequest() ? "pull request" : "issue")
+                            + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getCreatedAtSimple() + ".) - "
+                            + issue.getShortUrl());
 		        }
 		    }
 		}
@@ -1916,11 +1920,14 @@ public class Spazz extends ListenerAdapter {
             InputStream is = f.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
             if (map.get("messages") instanceof HashMap<?, ?>) {
-                for (Map.Entry<String, ArrayList<String>> msgs : ((HashMap<String, ArrayList<String>>) map.get("messages")).entrySet()) {
-                    for (String msg : msgs.getValue()) {
-                        String[] split = msg.split("_", 2);
-                        addMessage(new Message(split[0], split[1]));
-                    }
+                for (Object msgObj : ((HashMap<Integer, Object>) map.get("messages")).values()) {
+                    String msg;
+                    if (msgObj instanceof byte[])
+                        msg = new String((byte[]) msgObj);
+                    else
+                        msg = (String) msgObj;
+                    String[] split = msg.split("_", 2);
+                    addMessage(new Message(split[0], split[1]));
                 }
             }
 		}

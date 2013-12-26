@@ -34,10 +34,7 @@ public class Commit {
     }
     
     public boolean isPullRequest() {
-        if (getMessage().startsWith("Merge pull request #"))
-            return true;
-        
-        return false;
+        return (getMessage().startsWith("Merge pull request #"));
     }
     
     @SuppressWarnings("unchecked")

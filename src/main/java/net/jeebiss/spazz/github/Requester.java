@@ -3,7 +3,7 @@ package net.jeebiss.spazz.github;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import net.jeebiss.spazz.Utilities;
+import net.jeebiss.spazz.util.Utilities;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;

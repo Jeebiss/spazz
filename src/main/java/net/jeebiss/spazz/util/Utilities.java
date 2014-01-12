@@ -1,4 +1,4 @@
-package net.jeebiss.spazz;
+package net.jeebiss.spazz.util;
 
 import java.io.File;
 import java.io.FileInputStream;

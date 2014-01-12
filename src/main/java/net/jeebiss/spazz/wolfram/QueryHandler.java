@@ -4,7 +4,7 @@ import java.net.URLEncoder;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
-import net.jeebiss.spazz.Utilities;
+import net.jeebiss.spazz.util.Utilities;
 
 public class QueryHandler {
     

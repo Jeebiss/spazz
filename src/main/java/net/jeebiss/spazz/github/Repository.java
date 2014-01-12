@@ -6,8 +6,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.jeebiss.spazz.Utilities;
-import net.jeebiss.spazz.github.Comment;
+import net.jeebiss.spazz.util.Utilities;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 
@@ -102,7 +101,7 @@ public class Repository {
     }
     
     public Issue getIssue(int issueNumber) {
-        if (allIssues.containsKey(issueNumber)) {
+        if (allIssues != null && allIssues.containsKey(issueNumber)) {
             return allIssues.get(issueNumber);
         }
         else {

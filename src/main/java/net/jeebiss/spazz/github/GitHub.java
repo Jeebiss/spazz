@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
 
-import net.jeebiss.spazz.Utilities;
+import net.jeebiss.spazz.util.Utilities;
 
 public class GitHub {
 

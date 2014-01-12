@@ -3,7 +3,7 @@ package net.jeebiss.spazz.github;
 import java.util.Date;
 import java.util.Map;
 
-import net.jeebiss.spazz.Utilities;
+import net.jeebiss.spazz.util.Utilities;
 import net.minidev.json.JSONObject;
 
 public class Issue {

@@ -31,6 +31,8 @@ import net.jeebiss.spazz.github.IssueComment;
 import net.jeebiss.spazz.github.IssueEvent;
 import net.jeebiss.spazz.github.Repository;
 import net.jeebiss.spazz.github.RepositoryManager;
+import net.jeebiss.spazz.util.MinecraftServer;
+import net.jeebiss.spazz.util.Utilities;
 import net.jeebiss.spazz.wolfram.QueryHandler;
 
 import org.pircbotx.Channel;
@@ -87,8 +89,10 @@ public class Spazz extends ListenerAdapter {
     public static String chatChannel = "#denizen-dev";
     public static GitHub github = null;
     public static RepositoryManager repoManager = null;
-    public static Pattern issuesPattern = Pattern.compile("http(s)?://(www\\.)?github\\.com/(\\w+)/(\\w+)/issues/(\\d+)");
+    public static Pattern issuesPattern = Pattern
+            .compile("http(s)?://(www\\.)?github\\.com/(\\w+)/(\\w+)/(issues|pulls)/(\\d+)");
     public static Pattern altIssuesPattern = Pattern.compile("(\\w+)\\s*#(\\d+)");
+    public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "(.)");
     
     public static QueryHandler queryHandler = null;
     
@@ -421,13 +425,11 @@ public class Spazz extends ListenerAdapter {
         }
         
         else {
-            if (event.getState() == IssueEvent.State.OPENED) {
-                sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Pull request "
-                        + "opened: [" + defaultColor + issue.getNumber() + chatColor + "] \"" + defaultColor
-                        + issue.getTitle() + chatColor + "\" by " + optionalColor + issue.getUser().getLogin()
-                        + (issue.isPullRequest() ? Colors.GREEN + "+" + issue.getAdditions()
-                                + Colors.RED + " -" + issue.getDeletions() : "") + chatColor + " -- " + issue.getShortUrl());
-            }
+            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Pull request "
+                    + event.getState().name().toLowerCase() + ": [" + defaultColor + issue.getNumber() + chatColor + "] \"" 
+                    + defaultColor + issue.getTitle() + chatColor + "\" by " + optionalColor + issue.getUser().getLogin()
+                    + Colors.GREEN + "+" + issue.getAdditions()+ Colors.RED + " -" + issue.getDeletions()
+                    + chatColor + " -- " + issue.getShortUrl());
         }
         
     }
@@ -549,7 +551,7 @@ public class Spazz extends ListenerAdapter {
 		        if (issue != null) {
 		            bot.sendMessage(send, chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
 		                    + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
-                            + " -- " + issue.getState() + " " + (issue.isPullRequest() ? "pull request" : "issue")
+                            + " -- " + issue.getState().toLowerCase() + " " + (issue.isPullRequest() ? "pull request" : "issue")
 		                    + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getCreatedAtSimple() + ".)");
 		        }
 		    }
@@ -563,7 +565,7 @@ public class Spazz extends ListenerAdapter {
 		        if (issue != null) {
                     bot.sendMessage(send, chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
                             + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
-                            + " -- " + issue.getState() + " " + (issue.isPullRequest() ? "pull request" : "issue")
+                            + " -- " + issue.getState().toLowerCase() + " " + (issue.isPullRequest() ? "pull request" : "issue")
                             + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getCreatedAtSimple() + ".) - "
                             + issue.getShortUrl());
 		        }
@@ -1529,6 +1531,38 @@ public class Spazz extends ListenerAdapter {
 		        bot.sendMessage(send, chatColor + input + " = " + output);
 		    }
 		}
+
+        else if (msgLwr.startsWith(".mcping")) {
+            String[] args = msgLwr.split(" ");
+            if (args.length < 2) {
+                bot.sendMessage(send, address + chatColor + "Invalid server specified.");
+                return;
+            }
+            int port = 25565;
+            if (args[1].contains(":")) {
+                try { port = Integer.valueOf(args[1].split(":")[1].replace("/", "")); }
+                catch (Exception e) {}
+            }
+            MinecraftServer server = new MinecraftServer(args[1].contains(":") ? args[1].split(":")[0] : args[1], port);
+            if (server.getAddress().isUnresolved())
+                bot.sendMessage(send, address + chatColor + "Invalid server specified.");
+            else try {
+                MinecraftServer.StatusResponse response = server.ping();
+                MinecraftServer.Players players = response.getPlayers();
+                String serverInfo = response.getDescription() + chatColor + " - " + response.getVersion().getName() +
+                        chatColor + " - " + players.getOnline() + "/" + players.getMax();
+                Matcher m = minecraftColor.matcher(serverInfo);
+                while (m.find()) {
+                    String color = parseColor("&" + m.group(1));
+                    serverInfo = serverInfo.replace((char) 0xa7 + m.group(1), color != null ? color : "");
+                }
+                bot.sendMessage(send, address + chatColor + serverInfo.replace(String.valueOf((char) 0xc2), "")
+                        .replaceAll("\\s+", " "));
+            } catch (Exception e) {
+                e.printStackTrace();
+                bot.sendMessage(send, address + chatColor + "Invalid server specified.");
+            }
+        }
 		
 		else if (msgLwr.equals(".dev")) {
 		    if (usr.getNick().startsWith("Morph") && hasVoice(usr, bot.getChannel("#denizen-devs"))) {
@@ -1734,40 +1768,38 @@ public class Spazz extends ListenerAdapter {
 	private String parseColor(String colorName) {
 		
 		if(colorName.contains("&")) {
-			if(colorName.length() < 2)
-				return null;
-			String symbol = colorName.substring(1, colorName.length());
-			if (symbol == "0")
+			String symbol = colorName.substring(1, colorName.length()).toLowerCase();
+			if (symbol.equals("0"))
 				return Colors.BLACK;
-			else if (symbol == "1")
+			else if (symbol.equals("1"))
 				return Colors.DARK_BLUE;
-			else if (symbol == "2")
+			else if (symbol.equals("2"))
 				return Colors.DARK_GREEN;
-			else if (symbol == "3")
+			else if (symbol.equals("3"))
 				return Colors.TEAL;
-			else if (symbol == "4")
+			else if (symbol.equals("4"))
 				return Colors.RED;
-			else if (symbol == "5")
+			else if (symbol.equals("5"))
 				return Colors.PURPLE;
-			else if (symbol == "6")
+			else if (symbol.equals("6"))
 				return Colors.YELLOW;
-			else if (symbol == "7")
+			else if (symbol.equals("7"))
 				return Colors.LIGHT_GRAY;
-			else if (symbol == "8")
+			else if (symbol.equals("8"))
 				return Colors.DARK_GRAY;
-			else if (symbol == "9")
+			else if (symbol.equals("9"))
 				return Colors.BLUE;
-			else if (symbol == "a")
+			else if (symbol.equals("a"))
 				return Colors.GREEN;
-			else if (symbol == "b")
+			else if (symbol.equals("b"))
 				return Colors.CYAN;
-			else if (symbol == "c")
+			else if (symbol.equals("c"))
 				return Colors.RED;
-			else if (symbol == "d")
+			else if (symbol.equals("d"))
 				return Colors.MAGENTA;
-			else if (symbol == "e")
+			else if (symbol.equals("e"))
 				return Colors.YELLOW;
-			else if (symbol == "f")
+			else if (symbol.equals("f"))
 				return Colors.WHITE;
 			else return null;
 		}
@@ -2103,5 +2135,11 @@ public class Spazz extends ListenerAdapter {
 	    }
 	    return ret;
 	}
-	
+	/*
+	private static ArrayList<HashMap<String, String[]>> findMonkeyCmd(String input) throws Exception {
+	    ArrayList<HashMap<String, String[]>> ret = new ArrayList<HashMap<String, String[]>>();
+	    String monkeycmd = Utilities.getStringFromUrl("http://mcmonkey4eva.dynsns.org/cmds/"
+	            + URLEncoder.encode(input, "UTF-8")).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&");
+	}
+	*/
 }

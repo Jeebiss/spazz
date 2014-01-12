@@ -37,3 +37,7 @@ local.properties
 
 /users
 /storage
+
+*.idea
+*.iml
+*.MF

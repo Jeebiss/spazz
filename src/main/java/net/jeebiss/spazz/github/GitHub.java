@@ -29,8 +29,8 @@ public class GitHub {
         return (retrieve().githubConnection().getResponseCode() == 200);
     }
     
-    public Repository getRepository(String owner, String project, long updateDelay, boolean hasIssues, boolean hasComments) throws Exception {
-        return new Repository(this, updateDelay, hasIssues, hasComments, retrieve().parse(GITHUB_URL + "/repos/" + owner + "/" + project));
+    public Repository getRepository(String owner, String project, long updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) throws Exception {
+        return new Repository(this, updateDelay, hasIssues, hasComments, hasPulls, retrieve().parse(GITHUB_URL + "/repos/" + owner + "/" + project));
     }
     
     public Requester retrieve() {
@@ -88,26 +88,20 @@ public class GitHub {
         Calendar trueDate = Calendar.getInstance();
         trueDate.setTime(parseDate(date));
         long trueTime = trueDate.getTimeInMillis();
-        double seconds = (Calendar.getInstance().getTimeInMillis()-trueTime)/1000;
-        double minutes = seconds/60;
+        long seconds = (Calendar.getInstance().getTimeInMillis()-trueTime)/1000;
+        long minutes = seconds/60;
         seconds = seconds-(minutes*60);
-        double hours = minutes/60;
+        long hours = minutes/60;
         minutes = minutes-(hours*60);
-        double days = hours/24;
+        long days = hours/24;
         hours = hours-(days*24);
-        double years = days/365.242199;
-        days = days-(years*365.242199);
-        if ((int) years > 0) {
-            return ((int) years) + " year" + ((int) years > 1 ? "s" : "") + " ago";
-        } else if ((int) days > 0) {
-            return ((int) days) + " day" + ((int) days > 1 ? "s" : "") + " ago";
-        } else if ((int) hours > 0) {
-            return ((int) hours) + " hour" + ((int) hours > 1 ? "s" : "") + " ago";
-        } else if ((int) minutes > 0) {
-            return ((int) minutes) + " minute" + ((int) minutes > 1 ? "s" : "") + " ago";
-        } else {
-            return ((int) seconds) + " second" + ((int) seconds > 1 ? "s" : "") + " ago";
-        }
+        long years = days/365;
+        days = days-(years*365);
+        return (years > 1 ? years + " years, " : years == 1 ? "1 year, " : "")
+                + (days > 1 ? days + " days, " : days == 1 ? "1 day, " : "")
+                + (hours > 1 ? hours + " hours, " : hours == 1 ? "1 hour, " : "")
+                + (minutes > 1 ? minutes + " minutes, " : minutes == 1 ? "1 minute, " : "")
+                + (seconds == 1 ? "1 second ago" : seconds + " seconds ago");
     }
     
     private static final String[] GITHUB_TIMES = {"yyyy/MM/dd HH:mm:ss ZZZZ","yyyy-MM-dd'T'HH:mm:ss'Z'"};

@@ -29,6 +29,8 @@ import net.jeebiss.spazz.github.GitHub;
 import net.jeebiss.spazz.github.Issue;
 import net.jeebiss.spazz.github.IssueComment;
 import net.jeebiss.spazz.github.IssueEvent;
+import net.jeebiss.spazz.github.PullRequest;
+import net.jeebiss.spazz.github.PullRequestEvent;
 import net.jeebiss.spazz.github.Repository;
 import net.jeebiss.spazz.github.RepositoryManager;
 import net.jeebiss.spazz.util.MinecraftServer;
@@ -418,20 +420,20 @@ public class Spazz extends ListenerAdapter {
         Issue issue = event.getIssue();
         Repository repo = issue.getRepo();
         
-        if (!issue.isPullRequest()) {
-            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Issue " + event.getState().name().toLowerCase()
-                    + ": [" + defaultColor + issue.getNumber() + chatColor + "] \"" + defaultColor + issue.getTitle()
-                    + chatColor + "\" by " + optionalColor + issue.getUser().getLogin() + chatColor + " -- " + issue.getShortUrl());
-        }
+        sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Issue " + event.getState().name().toLowerCase()
+                + ": [" + defaultColor + issue.getNumber() + chatColor + "] \"" + defaultColor + issue.getTitle()
+                + chatColor + "\" by " + optionalColor + issue.getUser().getLogin() + chatColor + " -- " + issue.getShortUrl());
         
-        else {
-            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Pull request "
-                    + event.getState().name().toLowerCase() + ": [" + defaultColor + issue.getNumber() + chatColor + "] \"" 
-                    + defaultColor + issue.getTitle() + chatColor + "\" by " + optionalColor + issue.getUser().getLogin()
-                    + Colors.GREEN + "+" + issue.getAdditions()+ Colors.RED + " -" + issue.getDeletions()
-                    + chatColor + " -- " + issue.getShortUrl());
-        }
-        
+    }
+    
+    public static void onPullRequest(PullRequestEvent event) {
+        PullRequest request = event.getPullRequest();
+        Repository repo = request.getRepo();
+
+        sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Pull request " + event.getState().toLowerCase()
+                + ": [" + defaultColor + request.getNumber() + chatColor + "] \"" + defaultColor + request.getTitle()
+                + chatColor + "\" by " + optionalColor + request.getUser().getLogin() + chatColor + " -- " + request.getShortUrl());
+                
     }
     
     public static void onCommit(CommitEvent event) {
@@ -552,7 +554,7 @@ public class Spazz extends ListenerAdapter {
 		            bot.sendMessage(send, chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
 		                    + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
                             + " -- " + issue.getState().toLowerCase() + " " + (issue.isPullRequest() ? "pull request" : "issue")
-		                    + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getCreatedAtSimple() + ".)");
+		                    + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getLastUpdatedSimple() + ".)");
 		        }
 		    }
 		}
@@ -566,7 +568,7 @@ public class Spazz extends ListenerAdapter {
                     bot.sendMessage(send, chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
                             + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
                             + " -- " + issue.getState().toLowerCase() + " " + (issue.isPullRequest() ? "pull request" : "issue")
-                            + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getCreatedAtSimple() + ".) - "
+                            + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getLastUpdatedSimple() + ".) - "
                             + issue.getShortUrl());
 		        }
 		    }
@@ -1294,17 +1296,17 @@ public class Spazz extends ListenerAdapter {
 		                    if (arg.startsWith("delay:") && Double.valueOf(arg.split(":")[1]) != null)
 		                        updateDelay = Double.valueOf(arg.split(":")[1]);
 		                }
-		                if (repoManager.addRepository(proj[0], proj[1], updateDelay, !msgLwr.contains("no_issues"), !msgLwr.contains("no_comments")))
+		                if (repoManager.addRepository(proj[0], proj[1], updateDelay, !msgLwr.contains("no_issues"), !msgLwr.contains("no_comments"),
+		                        !msgLwr.contains("no_pulls")))
 		                    bot.sendMessage(send, chatColor + "I am now tracking " + proj[1]
-		                            + " with a delay of " + updateDelay + (msgLwr.contains("no_issues") ? (!msgLwr.contains("no_comments") 
-		                                    ? ", and no issues." : ", no issues" + ", and no comments.") : "."));
+		                            + " with a delay of " + updateDelay + ".");
 		                else
 	                        bot.sendMessage(send, chatColor + "Error while adding repository " + args[2] + "...");
 		            }
 		        }
 		        else
 		            bot.sendMessage(send, chatColor + "That command is written as: "
-		                    + parseUsage(".add repo [<author>/<project>] (no_issues) (no_comments) (delay:<#.#>)"));
+		                    + parseUsage(".add repo [<author>/<project>] (no_issues) (no_comments) (no_pulls) (delay:<#.#>)"));
 		    }
 		    else if (args[1].startsWith("q")) {
 		        if (args.length > 2) {
@@ -1388,7 +1390,7 @@ public class Spazz extends ListenerAdapter {
                         Repository repo = repoManager.getRepository(args[2]);
                         bot.sendMessage(send, chatColor + repo.getFullName() + ": Delay(" 
                                 + repo.getUpdateDelay() + ") Issues(" + repo.hasIssues() + ") Comments("
-                                + repo.hasComments() + ")");
+                                + repo.hasComments() + ") Pulls(" + repo.hasPulls() + ")");
                     }
                 }
                 else

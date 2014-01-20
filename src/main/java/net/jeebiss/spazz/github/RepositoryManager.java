@@ -23,12 +23,13 @@ public class RepositoryManager {
         try {
             loadAll();
         } catch(Exception e) {
-            addRepository("aufdemrand", "Denizen", 20, true, true);
-            addRepository("Morphan1", "Depenizen", 30, true, true);
-            addRepository("CitizensDev", "Citizens2", 20, false, false);
-            addRepository("CitizensDev", "CitizensAPI", 30, false, false);
-            addRepository("Jeebiss", "spazz", 60, true, true);
-            addRepository("jrbudda", "Sentry", 100, true, true);
+            e.printStackTrace();
+            addRepository("aufdemrand", "Denizen", 20, true, true, true);
+            addRepository("Morphan1", "Depenizen", 30, true, true, true);
+            addRepository("CitizensDev", "Citizens2", 20, false, false, false);
+            addRepository("CitizensDev", "CitizensAPI", 30, false, false, false);
+            addRepository("Jeebiss", "spazz", 60, true, true, true);
+            addRepository("jrbudda", "Sentry", 100, true, true, false);
         }
     }
     
@@ -62,9 +63,9 @@ public class RepositoryManager {
         return root;
     }
     
-    public boolean addRepository(String owner, String project, double updateDelay, boolean hasIssues, boolean hasComments) {
+    public boolean addRepository(String owner, String project, double updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) {
         try {
-            repositories.put(project.toLowerCase(), root.getRepository(owner, project, ((long)updateDelay)*1000, hasIssues, hasComments));
+            repositories.put(project.toLowerCase(), root.getRepository(owner, project, ((long)updateDelay)*1000, hasIssues, hasComments, hasPulls));
             return true;
         } catch (Exception e) {
             return false;
@@ -108,6 +109,7 @@ public class RepositoryManager {
             data.get(proj[0]).get(proj[1]).put("delay", repo.getUpdateDelay());
             data.get(proj[0]).get(proj[1]).put("has_issues", repo.hasIssues());
             data.get(proj[0]).get(proj[1]).put("has_comments", repo.hasComments());
+            data.get(proj[0]).get(proj[1]).put("has_pulls", repo.hasPulls());
         }
 
         FileWriter writer = new FileWriter(System.getProperty("user.dir") + "/storage/repositories.yml");
@@ -126,7 +128,7 @@ public class RepositoryManager {
             for (Entry<String, HashMap<String, Object>> repo : owner.getValue().entrySet()) {
                 addRepository(owner.getKey(), repo.getKey(),
                         (double) repo.getValue().get("delay"), (boolean) repo.getValue().get("has_issues"),
-                        (boolean) repo.getValue().get("has_comments"));
+                        (boolean) repo.getValue().get("has_comments"), (boolean) repo.getValue().get("has_pulls"));
             }
         }
     }

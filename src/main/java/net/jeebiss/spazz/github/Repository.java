@@ -17,6 +17,7 @@ public class Repository {
     private long updateDelay;
     private boolean hasIssues = false;
     private boolean hasComments = false;
+    private boolean hasPulls = false;
     private JSONObject information;
     
     private boolean shutdown = false;
@@ -24,10 +25,12 @@ public class Repository {
     private HashMap<Integer, Issue> openIssues;
     private HashMap<Integer, Issue> closedIssues;
     private HashMap<Integer, Issue> allIssues;
+    private HashMap<Integer, PullRequest> openPulls;
+    private HashMap<Integer, PullRequest> closedPulls;
     private HashMap<String, Commit> commits;
     private HashMap<Integer, Comment> comments;
     
-    public Repository(GitHub root, long updateDelay, boolean hasIssues, boolean hasComments, JSONObject information) {
+    public Repository(GitHub root, long updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls, JSONObject information) {
         this.root = root;
         this.information = information;
         if (updateDelay > 5000) {
@@ -38,11 +41,14 @@ public class Repository {
         if (hasIssues) {
             allIssues = new HashMap<Integer, Issue>();
             this.hasIssues = true;
-            this.hasComments = true;
+            this.hasComments = hasComments;
+            this.hasPulls = hasPulls;
             openIssues = getIssues(true);
             closedIssues = getIssues(false);
             allIssues.putAll(openIssues);
             allIssues.putAll(closedIssues);
+            openPulls = getPulls(true);
+            closedPulls = getPulls(false);
             comments = getComments();
         }
     }
@@ -56,6 +62,8 @@ public class Repository {
         reloadCommits();
         if (hasIssues)
             reloadIssues();
+        if (hasPulls)
+            reloadPulls();
         if (hasComments)
             reloadComments();
         return true;
@@ -75,6 +83,10 @@ public class Repository {
     
     public boolean hasIssues() {
         return hasIssues;
+    }
+    
+    public boolean hasPulls() {
+        return hasPulls;
     }
     
     public boolean hasComments() {
@@ -106,11 +118,24 @@ public class Repository {
         }
         else {
             try {
-                Issue issue = new Issue(root, this, root.retrieve().parse(((String) information.get("issues_url"))
-                        .replaceAll("\\{.+\\}", "") + "/" + issueNumber));
+                Issue issue = null;
+                if (hasIssues) {
+                    issue = new Issue(root, this, root.retrieve()
+                            .parse(((String) information.get("issues_url"))
+                                    .replaceAll("\\{.+\\}", "") + "/" + issueNumber));
+                }
+                else {
+                    issue = new PullRequest(root, this, root.retrieve()
+                            .parse(((String) information.get("pulls_url"))
+                                    .replaceAll("\\{.+\\}", "") + "/" + issueNumber));
+                }
+                if (allIssues == null) {
+                    allIssues = new HashMap<Integer, Issue>();
+                }
                 allIssues.put(issueNumber, issue);
                 return issue;
             } catch (Exception e) {
+                e.printStackTrace();
                 return null;
             }
         }
@@ -124,10 +149,28 @@ public class Repository {
             issues = new HashMap<Integer, Issue>();
             for (int i = 0; i < openIssuesArray.size(); i++) {
                 Issue issue = new Issue(root, this, Utilities.getJSONFromMap((Map<String, Object>) openIssuesArray.get(i)));
-                issues.put(issue.getNumber(), issue);
+                if (!issue.isPullRequest())
+                    issues.put(issue.getNumber(), issue);
             }
         } catch (Exception e) {}
         return issues;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public HashMap<Integer, PullRequest> getPulls(boolean open) {
+        HashMap<Integer, PullRequest> pulls = null;
+        try {
+            JSONArray openIssuesArray = root.retrieve().parseArray(((String) information.get("pulls_url")).replaceAll("\\{.+\\}", "") + "?state=" + (open ? "open" : "closed") + "&sort=updated");
+            pulls = new HashMap<Integer, PullRequest>();
+            for (int i = 0; i < openIssuesArray.size(); i++) {
+                PullRequest pull = new PullRequest(root, this, Utilities.getJSONFromMap((Map<String, Object>) openIssuesArray.get(i)));
+                pulls.put(pull.getNumber(), pull);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return pulls;
     }
     
     @SuppressWarnings("unchecked")
@@ -203,7 +246,7 @@ public class Repository {
             HashMap<Integer, Issue> newOpenIssues = getIssues(true);
             HashMap<Integer, Issue> newClosedIssues = getIssues(false);
             for (Issue newClosedIssue : newClosedIssues.values()) {
-                if (openIssues.containsKey(newClosedIssue.getNumber()) && !committedPullRequests.contains(newClosedIssue.getNumber())) {
+                if (openIssues.containsKey(newClosedIssue.getNumber())) {
                     new IssueEvent(root, newClosedIssue, IssueEvent.State.CLOSED);
                     continue;
                 }
@@ -225,19 +268,42 @@ public class Repository {
         } catch(Exception e) {}
     }
     
+    private void reloadPulls() {
+        try {
+            HashMap<Integer, PullRequest> newOpenPulls = getPulls(true);
+            HashMap<Integer, PullRequest> newClosedPulls = getPulls(false);
+            for (PullRequest pull : newClosedPulls.values()){
+                if (closedPulls.containsKey(pull.getNumber()))
+                    continue;
+                else if (!committedPullRequests.contains(pull.getNumber()))
+                    new PullRequestEvent(root, pull, PullRequestEvent.State.CLOSED);
+                else
+                    new PullRequestEvent(root, pull, PullRequestEvent.State.PULLED);
+            }
+            for (PullRequest pull : newOpenPulls.values()){
+                if (openPulls.containsKey(pull.getNumber()))
+                    continue;
+                new PullRequestEvent(root, pull, PullRequestEvent.State.OPENED);
+            }
+            openPulls = newOpenPulls;
+            closedPulls = newClosedPulls;
+        } catch (Exception e) {}
+    }
+    
     private ArrayList<Integer> committedPullRequests = new ArrayList<Integer>();
+    Pattern pullMerge = Pattern.compile("^Merge pull request #(\\d+) from .+$");
     
     private void reloadCommits() {
         try {
             HashMap<String, Commit> newCommits = getCommits();
             ArrayList<Commit> eventCommits = new ArrayList<Commit>();
             for (Commit newCommit : newCommits.values()) {
-                if (!commits.containsKey(newCommit.getCommitId())) {
+                Matcher m = pullMerge.matcher(newCommit.getMessage());
+                if (m.matches()) {
+                    committedPullRequests.add(Integer.valueOf(m.group(1)));
+                }
+                else if (!commits.containsKey(newCommit.getCommitId())) {
                     eventCommits.add(newCommit);
-                    Matcher m = Pattern.compile("^Merge pull request #(\\d+) from .+$").matcher(newCommit.getMessage());
-                    if (m.matches()) {
-                        committedPullRequests.add(Integer.valueOf(m.group(1)));
-                    }
                 }
             }
             if (!eventCommits.isEmpty()) {

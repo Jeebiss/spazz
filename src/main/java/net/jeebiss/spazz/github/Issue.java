@@ -46,8 +46,8 @@ public class Issue {
     }
     
     public String getState() {
-        String state = ((String) information.get("state")).toUpperCase();
-        return state.equals("CLOSED") && isPullRequest() ? "PULLED" : state;
+        String state = ((String) information.get("state")).toLowerCase();
+        return state;
     }
     
     public Date getLastUpdated() {
@@ -85,18 +85,6 @@ public class Issue {
     
     public String getCreatedAtSimple() {
         return GitHub.parseDateSimple((String) information.get("created_at"));
-    }
-    
-    public int getAdditions() {
-        return Integer.valueOf((String) information.get("additions"));
-    }
-    
-    public int getDeletions() {
-        return Integer.valueOf((String) information.get("deletions"));
-    }
-    
-    public int getChangedFiles() {
-        return Integer.valueOf((String) information.get("changed_files"));
     }
     
 }

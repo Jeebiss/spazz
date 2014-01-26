@@ -1,36 +1,36 @@
 package net.jeebiss.spazz.github;
 
-import java.util.Map;
-
 import net.jeebiss.spazz.util.Utilities;
 import net.minidev.json.JSONObject;
+
+import java.util.Map;
 
 public class IssueComment implements Comment {
 
     private final GitHub root;
-    
+
     private final Issue owner;
     private JSONObject information;
-    
+
     public IssueComment(GitHub root, Issue owner, JSONObject information) {
         this.root = root;
         this.owner = owner;
         this.information = information;
     }
-    
+
     public GitHub getGitHub() {
         return root;
     }
-    
+
     public Issue getIssue() {
         return owner;
     }
-    
+
     @Override
     public String getType() {
         return "Issue";
     }
-    
+
     @Override
     public int getCommentId() {
         return (int) information.get("id");
@@ -51,5 +51,5 @@ public class IssueComment implements Comment {
     public String getShortUrl() {
         return Utilities.getShortUrl((String) information.get("html_url"));
     }
-    
+
 }

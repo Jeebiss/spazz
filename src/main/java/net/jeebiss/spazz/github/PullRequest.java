@@ -11,17 +11,17 @@ public class PullRequest extends Issue {
         super(root, owner, information);
         this.information = information;
     }
-    
+
     @Override
     public String getUrl() {
         return (String) information.get("html_url");
     }
-    
+
     @Override
     public boolean isPullRequest() {
         return true;
     }
-    
+
     @Override
     public String getShortUrl() {
         return Utilities.getShortUrl((String) information.get("html_url"));

@@ -4,7 +4,7 @@ import net.jeebiss.spazz.Spazz;
 
 public class PullRequestEvent {
 
-    public enum State { OPENED, CLOSED, PULLED }
+    public enum State {OPENED, CLOSED, PULLED}
 
     private final GitHub root;
 

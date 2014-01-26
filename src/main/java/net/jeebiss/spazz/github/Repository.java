@@ -1,17 +1,17 @@
 package net.jeebiss.spazz.github;
 
+import net.jeebiss.spazz.util.Utilities;
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.jeebiss.spazz.util.Utilities;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
-
 public class Repository {
-    
+
     private final GitHub root;
 
     private long updateDelay;
@@ -19,9 +19,9 @@ public class Repository {
     private boolean hasComments = false;
     private boolean hasPulls = false;
     private JSONObject information;
-    
+
     private boolean shutdown = false;
-    
+
     private HashMap<Integer, Issue> openIssues;
     private HashMap<Integer, Issue> closedIssues;
     private HashMap<Integer, Issue> allIssues;
@@ -29,7 +29,7 @@ public class Repository {
     private HashMap<Integer, PullRequest> closedPulls;
     private HashMap<String, Commit> commits;
     private HashMap<Integer, Comment> comments;
-    
+
     public Repository(GitHub root, long updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls, JSONObject information) {
         this.root = root;
         this.information = information;
@@ -52,7 +52,7 @@ public class Repository {
             comments = getComments();
         }
     }
-    
+
     public boolean reload() {
         try {
             information = root.retrieve().parse(((String) information.get("url")).replaceAll("\\{.+\\}", ""));
@@ -68,50 +68,50 @@ public class Repository {
             reloadComments();
         return true;
     }
-    
+
     public void shutdown() {
         shutdown = true;
     }
-    
+
     public GitHub getGitHub() {
         return root;
     }
-    
+
     public double getUpdateDelay() {
-        return updateDelay/1000;
+        return updateDelay / 1000;
     }
-    
+
     public boolean hasIssues() {
         return hasIssues;
     }
-    
+
     public boolean hasPulls() {
         return hasPulls;
     }
-    
+
     public boolean hasComments() {
         return hasComments;
     }
-    
+
     public int getOpenIssueCount() {
         return (int) information.get("open_issues_count");
     }
-    
+
     public HashMap<Integer, Issue> getLoadedIssuesAll() {
         return allIssues;
     }
-    
+
     public HashMap<Integer, Issue> getLoadedIssues(boolean open) {
         if (open)
             return openIssues;
         else
             return closedIssues;
     }
-    
+
     public HashMap<String, Commit> getLoadedCommits() {
         return commits;
     }
-    
+
     public Issue getIssue(int issueNumber) {
         if (allIssues != null && allIssues.containsKey(issueNumber)) {
             return allIssues.get(issueNumber);
@@ -140,7 +140,7 @@ public class Repository {
             }
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     public HashMap<Integer, Issue> getIssues(boolean open) {
         HashMap<Integer, Issue> issues = null;
@@ -152,10 +152,11 @@ public class Repository {
                 if (!issue.isPullRequest())
                     issues.put(issue.getNumber(), issue);
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
         return issues;
     }
-    
+
     @SuppressWarnings("unchecked")
     public HashMap<Integer, PullRequest> getPulls(boolean open) {
         HashMap<Integer, PullRequest> pulls = null;
@@ -172,7 +173,7 @@ public class Repository {
         }
         return pulls;
     }
-    
+
     @SuppressWarnings("unchecked")
     public HashMap<String, Commit> getCommits() {
         HashMap<String, Commit> newCommits = null;
@@ -183,17 +184,18 @@ public class Repository {
                 Commit commit = new Commit(root, this, Utilities.getJSONFromMap((Map<String, Object>) commitsArray.get(i)));
                 newCommits.put(commit.getCommitId(), commit);
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
         return newCommits;
     }
-    
+
     @SuppressWarnings("unchecked")
     public HashMap<Integer, Comment> getComments() {
         HashMap<Integer, Comment> newComments = null;
         try {
             JSONArray eventsList = root.retrieve().parseArray(((String) information.get("events_url")).replaceAll("\\{.+\\}", ""));
             newComments = new HashMap<Integer, Comment>();
-            for (int i = eventsList.size()-1; i > -1; i--) {
+            for (int i = eventsList.size() - 1; i > -1; i--) {
                 Map<String, Object> map = (Map<String, Object>) eventsList.get(i);
                 Map<String, Object> payload = (Map<String, Object>) map.get("payload");
                 if (((String) map.get("type")).equals("IssueCommentEvent")) {
@@ -208,27 +210,28 @@ public class Repository {
                     newComments.put(comment.getCommentId(), comment);
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
         return newComments;
     }
-    
+
     @SuppressWarnings("unchecked")
     public User getOwner() {
         try {
-            return new User(root, Utilities.getJSONFromMap((Map<String,Object>) information.get("owner")));
+            return new User(root, Utilities.getJSONFromMap((Map<String, Object>) information.get("owner")));
         } catch (Exception e) {
             return null;
         }
     }
-    
+
     public String getName() {
         return (String) information.get("name");
     }
-    
+
     public String getFullName() {
         return (String) information.get("full_name");
     }
-    
+
     private void reloadComments() {
         try {
             HashMap<Integer, Comment> newComments = getComments();
@@ -238,9 +241,10 @@ public class Repository {
                 }
             }
             comments = newComments;
-        } catch(Exception e) {}
+        } catch (Exception e) {
+        }
     }
-    
+
     private void reloadIssues() {
         try {
             HashMap<Integer, Issue> newOpenIssues = getIssues(true);
@@ -265,14 +269,15 @@ public class Repository {
             closedIssues = newClosedIssues;
             allIssues.putAll(openIssues);
             allIssues.putAll(closedIssues);
-        } catch(Exception e) {}
+        } catch (Exception e) {
+        }
     }
-    
+
     private void reloadPulls() {
         try {
             HashMap<Integer, PullRequest> newOpenPulls = getPulls(true);
             HashMap<Integer, PullRequest> newClosedPulls = getPulls(false);
-            for (PullRequest pull : newClosedPulls.values()){
+            for (PullRequest pull : newClosedPulls.values()) {
                 if (closedPulls.containsKey(pull.getNumber()))
                     continue;
                 else if (!committedPullRequests.contains(pull.getNumber()))
@@ -280,19 +285,20 @@ public class Repository {
                 else
                     new PullRequestEvent(root, pull, PullRequestEvent.State.PULLED);
             }
-            for (PullRequest pull : newOpenPulls.values()){
+            for (PullRequest pull : newOpenPulls.values()) {
                 if (openPulls.containsKey(pull.getNumber()))
                     continue;
                 new PullRequestEvent(root, pull, PullRequestEvent.State.OPENED);
             }
             openPulls = newOpenPulls;
             closedPulls = newClosedPulls;
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
-    
+
     private ArrayList<Integer> committedPullRequests = new ArrayList<Integer>();
     Pattern pullMerge = Pattern.compile("^Merge pull request #(\\d+) from .+$");
-    
+
     private void reloadCommits() {
         try {
             HashMap<String, Commit> newCommits = getCommits();
@@ -310,24 +316,24 @@ public class Repository {
                 new CommitEvent(root, this, eventCommits);
             }
             commits = newCommits;
-        } catch(Exception e) {}
+        } catch (Exception e) {
+        }
     }
-    
+
     public class RepositoryChecker implements Runnable {
-        
+
         @Override
         public void run() {
             while (!shutdown) {
                 try {
                     Thread.sleep(updateDelay);
                     reload();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
-        
+
     }
-    
+
 }

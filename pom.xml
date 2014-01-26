@@ -1,50 +1,51 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>net.jeebiss</groupId>
-  <artifactId>spazz</artifactId>
-  <version>0.3-SNAPSHOT</version>
-  <name>Spazz IRC Bot</name>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>net.jeebiss</groupId>
+    <artifactId>spazz</artifactId>
+    <version>0.3-SNAPSHOT</version>
+    <name>Spazz IRC Bot</name>
 
-	<dependencies>
+    <dependencies>
         <dependency>
-                <groupId>org.pircbotx</groupId>
-                <artifactId>pircbotx</artifactId>
-                <version>1.9</version>
+            <groupId>org.pircbotx</groupId>
+            <artifactId>pircbotx</artifactId>
+            <version>1.9</version>
         </dependency>
-	    <dependency>
-		    <groupId>org.yaml</groupId>
-		    <artifactId>snakeyaml</artifactId>
-		    <version>1.12</version>
-		  </dependency>
-		<dependency>
-			<groupId>net.minidev</groupId>
-			<artifactId>json-smart-mini</artifactId>
-			<version>1.0.8</version>
-		</dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.12</version>
+        </dependency>
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart-mini</artifactId>
+            <version>1.0.8</version>
+        </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.2.4</version>
             <scope>compile</scope>
         </dependency>
-	</dependencies>
-	        
-	<repositories>
+    </dependencies>
+
+    <repositories>
         <repository>
-	        <id>sonatype-nexus-snapshots</id>
-	        <name>Sonatype Nexus Snapshots</name>
-	        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-	        <releases>
-	                <enabled>false</enabled>
-	        </releases>
-	        <snapshots>
-	                <enabled>true</enabled>
-	        </snapshots>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Sonatype Nexus Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
-          <repository>
-		    <id>Sonatype-public</id>
-		    <name>SnakeYAML repository</name>
-		    <url>http://oss.sonatype.org/content/groups/public/</url>
-		  </repository>
-	</repositories>
+        <repository>
+            <id>Sonatype-public</id>
+            <name>SnakeYAML repository</name>
+            <url>http://oss.sonatype.org/content/groups/public/</url>
+        </repository>
+    </repositories>
 </project>

@@ -24,39 +24,42 @@ public class Utilities {
         try {
             quotes = new ArrayList<HashMap<Integer, String>>();
             quotesInfo = new ArrayList<HashMap<String, String>>();
-            ArrayList<HashMap<Object, Object>> map = null;
+            ArrayList<HashMap<Object, Object>> allQuotes = null;
             Yaml yaml = new Yaml();
             File f = new File(System.getProperty("user.dir") + "/storage/quotes.yml");
             InputStream is = f.toURI().toURL().openStream();
-            map = (ArrayList<HashMap<Object, Object>>) yaml.load(is);
-            for (HashMap<Object, Object> quote : map) {
-                HashMap<Integer, String> endQuote = new HashMap<Integer, String>();
+            allQuotes = (ArrayList<HashMap<Object, Object>>) yaml.load(is);
+            for (HashMap<Object, Object> fullQuote : allQuotes) {
+                HashMap<Integer, String> quote = new HashMap<Integer, String>();
                 quotesInfo.add(new HashMap<String, String>());
-                for (Entry<Object, Object> entry : quote.entrySet()) {
+                int line = 0;
+                for (Entry<Object, Object> entry : fullQuote.entrySet()) {
                     if (entry.getValue() instanceof byte[])
                         entry.setValue(new String((byte[]) entry.getValue()));
                     if (!(entry.getKey() instanceof Integer))
-                        quotesInfo.get(quotes.size()).put((String) entry.getKey(), (String) entry.getValue());
-                    else
-                        endQuote.put((int) entry.getKey(), (String) entry.getValue());
+                        quotesInfo.get(quotesInfo.size()-1).put((String) entry.getKey(), (String) entry.getValue());
+                    else {
+                        quote.put(line, (String) entry.getValue());
+                        line++;
+                    }
                 }
-                quotes.add(endQuote);
+                quotes.add(quote);
             }
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     public static void saveQuotes() {
         try {
             ArrayList<HashMap<Object, Object>> allQuotes = new ArrayList<HashMap<Object, Object>>();
-            for (int x = 0; x < quotes.size(); x++) {
-                allQuotes.add(new HashMap<Object, Object>());
-                for (String quote : quotes.get(x).values()) {
-                    allQuotes.get(x).put(x, quote);
-                }
-                for (Entry<String, String> quoteInfo : quotesInfo.get(x).entrySet()) {
-                    allQuotes.get(x).put(quoteInfo.getKey(), quoteInfo.getValue());
-                }
+            for (int i = 0; i < quotes.size(); i++) {
+                HashMap<Integer, String> quote = quotes.get(i);
+                HashMap<String, String> quoteInfo = quotesInfo.get(i);
+                HashMap<Object, Object> fullQuote = new HashMap<Object, Object>();
+                fullQuote.putAll(quote);
+                fullQuote.putAll(quoteInfo);
+                allQuotes.add(fullQuote);
             }
             DumperOptions options = new DumperOptions();
             options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -65,11 +68,12 @@ public class Utilities {
             writer.write(yaml.dump(allQuotes));
             writer.close();
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     public static boolean hasQuote(int number) {
-        return (quotes.size() <= number);
+        return number >= 0 && (quotes.size()-1) >= number;
     }
 
     public static int addQuote(String quote, String adder) {

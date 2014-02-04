@@ -47,7 +47,6 @@ public class Spazz extends ListenerAdapter {
     User charger;
     int botsnack = 0;
     ArrayList<User> feeders = new ArrayList<User>();
-    ArrayList<User> help = new ArrayList<User>();
     String confirmingComment = null;
     int confirmingIssue = 0;
     Boolean confirmComment = false;
@@ -62,7 +61,7 @@ public class Spazz extends ListenerAdapter {
     public static GitHub github = null;
     public static RepositoryManager repoManager = null;
     public static Pattern issuesPattern = Pattern
-            .compile("http(s)?://(www\\.)?github\\.com/(\\w+)/(\\w+)/(issues|pulls)/(\\d+)");
+            .compile("http(?:s)?://(?:www\\.)?github\\.com/(\\w+)/(\\w+)/(?:issues|pulls)/(\\d+)", Pattern.CASE_INSENSITIVE);
     public static Pattern altIssuesPattern = Pattern.compile("(\\w+)\\s*#(\\d+)");
     public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "(.)");
 
@@ -128,7 +127,7 @@ public class Spazz extends ListenerAdapter {
             System.out.println("Failed to connect to EsperNet. Check your internet connection and try again.");
             return;
         }
-        bot.setMessageDelay(0);
+        bot.setMessageDelay(500);
         if (!devMode) {
             bot.joinChannel("#denizen-dev");
         }
@@ -520,9 +519,9 @@ public class Spazz extends ListenerAdapter {
         }
 
         while (issuesMatcher.find()) {
-            if (repoManager.hasRepository(issuesMatcher.group(3), issuesMatcher.group(4))) {
-                Repository repo = repoManager.getRepository(issuesMatcher.group(4));
-                Issue issue = repo.getIssue(Integer.valueOf(issuesMatcher.group(5)));
+            if (repoManager.hasRepository(issuesMatcher.group(1), issuesMatcher.group(2))) {
+                Repository repo = repoManager.getRepository(issuesMatcher.group(2));
+                Issue issue = repo.getIssue(Integer.valueOf(issuesMatcher.group(3)));
                 if (issue != null) {
                     bot.sendMessage(send, chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
                             + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
@@ -654,11 +653,11 @@ public class Spazz extends ListenerAdapter {
         }
         else if (msgLwr.startsWith(".help")) {
             bot.sendMessage(send, address + chatColor + "Greetings. I am an interactive Denizen guide. I am a scripting guru. I am spazz.");
-            bot.sendMessage(send, chatColor + "For help with script commands, type " + Colors.BOLD + ".cmd <command_name>");
-            bot.sendMessage(send, chatColor + "For help with script requirements, type " + Colors.BOLD + ".req <requirement_name>");
-            bot.sendMessage(send, chatColor + "For info on replaceable tags, type " + Colors.BOLD + ".tag <tag_name>");
-            bot.sendMessage(send, chatColor + "Finally, for help with world events, type " + Colors.BOLD + ".event <event_name>");
-            bot.sendMessage(send, chatColor + "For everything else, ask in the channel or visit one of the links from .getstarted");
+            bot.sendMessage(send, chatColor + "For help with script commands, type " + Colors.BOLD + "!cmd <command_name>");
+            bot.sendMessage(send, chatColor + "For help with script requirements, type " + Colors.BOLD + "!req <requirement_name>");
+            bot.sendMessage(send, chatColor + "For info on replaceable tags, type " + Colors.BOLD + "!tag <tag_name>");
+            bot.sendMessage(send, chatColor + "For help with world events, type " + Colors.BOLD + "!event <event_name>");
+            bot.sendMessage(send, chatColor + "Refer to !help for more information.");
             return;
         }
         else if (msgLwr.startsWith(".paste") || msgLwr.startsWith(".pastie") || msgLwr.startsWith(".hastebin") || msgLwr.startsWith(".pastebin")) {
@@ -1251,16 +1250,11 @@ public class Spazz extends ListenerAdapter {
                     + ((minutes > 1 || minutes < -1) ? (Math.abs(minutes) + " minutes, ") : ((minutes == 1 || minutes == -1) ? "1 minute, " : ""))
                     + ((seconds == 1 || seconds == -1) ? (seconds == -1 ? "1 second from now." : "1 second ago.") : Math.abs(seconds) + (seconds < -1 ? " seconds from now." : " seconds ago.")));
         }
-        else if ((msg.contains("hastebin.") || msg.contains("pastebin.") || msg.contains("pastie.")) && !(help.contains(usr) || chnl.hasVoice(usr) || chnl.isOp(usr))) {
-            help.add(usr);
-            bot.sendNotice(usr, "If you want to whether a Denizen script will compile, type " + Colors.BOLD + ".yml link_to_the_script");
-            return;
-        }
-        else if ((msgLwr.contains("help") || msgLwr.contains("halp") || msgLwr.contains("hlp")) && !(help.contains(usr) || chnl.hasVoice(usr) || chnl.isOp(usr))) {
-            help.add(usr);
-            bot.sendNotice(usr, "If you need help with a Denizen issue, type " + Colors.BOLD + ".help");
-            return;
-        }
+        //else if ((msg.contains("hastebin.") || msg.contains("pastebin.") || msg.contains("pastie.")) && || chnl.hasVoice(usr) || chnl.isOp(usr))) {
+        //    help.add(usr);
+        //    bot.sendNotice(usr, "If you want to whether a Denizen script will compile, type " + Colors.BOLD + ".yml link_to_the_script");
+        //    return;
+        //}
 
         else if (msgLwr.startsWith(".rate")) {
             bot.sendNotice(usr, chatColor + "Max rate limit: " + github.getMaxRateLimit());
@@ -1346,7 +1340,7 @@ public class Spazz extends ListenerAdapter {
 
             String[] args = msgLwr.trim().split(" ");
 
-            if (!hasOp(usr, bot.getChannel("#denizen-devs")) && !hasVoice(usr, bot.getChannel("#denizen-dev")) && !usr.getLogin().equalsIgnoreCase("mcmonkey"))
+            if (!hasOp(usr, bot.getChannel("#denizen-devs")) && !hasVoice(usr, bot.getChannel("#denizen-dev")))
                 bot.sendMessage(send, chatColor + "Sorry, " + senderNick + ", that's only for the Dev Team.");
             else if (args[1].startsWith("r")) {
                 if (args.length > 2) {
@@ -1371,6 +1365,7 @@ public class Spazz extends ListenerAdapter {
                         else
                             bot.sendMessage(send, chatColor + "That quote doesn't exist.");
                     } catch (Exception e) {
+                        e.printStackTrace();
                         bot.sendMessage(send, chatColor + "That command is written as: .remove quote [<#>]");
                     }
                 }

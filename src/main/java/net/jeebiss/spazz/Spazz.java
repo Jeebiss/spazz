@@ -176,6 +176,7 @@ public class Spazz extends ListenerAdapter {
         System.out.println("/disconnect              Saves user info and disconnects from the server.");
         System.out.println("/channel <channel>       Set the chat channel.");
         System.out.println("/debug                   Turns console debug on or off.");
+        System.out.println("/raw                     Sends a raw IRC protocol to the server.");
         System.out.println("<msg>                    Sends a message to the current chat channel.");
         System.out.println();
 
@@ -263,6 +264,10 @@ public class Spazz extends ListenerAdapter {
                         System.out.println("Not connected to channel \"" + chatChannel + "\".");
                     break;
 
+                case "raw":
+                    bot.sendRawLineNow(channel.toUpperCase() + " " + commandArgs);
+                    break;
+
                 default:
                     if (rawInput.startsWith("/")) {
                         System.out.println("Invalid command: " + inputCommand);
@@ -298,16 +303,7 @@ public class Spazz extends ListenerAdapter {
         if (!dUsers.containsKey(usr.getNick().toLowerCase()))
             dUsers.put(usr.getNick().toLowerCase(), new dUser(usr.getNick()));
 
-        if (!usr.getNick().equals("spazzmatic")) {
-            if (usr.getNick().equals("monkeybot")) {
-                monkeybotScan = false;
-                if (metaBackup) {
-                    sendToAllChannels(chatColor + "Disabling meta backup systems. Welcome back, monkeybot.");
-                    metaBackup = false;
-                }
-            }
-        }
-        else {
+        if (usr.getNick().equals("spazzmatic")) {
             if (devMode) {
                 chatChannel = "#denizen-devs";
                 bot.sendMessage(chatChannel, chatColor + "Dev mode enabled.");
@@ -318,36 +314,12 @@ public class Spazz extends ListenerAdapter {
 
     @Override
     public void onQuit(QuitEvent event) {
-        if (event.getUser().getNick().equals("monkeybot") && !metaBackup) {
-            monkeybotScan = true;
-            new java.util.Timer().schedule(new java.util.TimerTask() {
-                @Override
-                public void run() {
-                    if (monkeybotScan) {
-                        monkeybotScan = false;
-                        metaBackup = true;
-                        sendToAllChannels(chatColor + "User 'monkeybot' not detected. Enabling meta backup systems.");
-                    }
-                }
-            }, 60000);
-        }
+        // ...
     }
 
     @Override
     public void onPart(PartEvent event) {
-        if (event.getUser().getNick().equals("monkeybot") && !metaBackup) {
-            monkeybotScan = true;
-            new java.util.Timer().schedule(new java.util.TimerTask() {
-                @Override
-                public void run() {
-                    if (monkeybotScan) {
-                        monkeybotScan = false;
-                        metaBackup = true;
-                        sendToAllChannels(chatColor + "User 'monkeybot' not detected. Enabling meta backup systems.");
-                    }
-                }
-            }, 60000);
-        }
+        // ...
     }
 
     @Override
@@ -363,6 +335,11 @@ public class Spazz extends ListenerAdapter {
                     System.out.println("An error has occured while using saving user " + usr.getNick() + " on disconnect... Turn on debug for more information.");
             }
         }
+    }
+
+    @Override
+    public void onReconnect(ReconnectEvent event) {
+
     }
 
     @Override
@@ -671,7 +648,7 @@ public class Spazz extends ListenerAdapter {
             bot.sendMessage(send, chatColor + "Most errors can be fixed by updating all 3. (NOTE: We build on Bukkit and therefore do not support Spigot issues!)");
             bot.sendMessage(send, Colors.BOLD + "Denizen" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/1aaGB3T");
 
-            if (dusr.getDepenizen())
+            if (msgLwr.split(" ").length > 1 && msgLwr.split(" ")[1].equals("depenizen"))
                 bot.sendMessage(send, Colors.BOLD + "Depenizen" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/1aaGEfY");
 
             bot.sendMessage(send, Colors.BOLD + "Citizens" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/1aaGEN2");
@@ -680,7 +657,7 @@ public class Spazz extends ListenerAdapter {
         }
         else if (msgLwr.startsWith(".newconfig") || msgLwr.startsWith(".nc")) {
             bot.sendMessage(send, address + chatColor + "If you are having issues with triggers not firing, you may be using the old config file.");
-            bot.sendMessage(send, chatColor + "You can easily generate a new one by deleteing your current config.yml file in the Denizen folder");
+            bot.sendMessage(send, chatColor + "You can easily generate a new one by deleting your current config.yml file in the Denizen folder");
             return;
         }
         else if (msgLwr.startsWith(".wiki")) {
@@ -812,239 +789,6 @@ public class Spazz extends ListenerAdapter {
                 }
             }
         }
-		
-		/*
-		else if (msgLwr.startsWith(".req") || msgLwr.startsWith(".requirement") 
-		        || msgLwr.startsWith(".cmd") || msgLwr.startsWith(".command")) {
-            String [] args = msg.split(" ");
-            String arg = args[1].toLowerCase();
-            if (arg.equals("all"))
-                arg = "";
-            String shortened = null;
-            String full = null;
-            String fullCap = null;
-            ArrayList<dCommand> found = null;
-            if (msgLwr.startsWith(".c")) {
-                shortened = "cmd";
-                full = "command";
-                fullCap = "Command";
-                found = denizenMH.searchCommands(arg);
-                if (dusr.getDepenizen()) {
-                    found.addAll(depenizenMH.searchCommands(arg));
-                }
-            }
-            if (msgLwr.startsWith(".r")) {
-                shortened = "req";
-                full = "requirement";
-                fullCap = "Requirement";
-                found = denizenMH.searchRequirements(arg);
-                if (dusr.getDepenizen()) {
-                    found.addAll(depenizenMH.searchRequirements(arg));
-                }
-            }
-            if (args.length < 2) {
-                bot.sendMessage(send, address + chatColor + "Check your argument count. Command format: ." + shortened + " [<" + full + ">] (stability) (usage) (description)");
-                return;
-            }
-            List<String> argList = new ArrayList<String>();
-            if (args.length > 2) {
-                for (int i = 2; i < args.length; i++) {
-                    argList.add(args[i].toLowerCase().substring(0, 1));
-                }
-            }
-            String extra = "";
-            if (!argList.isEmpty()) {
-                if (argList.contains("s")) {
-                    extra += "s";
-                }
-                if (argList.contains("u")) {
-                    extra += "u";
-                }
-                if (argList.contains("d")) {
-                    extra += "d";
-                }
-            }
-            if (found.size() > 1) {
-                bot.sendMessage(send, address + chatColor + "I found " + defaultColor + found.size() + chatColor + " matches...");
-                String list = "";
-                for (int x = 0; x < found.size(); x++) {
-                    if (x > 0 && x%30 == 0) {
-                        bot.sendMessage(send, optionalColor + list.substring(0, list.length()-2)
-                                + (found.size() > x+1 ? "..." : "."));
-                        list = "";
-                    }
-                    list += found.get(x).getName() + ", ";
-                }
-                if (!list.isEmpty()) {
-                    list = list.substring(0, list.length()-2) + ".";
-                    bot.sendMessage(send, optionalColor + list);
-                }
-                return;
-            }
-            else if (found.size() == 1) {
-                int messageCount = 0;
-                dCommand match = found.get(0);
-                bot.sendMessage(send, address + chatColor + fullCap + " found: " + optionalColor + match.getName());
-                messageCount++;
-                if (match.isDepenizen()) {
-                    bot.sendMessage(send, chatColor + "  This " + full + " is from Depenizen. It depends on the plugin "
-                            + defaultColor + match.getPlugin() + chatColor + ".");
-                    messageCount++;
-                }
-                if (match.isDeprecated()) {
-                    bot.sendMessage(send, chatColor + "  This " + full + " is " + defaultColor + "deprecated" 
-                            + chatColor + ": " + match.getDepReason());
-                    messageCount++;
-                }
-                ArrayList<String> desc = match.getDescription();
-                bot.sendMessage(send, defaultColor + "  Summary" + chatColor + ": " + desc.get(0));
-                messageCount++;
-                if (desc.size() > 1) {
-                    for (int i = 1; i < desc.size(); i++) {
-                        bot.sendMessage(send, chatColor + "           " + desc.get(i));
-                        messageCount++;
-                    }
-                }
-                bot.sendMessage(send, defaultColor + "  Syntax" + chatColor + ": - " + match.getUsage());
-                messageCount++;
-                if (extra.contains("s")) {
-                    bot.sendMessage(send, defaultColor + "  Stability" + chatColor + ": " + match.getStable());
-                    messageCount++;
-                }
-                if (extra.contains("u")) {
-                    ArrayList<String> usage = match.getUsage();
-                    if (messageCount > 5) {
-                        bot.sendNotice(usr, defaultColor + "  Usage" + chatColor + ": " + usage.get(0));
-                    }
-                    else {
-                        bot.sendMessage(send, defaultColor + "  Usage" + chatColor + ": " + usage.get(0));
-                        messageCount++;
-                    }
-                    for (int i = 1; i < usage.size(); i++) {
-                        if (messageCount > 5) {
-                            bot.sendNotice(usr, chatColor + "         " + usage.get(i));
-                        }
-                        else {
-                            bot.sendMessage(send, chatColor + "         " + usage.get(i));
-                            messageCount++;
-                        }
-                    }
-                }
-                if (extra.contains("d")) {
-                    ArrayList<String> description = match.getDescription();
-                    if (messageCount > 5) {
-                        bot.sendNotice(usr, defaultColor + "  Description" + chatColor + ": " + description.get(0));
-                    }
-                    else {
-                        bot.sendMessage(send, defaultColor + "  Description" + chatColor + ": " + description.get(0));
-                        messageCount++;
-                    }
-                    for (int i = 1; i < description.size(); i++) {
-                        if (messageCount > 5) {
-                            bot.sendNotice(usr, chatColor + "               " + description.get(i));
-                        }
-                        else {
-                            bot.sendMessage(send, chatColor + "               " + description.get(i));
-                            messageCount++;
-                        }
-                    }
-                }
-                return;
-            }
-            else {
-                bot.sendMessage(send, chatColor + fullCap + " \"" + arg + "\" not found.");
-                return;
-            }
-			
-		} else if (msgLwr.startsWith(".event")) {
-		    String[] args = msg.split(" ");
-		    int argSize = args.length;
-		    if (args[args.length-1].endsWith("@@")) {
-		        argSize--;
-		    }
-		    if (argSize < 2) {
-		        bot.sendMessage(send, address + chatColor + "Check your argument count. Command format: .event [<event>]");
-		        return;
-		    }
-		    String arg = "";
-		    for (int i = 1; i < argSize; i++) {
-		        arg += args[i] + " ";
-		    }
-            arg = arg.substring(0, arg.length()-1);
-            
-            if (debugMode) System.out.println("Finding events for " + arg);
-            ArrayList<dEvent> found = denizenMH.searchEvents(arg);
-            if (dusr.getDepenizen()) {
-                found.addAll(depenizenMH.searchEvents(arg));
-            }
-            
-            if (found.size() > 1) {
-                bot.sendMessage(send, chatColor + "I found " + defaultColor + found.size() + chatColor + " matches...");
-                String events = "";
-                boolean notice = false;
-                for (int x = 0; x < found.size(); x++) {
-                    if (x > 0 && x%10 == 0) {
-                        if (notice) {
-                            bot.sendNotice(usr, optionalColor + events.substring(0, events.length()-2)
-                                    + (found.size() > x+1 ? "..." : "."));
-                        }
-                        else {
-                            bot.sendMessage(send, optionalColor + events.substring(0, events.length()-2)
-                                    + (found.size() > x+1 ? "..." : "."));
-                            notice = true;
-                        }
-                        events = "";
-                    }
-                    events += found.get(x).getEventBase() + ", ";
-                }
-                if (!events.isEmpty()) {
-                    if (notice)
-                        bot.sendNotice(usr, optionalColor + events.substring(0, events.length()-2) + ".");
-                    else
-                        bot.sendMessage(send, optionalColor + events.substring(0, events.length()-2) + ".");
-                }
-            }
-            else if (found.size() == 1) {
-                dEvent found_event = found.get(0);
-                bot.sendMessage(send, chatColor + "Event found: " + optionalColor + found_event.getEventBase());
-                if (found_event.isDepenizen()) {
-                    bot.sendMessage(send, chatColor + "  This event is from Depenizen. It depends on the plugin "
-                            + defaultColor + found_event.getPlugin() + chatColor + ".");
-                }
-                if (found_event.hasAliases()) {
-                    bot.sendMessage(send, defaultColor + "  Aliases" + chatColor + ": " + found_event.getAliases());
-                }
-                ArrayList<String> triggers = found_event.getTriggers();
-                bot.sendMessage(send, defaultColor + "  Triggered" + chatColor + ": " + triggers.get(0));
-                if (triggers.size() > 1) {
-                    for (int x = 1; x < triggers.size(); x++) {
-                        bot.sendMessage(send, chatColor + "             " + triggers.get(x));
-                    }
-                }
-                if (found_event.hasContext()) {
-                    ArrayList<String> context = found_event.getContext();
-                    bot.sendMessage(send, defaultColor + "  Context" + chatColor + ": " + context.get(0));
-                    if (context.size() > 1) {
-                        for (int x = 1; x < context.size(); x++) {
-                            bot.sendMessage(send, chatColor + "           " + context.get(x));
-                        }
-                    }
-                }
-                if (found_event.hasDetermine()) {
-                    ArrayList<String> determine = found_event.getDetermine();
-                    bot.sendMessage(send, defaultColor + "  Determine" + chatColor + ": " + determine.get(0));
-                    if (determine.size() > 1) {
-                        for (int x = 1; x < determine.size(); x++) {
-                            bot.sendMessage(send, chatColor + "             " + determine.get(x));
-                        }
-                    }
-                }
-            }
-            else {
-                bot.sendMessage(send, chatColor + "Event \"" + arg + "\" not found.");
-            }
-		}
-		*/
 
         else if (msgLwr.startsWith(".quote") || msgLwr.startsWith(".q")) {
             String[] args = msg.split(" ");
@@ -1397,8 +1141,7 @@ public class Spazz extends ListenerAdapter {
                 if (args.length > 2) {
                     if (dUsers.containsKey(args[2])) {
                         dUser dusr2 = dUsers.get(args[2]);
-                        bot.sendMessage(send, chatColor + args[2] + ": LastSeen(" + dusr2.getLastSeen()
-                                + ") Depenizen(" + dusr2.getDepenizen() + ")");
+                        bot.sendMessage(send, chatColor + args[2] + ": LastSeen(" + dusr2.getLastSeen() + ")");
                     }
                 }
             }
@@ -1558,8 +1301,7 @@ public class Spazz extends ListenerAdapter {
                 bot.sendMessage(send, address + chatColor + serverInfo.replace(String.valueOf((char) 0xc2), "")
                         .replaceAll("\\s+", " "));
             } catch (Exception e) {
-                e.printStackTrace();
-                bot.sendMessage(send, address + chatColor + "Invalid server specified.");
+                bot.sendMessage(send, address + chatColor + "Error contacting that server. (" + e.getMessage() + ")");
             }
         }
 
@@ -1603,31 +1345,6 @@ public class Spazz extends ListenerAdapter {
             debugMode = debug;
         if (repoManager == null)
             repoManager = new RepositoryManager(github);
-	    /*
-        try {
-            if (devMode) {
-                bot.sendMessage(chatChannel, chatColor + "GitHub response code: " + github.responseCode());
-            }
-            if (github.isConnected()) {
-                repoManager = new RepositoryManager(github);
-                if (denizenMH == null)
-                    denizenMH = new MetaHandler(repoManager.getRepository("Denizen"));
-                else
-                    denizenMH.reload();
-                if (depenizenMH == null)
-                    depenizenMH = new MetaHandler(repoManager.getRepository("Depenizen"));
-                else
-                    depenizenMH.reload();
-            }
-            else {
-                System.out.println("Error connecting to GitHub.");
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("GitHub error... This was most likely caused by connecting to repositories.");
-        }
-        */
         debugMode = original;
     }
 
@@ -1862,15 +1579,13 @@ public class Spazz extends ListenerAdapter {
         private String nick;
         private boolean status;
         private MessageList messages;
-        private boolean depenizen;
 
         public dUser(String nick) {
             if (nick == null || nick.equals("")) return;
             this.nick = nick;
             this.messages = new MessageList();
-            this.depenizen = false;
             setLastSeen("Existing");
-            if (!new File(System.getProperty("user.dir") + "/users/" + nick.toLowerCase() + ".yml").exists()) {
+            if (!new File(System.getProperty("user.dir") + "/users/" + nick.toLowerCase().replace('|', '_') + ".yml").exists()) {
                 try {
                     saveAll();
                 } catch (Exception e) {
@@ -1904,14 +1619,6 @@ public class Spazz extends ListenerAdapter {
             this.status = status;
         }
 
-        void invertDepenizen() {
-            depenizen = !depenizen;
-        }
-
-        boolean getDepenizen() {
-            return depenizen;
-        }
-
         void addMessage(Message msg) {
             this.messages.add(msg);
         }
@@ -1922,8 +1629,7 @@ public class Spazz extends ListenerAdapter {
             Yaml yaml = new Yaml(options);
 
             Map<String, Object> data = new HashMap<String, Object>();
-            data.put("name", getNick().toString());
-            data.put("depenizen", getDepenizen());
+            data.put("name", getNick());
             data.put("lastseen", getLastSeen().getBytes());
             Calendar seenTime = Calendar.getInstance();
             seenTime.setTime(getLastSeenTime());
@@ -1937,7 +1643,7 @@ public class Spazz extends ListenerAdapter {
                 data.put("github", System.getProperty("spazz.github"));
             }
 
-            FileWriter writer = new FileWriter(usersFolder + "/" + getNick().toLowerCase() + ".yml");
+            FileWriter writer = new FileWriter(usersFolder + "/" + getNick().toLowerCase().replace('|', '_') + ".yml");
             writer.write(yaml.dump(data));
             writer.close();
         }
@@ -1946,7 +1652,7 @@ public class Spazz extends ListenerAdapter {
         void loadMessages() throws Exception {
             LinkedHashMap map = null;
             Yaml yaml = new Yaml();
-            File f = new File(usersFolder + "/" + getNick().toLowerCase() + ".yml");
+            File f = new File(usersFolder + "/" + getNick().toLowerCase().replace('|', '_') + ".yml");
             InputStream is = f.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
             if (map.get("messages") instanceof HashMap<?, ?>) {
@@ -1965,7 +1671,7 @@ public class Spazz extends ListenerAdapter {
         void loadLastSeen() throws Exception {
             LinkedHashMap map = null;
             Yaml yaml = new Yaml();
-            File f = new File(usersFolder + "/" + getNick().toLowerCase() + ".yml");
+            File f = new File(usersFolder + "/" + getNick().toLowerCase().replace('|', '_') + ".yml");
             f.mkdirs();
             InputStream is = f.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
@@ -1984,19 +1690,6 @@ public class Spazz extends ListenerAdapter {
             if (debugMode) System.out.println("Loaded user with lasttime: " + dateFormat.format(getLastSeenTime()));
         }
 
-        void loadDepenizen() throws Exception {
-            LinkedHashMap map = null;
-            Yaml yaml = new Yaml();
-            File f = new File(usersFolder + "/" + getNick().toLowerCase() + ".yml");
-            f.mkdirs();
-            InputStream is = f.toURI().toURL().openStream();
-            map = (LinkedHashMap) yaml.load(is);
-            if (map.get("depenizen") instanceof Boolean)
-                this.depenizen = (Boolean) map.get("depenizen");
-            else
-                this.depenizen = false;
-        }
-
         void loadAll() throws Exception {
             if (debugMode) System.out.println("Loading messages for \"" + getNick() + "\"...");
             loadMessages();
@@ -2004,9 +1697,6 @@ public class Spazz extends ListenerAdapter {
             if (debugMode) System.out.println("Loading lastseen for \"" + getNick() + "\"...");
             loadLastSeen();
             if (debugMode) System.out.println("Lastseen loaded: " + this.lastSeen);
-            if (debugMode) System.out.println("Loading depenizen for \"" + getNick() + "\"...");
-            loadDepenizen();
-            if (debugMode) System.out.println("Depenizen loaded: " + this.depenizen);
         }
 
         public String getLastSeen() {

@@ -37,6 +37,7 @@ local.properties
 
 /users
 /storage
+*.bat
 
 *.idea
 *.iml

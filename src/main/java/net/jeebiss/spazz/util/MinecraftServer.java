@@ -14,6 +14,7 @@ public class MinecraftServer {
 
     private InetSocketAddress host;
     private int timeout = 7000;
+    private int pingTries = 0;
     private Gson gson = new Gson();
 
     public MinecraftServer(String host, int port) {
@@ -58,6 +59,8 @@ public class MinecraftServer {
 
     public StatusResponse ping() throws IOException {
 
+        pingTries++;
+
         Socket socket = new Socket();
         OutputStream outputStream;
         DataOutputStream dataOutputStream;
@@ -94,19 +97,23 @@ public class MinecraftServer {
         int id = readVarInt(dataInputStream); //packet id
 
         if (id == -1) {
+            if (pingTries == 1) return ping();
             throw new IOException("Premature end of stream.");
         }
 
         if (id != 0x00) { //we want a status response
+            if (pingTries == 1) return ping();
             throw new IOException("Invalid packetID");
         }
         int length = readVarInt(dataInputStream); //length of json string
 
         if (length == -1) {
+            if (pingTries == 1) return ping();
             throw new IOException("Premature end of stream.");
         }
 
         if (length == 0) {
+            if (pingTries == 1) return ping();
             throw new IOException("Invalid string length.");
         }
 
@@ -123,10 +130,12 @@ public class MinecraftServer {
         readVarInt(dataInputStream);
         id = readVarInt(dataInputStream);
         if (id == -1) {
+            if (pingTries == 1) return ping();
             throw new IOException("Premature end of stream.");
         }
 
         if (id != 0x01) {
+            if (pingTries == 1) return ping();
             throw new IOException("Invalid packetID");
         }
         long pingtime = dataInputStream.readLong(); //read response

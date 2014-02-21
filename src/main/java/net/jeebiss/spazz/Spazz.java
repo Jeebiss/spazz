@@ -1497,7 +1497,7 @@ public class Spazz extends ListenerAdapter {
             else if (symbol.equals("5"))
                 return Colors.PURPLE;
             else if (symbol.equals("6"))
-                return Colors.YELLOW;
+                return Colors.OLIVE;
             else if (symbol.equals("7"))
                 return Colors.LIGHT_GRAY;
             else if (symbol.equals("8"))

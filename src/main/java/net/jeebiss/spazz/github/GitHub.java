@@ -13,12 +13,21 @@ public class GitHub {
     public static final String GITHUB_URL = "https://api.github.com";
     public final String authentication;
 
+    private static GitHub current;
+    private static Requester requester;
+
     private GitHub(String oauth) {
         authentication = oauth;
     }
 
     public static GitHub connect(String oauth) {
-        return new GitHub(oauth);
+        current = new GitHub(oauth);
+        requester = new Requester(current);
+        return current;
+    }
+
+    public static GitHub currentInstance() {
+        return current;
     }
 
     public int responseCode() throws Exception {
@@ -29,44 +38,27 @@ public class GitHub {
         return (retrieve().githubConnection().getResponseCode() == 200);
     }
 
-    public Repository getRepository(String owner, String project, long updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) throws Exception {
-        return new Repository(this, updateDelay, hasIssues, hasComments, hasPulls, retrieve().parse(GITHUB_URL + "/repos/" + owner + "/" + project));
+    public Repository getRepository(String owner, String project) throws Exception {
+        return retrieve().parse(GITHUB_URL + "/repos/" + owner + "/" + project, Repository.class);
     }
 
     public Requester retrieve() {
-        return new Requester(this).method("GET");
+        return requester.method("GET");
     }
 
     public Requester post() {
-        return new Requester(this);
+        return requester.method("POST");
     }
 
-    @SuppressWarnings("unchecked")
-    public int getMaxRateLimit() {
-        try {
-            return (int) Utilities.getJSONFromMap((Map<String, Object>) retrieve().parse(GITHUB_URL + "/rate_limit").get("rate")).get("limit");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
-        }
+    public Requester request() {
+        return requester;
     }
 
-    @SuppressWarnings("unchecked")
-    public int getRemainingRateLimit() {
+    public RateLimit.Data getRateLimit() {
         try {
-            return (int) Utilities.getJSONFromMap((Map<String, Object>) retrieve().parse(GITHUB_URL + "/rate_limit").get("rate")).get("remaining");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public Date getRateLimitReset() {
-        try {
-            return new Date((long) ((int) Utilities.getJSONFromMap((Map<String, Object>) retrieve().parse(GITHUB_URL + "/rate_limit").get("rate")).get("reset")) * 1000);
-        } catch (Exception e) {
-            e.printStackTrace();
+            return retrieve().parse(GITHUB_URL + "/rate_limit", RateLimit.class).getRate();
+        } catch(Exception e) {
+            System.out.println("Could not retrieve rate limit: " + e.getMessage());
             return null;
         }
     }

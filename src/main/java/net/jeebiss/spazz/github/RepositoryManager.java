@@ -23,7 +23,7 @@ public class RepositoryManager {
         try {
             loadAll();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Failed to load 'storage/repositories.yml'... Loading default repositories.");
             addRepository("aufdemrand", "Denizen", 20, true, true, true);
             addRepository("Morphan1", "Depenizen", 30, true, true, true);
             addRepository("CitizensDev", "Citizens2", 20, false, false, false);
@@ -44,20 +44,13 @@ public class RepositoryManager {
         return repositories.keySet();
     }
 
-    public void reloadAll() {
-        for (Repository repo : repositories.values()) {
-            repo.reload();
-        }
-    }
-
     public void shutdown() {
         try {
             saveAll();
             for (Repository repo : repositories.values()) {
                 repo.shutdown();
             }
-        } catch (Exception e) {
-        }
+        } catch (Exception e) {}
     }
 
     public GitHub getGitHub() {
@@ -66,9 +59,12 @@ public class RepositoryManager {
 
     public boolean addRepository(String owner, String project, double updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) {
         try {
-            repositories.put(project.toLowerCase(), root.getRepository(owner, project, ((long) updateDelay) * 1000, hasIssues, hasComments, hasPulls));
+            repositories.put(project.toLowerCase(), root.getRepository(owner, project)
+                    ._init(root, (long) updateDelay * 1000, hasIssues, hasComments, hasPulls));
             return true;
         } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Failure adding repository '" + owner + "/" + project + "': " + e.getMessage());
             return false;
         }
     }

@@ -1,8 +1,10 @@
-package net.jeebiss.spazz.github;
+package net.jeebiss.spazz.github.comments;
+
+import net.jeebiss.spazz.github.User;
 
 public interface Comment {
 
-    public int getCommentId();
+    public long getCommentId();
 
     public User getUser();
 
@@ -11,5 +13,7 @@ public interface Comment {
     public String getUrl();
 
     public String getShortUrl();
+
+    public String getBody();
 
 }

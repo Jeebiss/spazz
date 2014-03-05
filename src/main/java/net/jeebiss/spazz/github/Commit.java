@@ -1,64 +1,54 @@
 package net.jeebiss.spazz.github;
 
 import net.jeebiss.spazz.util.Utilities;
-import net.minidev.json.JSONObject;
 
-import java.util.Map;
+import java.util.Date;
 
 public class Commit {
 
-    private final GitHub root;
+    private String sha;
+    private Details commit;
+    private User author;
+    private User committer;
+    private String html_url;
+    private Repository repo;
 
-    private final Repository owner;
-    private JSONObject information;
-    private JSONObject commitInfo;
+    public String getCommitId() { return sha; }
 
-    @SuppressWarnings("unchecked")
-    public Commit(GitHub root, Repository owner, JSONObject information) {
-        this.root = root;
-        this.owner = owner;
-        this.information = information;
-        commitInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("commit"));
-    }
+    public Details getDetails() { return commit; }
 
-    public GitHub getGitHub() {
-        return root;
-    }
+    public User getAuthor() { return author; }
 
-    public String getCommitId() {
-        return (String) information.get("sha");
-    }
-
-    public String getMessage() {
-        return (String) commitInfo.get("message");
-    }
-
-    public boolean isPullRequest() {
-        return (getMessage().startsWith("Merge pull request #"));
-    }
-
-    @SuppressWarnings("unchecked")
-    public String getAuthor() {
-        JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) commitInfo.get("author"));
-        return (String) userInfo.get("name");
-    }
-
-    @SuppressWarnings("unchecked")
     public User getCommitter() {
-        JSONObject userInfo = Utilities.getJSONFromMap((Map<String, Object>) information.get("committer"));
-        return new User(root, userInfo);
+        return committer;
     }
 
-    public Repository getRepo() {
-        return owner;
-    }
+    public String getUrl() { return html_url; }
 
-    public String getUrl() {
-        return (String) information.get("html_url");
-    }
+    public String getShortUrl() { return Utilities.getShortUrl(html_url); }
 
-    public String getShortUrl() {
-        return Utilities.getShortUrl((String) information.get("html_url"));
+    public boolean isPullRequest() { return commit.getMessage().startsWith("Merge pull request #"); }
+
+    public class Details {
+        private SimplifiedUser author;
+        private SimplifiedUser committer;
+        private String message;
+        private int comment_count;
+
+        public SimplifiedUser getAuthor() { return author; }
+        public SimplifiedUser getCommitter() { return committer; }
+        public String getMessage() { return message; }
+        public int getCommentCount() { return comment_count; }
+
+        public class SimplifiedUser {
+            private String name;
+            private String email;
+            private String date;
+
+            public String getName() { return name; }
+            public String getEmail() { return email; }
+            public Date getDate() { return GitHub.parseDate(date); }
+        }
     }
 
 }

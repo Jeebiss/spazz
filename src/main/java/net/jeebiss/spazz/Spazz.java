@@ -18,7 +18,6 @@ import org.yaml.snakeyaml.error.YAMLException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
-import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
@@ -64,7 +63,12 @@ public class Spazz extends ListenerAdapter {
             .compile("http(?:s)?://(?:www\\.)?github\\.com/(\\w+)/(\\w+)/(?:issues|pulls)/(\\d+)", Pattern.CASE_INSENSITIVE);
     public static Pattern altIssuesPattern = Pattern.compile("(\\w+)\\s*#(\\d+)");
     public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "(.)");
-    public static Pattern sReplace = Pattern.compile("s/(^[/])/(.+)/");
+
+    public static int cachedMsgCount = 0;
+    public static ArrayList<String> cachedMessages = new ArrayList<String>();
+    public static Pattern sReplace = Pattern.compile("s/([^/]+)/(.+)/");
+
+    public static int messageDelay = 0;
 
     public static QueryHandler queryHandler = null;
 
@@ -97,6 +101,9 @@ public class Spazz extends ListenerAdapter {
             if (map.get("github") instanceof String) {
                 System.setProperty("spazz.github", (String) map.get("github"));
             }
+            if (map.get("message-delay") instanceof Integer) {
+                messageDelay = (int) map.get("message-delay");
+            }
         } catch (Exception e) {
             if (!usersFolder.isDirectory() && !usersFolder.mkdir()) {
                 System.out.println("Could not load users folder. Password for Spazzmatic not found. Cancelling startup...");
@@ -105,6 +112,7 @@ public class Spazz extends ListenerAdapter {
         }
 
         github = GitHub.connect(System.getProperty("spazz.github"));
+        repoManager = new RepositoryManager(github);
 
         Utilities.loadQuotes();
         reloadSites(debugMode);
@@ -113,8 +121,7 @@ public class Spazz extends ListenerAdapter {
         /*
 		 * Connect to #denizen-dev on start up
 		 */
-        bot.setVersion("Spazzmatic v0.3 [Morphan1]");
-        bot.setAutoReconnect(true);
+        bot.setVersion("Spazzmatic v0.4 [Morphan1]");
         bot.setName("spazzmatic");
         bot.setLogin("spazz");
         bot.setVerbose(debugMode);
@@ -128,7 +135,7 @@ public class Spazz extends ListenerAdapter {
             System.out.println("Failed to connect to EsperNet. Check your internet connection and try again.");
             return;
         }
-        bot.setMessageDelay(500);
+        bot.setMessageDelay(messageDelay);
         if (!devMode) {
             bot.joinChannel("#denizen-dev");
         }
@@ -147,11 +154,11 @@ public class Spazz extends ListenerAdapter {
                 for (Channel chnl : bot.getChannels()) {
                     for (User usr : chnl.getUsers()) {
                         String nick = usr.getNick().toLowerCase();
+                        if (nick.equals("monkeybot"))
+                            monkeybot = true;
                         if (dUsers.containsKey(nick) || bot.getName().equalsIgnoreCase(nick) || nick.length() == 0)
                             continue;
                         dUsers.put(nick, new dUser(usr.getNick()));
-                        if (nick.equals("monkeybot"))
-                            monkeybot = true;
                     }
                 }
                 for (String usr : findUserFiles()) {
@@ -160,8 +167,7 @@ public class Spazz extends ListenerAdapter {
                     dUsers.put(usr, new dUser(usr));
                 }
                 if (!monkeybot) {
-                    sendToAllChannels(chatColor + "User 'monkeybot' not detected. Enabling meta backup systems.");
-                    metaBackup = true;
+                    // metaBackup = true;
                 }
             }
         }, 3000);
@@ -188,7 +194,7 @@ public class Spazz extends ListenerAdapter {
         String commandArgs = "";
         String channel = "";
 
-        while (!shuttingDown) {
+        input: while (!shuttingDown && scanner.hasNext()) {
 
             rawInput = scanner.nextLine();
             String[] inputArgs = rawInput.split(" ");
@@ -227,7 +233,7 @@ public class Spazz extends ListenerAdapter {
                     System.out.println();
                     System.out.println("Disconnected.");
                     shuttingDown = true;
-                    break;
+                    break input;
 
                 case "join":
                     if (bot.channelExists(channel))
@@ -298,7 +304,7 @@ public class Spazz extends ListenerAdapter {
 
     public static void sendToAllChannels(String message) {
         for (Channel chnl : bot.getChannels())
-            bot.sendMessage(chnl, message);
+            bot.sendMessage(chnl, chatColor + formatChat(message));
     }
 
     private static String send = "";
@@ -308,9 +314,23 @@ public class Spazz extends ListenerAdapter {
 
     public static void send(String message) {
         if (send.equals("spazzmatic"))
-            System.out.println(message);
+            System.out.println("<spazzmatic> " + Colors.removeFormattingAndColors(message));
         else
             bot.sendMessage(send, address + chatColor + message);
+    }
+
+    public static void sendNotice(String destination, String message) {
+        if (destination.equals("spazzmatic"))
+            System.out.println("-spazzmatic- " + Colors.removeFormattingAndColors(message));
+        else
+            bot.sendNotice(destination, chatColor + message);
+    }
+
+    public static void sendAction(String action) {
+        if (send.equals("spazzmatic"))
+            System.out.println("* spazzmatic " + Colors.removeFormattingAndColors(action));
+        else
+            bot.sendAction(send, chatColor + action);
     }
 
     @Override
@@ -382,81 +402,9 @@ public class Spazz extends ListenerAdapter {
         onMessage(new MessageEvent(bot, null, event.getUser(), event.getMessage()));
     }
 
-    public static void onIssue(IssueEvent event) {
-
-        Issue issue = event.getIssue();
-        Repository repo = issue.getRepo();
-
-        sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Issue " + event.getState().name().toLowerCase()
-                + ": [" + defaultColor + issue.getNumber() + chatColor + "] \"" + defaultColor + issue.getTitle()
-                + chatColor + "\" by " + optionalColor + issue.getUser().getLogin() + chatColor + " -- " + issue.getShortUrl());
-
-    }
-
-    public static void onPullRequest(PullRequestEvent event) {
-        PullRequest request = event.getPullRequest();
-        Repository repo = request.getRepo();
-
-        sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] Pull request " + event.getState().toLowerCase()
-                + ": [" + defaultColor + request.getNumber() + chatColor + "] \"" + defaultColor + request.getTitle()
-                + chatColor + "\" by " + optionalColor + request.getUser().getLogin() + chatColor + " -- " + request.getShortUrl());
-
-    }
-
-    public static void onCommit(CommitEvent event) {
-
-        ArrayList<Commit> commits = event.getCommits();
-        Repository repo = event.getRepo();
-
-        String users = "";
-        for (String user : event.getUsers()) {
-            users += user + ", ";
-        }
-
-        sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] "
-                + defaultColor + users.substring(0, users.length() - 2) + chatColor + " pushed " + commits.size()
-                + " commit" + (commits.size() == 1 ? "" : "s") + " to master branch");
-
-        for (Commit commit : commits) {
-            String message = commit.getMessage();
-            String shortenedUrl = commit.getShortUrl();
-            if (message.contains("\n")) {
-                message = message.substring(0, message.indexOf('\n'));
-            }
-
-            sendToAllChannels(defaultColor + "  " + commit.getAuthor() + chatColor + ": " + message + " -- " + shortenedUrl);
-        }
-
-    }
-
-    public static void onComment(CommentEvent event) {
-
-        Comment comment = event.getComment();
-        Repository repo = event.getRepo();
-
-        if (comment instanceof IssueComment) {
-            IssueComment icomment = (IssueComment) comment;
-            Issue issue = icomment.getIssue();
-            String url = icomment.getShortUrl();
-            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
-                    + comment.getUser().getLogin() + chatColor + " commented on "
-                    + issue.getState() + " issue: ["
-                    + defaultColor + issue.getNumber() + chatColor + "] " + defaultColor
-                    + issue.getTitle() + chatColor + " by " + defaultColor
-                    + issue.getUser().getLogin() + chatColor
-                    + (url != null ? " -- " + url : ""));
-        }
-        else if (comment instanceof CommitComment) {
-            CommitComment ccomment = (CommitComment) comment;
-            Commit commit = ccomment.getCommit();
-            String url = ccomment.getShortUrl();
-            sendToAllChannels(chatColor + "[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
-                    + comment.getUser().getLogin() + chatColor + " commented on commit: " + defaultColor
-                    + commit.getMessage() + chatColor + " by " + defaultColor
-                    + commit.getAuthor() + chatColor
-                    + (url != null ? " -- " + url : ""));
-        }
-
+    public static void cacheMessage(String message) {
+        if (send.equals("spazzmatic")) return;
+        cachedMessages.add(0, message);
     }
 
     private static String address = "";
@@ -464,7 +412,7 @@ public class Spazz extends ListenerAdapter {
     @Override
     public void onMessage(MessageEvent event) {
 
-        final Channel chnl = event.getChannel();
+        Channel chnl = event.getChannel();
 
         String msg = event.getMessage();
         User usr = event.getUser();
@@ -475,8 +423,10 @@ public class Spazz extends ListenerAdapter {
 
         dusr = dUsers.get(usr.getNick().toLowerCase());
 
-        if (chnl == null)
+        if (chnl == null) {
             setSend(usr.getNick());
+            chnl = bot.getChannel(chatChannel);
+        }
         else {
             setSend(chnl.getName());
             dusr.setLastSeen("Saying \"" + msg + chatColor + "\" in " + send);
@@ -488,9 +438,11 @@ public class Spazz extends ListenerAdapter {
         final String senderNick = usr.getNick();
         address = "";
 
+        cacheMessage("<" + senderNick + "> " + msg);
+
         if (charging) {
             if (System.currentTimeMillis() > (chargeInitiateTime + chargeFullTime + chargeFullTime / 2)) {
-                bot.sendAction(chnl, "loses control of his beams, accidentally making pew pew noises towards " + charger.getNick() + "!");
+                sendAction("loses control of his beams, accidentally making pew pew noises towards " + charger.getNick() + "!");
                 charging = false;
                 chargeInitiateTime = 0;
                 charger = null;
@@ -514,6 +466,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
+        /*
         while (issuesMatcher.find()) {
             if (repoManager.hasRepository(issuesMatcher.group(1), issuesMatcher.group(2))) {
                 Repository repo = repoManager.getRepository(issuesMatcher.group(2));
@@ -541,8 +494,20 @@ public class Spazz extends ListenerAdapter {
                 }
             }
         }
+        */
 
-        if (msgLwr.startsWith(".hello")) {
+        Matcher m = sReplace.matcher(msgLwr);
+
+        if (m.matches()) {
+            for (String message : cachedMessages) {
+                if (message.contains(m.group(1))) {
+                    String before = message.substring(0, message.indexOf('>'));
+                    message = before + message.substring(0, message.indexOf('>')).replace(m.group(1), m.group(2));
+                }
+            }
+        }
+
+        else if (msgLwr.startsWith(".hello")) {
             send("Hello World");
             return;
         }
@@ -604,8 +569,7 @@ public class Spazz extends ListenerAdapter {
                     send("Gluttony mode activated. Beginning " + args[1] + " consumption sequence.");
                 else {
                     ArrayList<User> users = new ArrayList<User>(chnl.getUsers());
-                    Random rand = new Random();
-                    User random = users.get(rand.nextInt(users.size()));
+                    User random = users.get(Utilities.getRandomNumber(users.size()));
                     send("Oh no! " + args[1] + " not found, nomming " + random.getNick() + " instead.");
                 }
                 feeders.add(usr);
@@ -688,42 +652,6 @@ public class Spazz extends ListenerAdapter {
             send("Here's every replaceable tag in Denizen! - http://bit.ly/164DlSE");
         }
 
-        else if (msgLwr.startsWith(".tag")) {
-            if (!metaBackup) {
-                send("Meta backup mode not enabled. Please use !tag <tag_name>.");
-            }
-            else try {
-                String arg = msgLwr.split(" ")[1];
-                ArrayList<HashMap<String, String[]>> tags = findMonkeyTag(arg);
-                if (tags.isEmpty()) {
-                    send("I found " + defaultColor + 0 + chatColor + " matching tags.");
-                }
-                else if (tags.size() > 1) {
-                    send("I found " + defaultColor + tags.size() + chatColor + " matching tags.");
-                    String send_msg = optionalColor;
-                    int x = 1;
-                    for (HashMap<String, String[]> tag : tags) {
-                        send_msg += tag.get("name")[0] + ", ";
-                        x++;
-                        if (x % 10 == 0) {
-                            send(send_msg.substring(0, send_msg.length() - 1));
-                            send_msg = optionalColor;
-                        }
-                    }
-                    send(send_msg.substring(0, send_msg.length() - 2) + ".");
-                }
-                else {
-                    HashMap<String, String[]> tag = tags.get(0);
-                    send("Tag found: " + defaultColor + tag.get("name")[0]
-                            + chatColor + ", which returns a " + defaultColor + tag.get("returns")[0]);
-                    for (String line : tag.get("description"))
-                        send("  " + line);
-                }
-            } catch (Exception e) {
-                send("That command is written as: .tag <tag_name>");
-            }
-        }
-
         else if (msgLwr.startsWith(".effects") || msgLwr.startsWith(".potions")) {
             send("A list of Bukkit potion effects is available here " + Colors.BOLD + "- http://bit.ly/13xyXur");
         }
@@ -745,17 +673,18 @@ public class Spazz extends ListenerAdapter {
         }
 
         else if (msgLwr.startsWith(".msg") || msgLwr.startsWith(".message")) {
-            String[] args = msg.split(" ");
-            if (args.length < 2 || args[2].length() < 1) {
+            String[] args = msg.trim().split(" ");
+            if (args.length < 3) {
                 send("Check your argument count. Command format: .msg <user> <message>");
                 return;
             }
             msg = msg.replaceFirst(args[0] + " " + args[1] + " ", "");
             if (!dUsers.containsKey(args[1].toLowerCase()))
-                dUsers.put(args[1].toLowerCase(), new dUser(args[1]));
-            dUsers.get(args[1].toLowerCase()).addMessage(new Message(senderNick, msg));
-            send("Message sent to: " + defaultColor + args[1] + chatColor + ".");
-            return;
+                send("I've never seen that user '" + args[1] + "'.");
+            else {
+                dUsers.get(args[1].toLowerCase()).addMessage(new Message(senderNick, msg));
+                send("Message sent to: " + defaultColor + args[1] + chatColor + ".");
+            }
         }
 
         else if (msgLwr.startsWith(".yaml") || msgLwr.startsWith(".yml")) {
@@ -835,7 +764,7 @@ public class Spazz extends ListenerAdapter {
 
         else if (msgLwr.startsWith(".party") || msgLwr.startsWith(".celebrate")) {
             if (msgLwr.contains("reason: ")) {
-                String[] split = msg.split("reason:");
+                String[] split = msg.split("reason:", 2);
                 String reason = split[1].replace(" me ", senderNick + " ");
                 send("Woo! Let's party for " + reason.substring(1, reason.length()) + "!");
                 return;
@@ -900,11 +829,11 @@ public class Spazz extends ListenerAdapter {
                 if (chnl.getUsers().toString().contains(args[1])) {
                     double chance = (Math.random() * 99 + 1) * ((System.currentTimeMillis() - chargeInitiateTime) / chargeFullTime);
                     if (chance > 50) {
-                        bot.sendAction(send, chatColor + "makes pew pew noises towards " + args[1] + "... successfully!");
+                        sendAction("makes pew pew noises towards " + args[1] + "... successfully!");
                         send("Take that " + args[1] + "!");
                     }
                     else {
-                        bot.sendAction(send, chatColor + "makes pew pew noises towards " + args[1] + "... and misses D:");
+                        sendAction("makes pew pew noises towards " + args[1] + "... and misses D:");
                         send("You've bested me this time " + args[1] + "...");
                     }
                     charging = false;
@@ -1015,23 +944,24 @@ public class Spazz extends ListenerAdapter {
         }
         //else if ((msg.contains("hastebin.") || msg.contains("pastebin.") || msg.contains("pastie.")) && || chnl.hasVoice(usr) || chnl.isOp(usr))) {
         //    help.add(usr);
-        //    bot.sendNotice(usr, "If you want to whether a Denizen script will compile, type " + Colors.BOLD + ".yml link_to_the_script");
+        //    sendNotice(senderNick, "If you want to whether a Denizen script will compile, type " + Colors.BOLD + ".yml link_to_the_script");
         //    return;
         //}
 
         else if (msgLwr.startsWith(".rate")) {
-            bot.sendNotice(usr, chatColor + "Max rate limit: " + github.getMaxRateLimit());
-            bot.sendNotice(usr, chatColor + "Remaining rate limit: " + github.getRemainingRateLimit());
+            RateLimit.Data rateLimit = github.getRateLimit();
+            sendNotice(senderNick, "Max rate limit: " + rateLimit.getLimit());
+            sendNotice(senderNick, "Remaining rate limit: " + rateLimit.getRemaining());
 
             long currentTime = Calendar.getInstance().getTimeInMillis();
             Calendar seen = Calendar.getInstance();
-            seen.setTime(github.getRateLimitReset());
+            seen.setTime(new Date(rateLimit.getReset()*1000));
             long seenTime = seen.getTimeInMillis();
             long seconds = (seenTime - currentTime) / 1000;
             long minutes = seconds / 60;
             seconds = seconds - (minutes * 60);
 
-            bot.sendNotice(usr, chatColor + "Next reset: "
+            sendNotice(senderNick, "Next reset: "
                     + (minutes > 0 ? minutes > 1 ? minutes + " minutes, " : "1 minute, " : "")
                     + (seconds > 0 ? seconds > 1 ? seconds + " seconds" : "1 second" : minutes > 0 ? "0 seconds" : "Now."));
         }
@@ -1311,36 +1241,33 @@ public class Spazz extends ListenerAdapter {
                 MinecraftServer.StatusResponse response = server.ping();
                 MinecraftServer.Players players = response.getPlayers();
                 String serverInfo = response.getDescription() + Colors.NORMAL + chatColor + " - " + response.getVersion().getName()
-                        + chatColor + " - " + players.getOnline() + "/" + players.getMax();
-                Matcher m = minecraftColor.matcher(serverInfo);
+                        + " - " + players.getOnline() + "/" + players.getMax();
+                m = minecraftColor.matcher(serverInfo);
+                String lastColor = "";
                 while (m.find()) {
-                    String color = parseColor("&" + m.group(1));
-                    serverInfo = serverInfo.replace((char) 0xa7 + m.group(1), color != null ? color : "");
+                    String color = Colors.NORMAL + (m.group(1).matches("l|o|n") ? lastColor : "") + parseColor("&" + m.group(1));
+                    serverInfo = serverInfo.replaceFirst((char) 0xa7 + m.group(1), lastColor = color);
                 }
-                send(serverInfo.replace(String.valueOf((char) 0xc2), "")
-                        .replaceAll("\\s+", " ").replace(" ", Colors.NORMAL + " "));
+                send(serverInfo.replace(String.valueOf((char) 0xc2), "").replaceAll("\\s+", " "));
                 if (server.getAddress().getHostName().equals("mc.luminatics.net")
                         && Utilities.getRandomNumber(100) <= 25) {
                     response = server.ping();
                     players = response.getPlayers();
                     serverInfo = response.getDescription() + Colors.NORMAL + chatColor + " - " + response.getVersion().getName()
-                            + chatColor + " - " + players.getOnline() + "/" + players.getMax();
+                            + " - " + players.getOnline() + "/" + players.getMax();
                     m = minecraftColor.matcher(serverInfo);
+                    lastColor = "";
                     while (m.find()) {
-                        String color = parseColor("&" + m.group(1));
-                        serverInfo = serverInfo.replace((char) 0xa7 + m.group(1), color != null ? color : "");
+                        String color = Colors.NORMAL + (m.group(1).matches("l|o|n") ? lastColor : "") + parseColor("&" + m.group(1));
+                        serverInfo = serverInfo.replaceFirst((char) 0xa7 + m.group(1), lastColor = color);
                     }
                     send("That's interesting Laura... tell me more.");
-                    send(serverInfo.replace(String.valueOf((char) 0xc2), "")
-                            .replaceAll("\\s+", " ").replace(" ", Colors.NORMAL + " "));
+                    send(serverInfo.replace(String.valueOf((char) 0xc2), "").replaceAll("\\s+", " "));
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 send("Error contacting that server. (" + e.getMessage() + ")");
             }
-        }
-
-        else if (sReplace.matcher(msgLwr).matches()) {
-
         }
 
         else if (msgLwr.equals(".dev")) {
@@ -1374,8 +1301,8 @@ public class Spazz extends ListenerAdapter {
         }
 
         address = "";
+        dusr.checkMessages();
         setSend("");
-        dusr.checkMessages(chnl);
 
     }
 
@@ -1383,8 +1310,6 @@ public class Spazz extends ListenerAdapter {
         boolean original = debugMode;
         if (!debugMode)
             debugMode = debug;
-        if (repoManager == null)
-            repoManager = new RepositoryManager(github);
         debugMode = original;
     }
 
@@ -1402,6 +1327,13 @@ public class Spazz extends ListenerAdapter {
         if (channel.isOp(chatter))
             return true;
         return false;
+    }
+
+    private static String formatChat(String message) {
+        return message.replace("<C>", chatColor)
+                .replace("<D>", defaultColor)
+                .replace("<O>", optionalColor)
+                .replace("<LT>", "<");
     }
 
     private static String parseUsage(String unparsed) {
@@ -1687,6 +1619,7 @@ public class Spazz extends ListenerAdapter {
                 data.put("dev-mode", devMode);
                 data.put("wolfram", queryHandler.WOLFRAM_KEY);
                 data.put("github", System.getProperty("spazz.github"));
+                data.put("message-delay", messageDelay);
             }
 
             FileWriter writer = new FileWriter(usersFolder + "/" + getNick().toLowerCase().replace('|', '_') + ".yml");
@@ -1761,17 +1694,17 @@ public class Spazz extends ListenerAdapter {
             return this.status;
         }
 
-        public void checkMessages(Channel chnl) {
-            if (this.messages.isEmpty() || chnl == null) return;
-            bot.sendMessage(chnl, getNick() + ": " + chatColor + "You have messages waiting for you...");
+        public void checkMessages() {
+            if (this.messages.isEmpty()) return;
+            send(Colors.NORMAL + getNick() + ": " + chatColor + "You have messages waiting for you...");
             String lastNick = null;
             for (String msg : this.messages.getMessages().values()) {
                 String[] split = msg.split("_", 2);
                 if (!split[0].equals(lastNick)) {
                     lastNick = split[0];
-                    bot.sendNotice(getNick(), defaultColor + lastNick + chatColor + ":");
+                    sendNotice(getNick(), defaultColor + lastNick + chatColor + ":");
                 }
-                bot.sendNotice(getNick(), chatColor + "  " + split[1]);
+                sendNotice(getNick(), "  " + split[1]);
             }
             this.messages.clear();
             try {
@@ -1852,29 +1785,4 @@ public class Spazz extends ListenerAdapter {
 
     }
 
-    private static Pattern tagInfo = Pattern.compile("<tr class=\"first\"><td>Name</td><td>(.*)</td></tr>\n\n"
-            + "<tr class=\"second\"><td>Returns</td><td>(.*)</td></tr>\n\n"
-            + "<tr class=\"second\"><td>Description</td><td>(.*)\n<br></td></tr>");
-
-    private static ArrayList<HashMap<String, String[]>> findMonkeyTag(String input) throws Exception {
-        ArrayList<HashMap<String, String[]>> ret = new ArrayList<HashMap<String, String[]>>();
-        String monkeytag = Utilities.getStringFromUrl("http://mcmonkey4eva.dyndns.org/tags/"
-                + URLEncoder.encode(input, "UTF-8")).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&");
-        Matcher m = tagInfo.matcher(monkeytag);
-        while (m.find()) {
-            HashMap<String, String[]> tag = new HashMap<String, String[]>();
-            tag.put("name", m.group(1).split("<br>"));
-            tag.put("returns", m.group(2).split("<br>"));
-            tag.put("description", m.group(3).split("<br>"));
-            ret.add(tag);
-        }
-        return ret;
-    }
-	/*
-	private static ArrayList<HashMap<String, String[]>> findMonkeyCmd(String input) throws Exception {
-	    ArrayList<HashMap<String, String[]>> ret = new ArrayList<HashMap<String, String[]>>();
-	    String monkeycmd = Utilities.getStringFromUrl("http://mcmonkey4eva.dynsns.org/cmds/"
-	            + URLEncoder.encode(input, "UTF-8")).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&");
-	}
-	*/
 }

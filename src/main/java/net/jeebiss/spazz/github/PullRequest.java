@@ -1,20 +1,14 @@
 package net.jeebiss.spazz.github;
 
 import net.jeebiss.spazz.util.Utilities;
-import net.minidev.json.JSONObject;
 
 public class PullRequest extends Issue {
 
-    private JSONObject information;
-
-    public PullRequest(GitHub root, Repository owner, JSONObject information) {
-        super(root, owner, information);
-        this.information = information;
-    }
+    private String merged_at;
 
     @Override
     public String getUrl() {
-        return (String) information.get("html_url");
+        return html_url;
     }
 
     @Override
@@ -24,7 +18,11 @@ public class PullRequest extends Issue {
 
     @Override
     public String getShortUrl() {
-        return Utilities.getShortUrl((String) information.get("html_url"));
+        return Utilities.getShortUrl(html_url);
+    }
+
+    public boolean merged() {
+        return merged_at != null;
     }
 
 }

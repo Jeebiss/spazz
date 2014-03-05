@@ -1,9 +1,9 @@
 package net.jeebiss.spazz.github;
 
+import com.google.gson.*;
+import net.jeebiss.spazz.github.deserializers.EventDeserializer;
+import net.jeebiss.spazz.github.events.Event;
 import net.jeebiss.spazz.util.Utilities;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
-import net.minidev.json.JSONValue;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -11,6 +11,10 @@ import java.net.URL;
 public class Requester {
 
     private final GitHub root;
+    private static final Requester staticInstance = new Requester(null);
+    private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(Event.class, new EventDeserializer())
+            .create();
 
     private String method = "POST";
 
@@ -18,25 +22,35 @@ public class Requester {
         this.root = root;
     }
 
+    public static Gson getGson() {
+        return gson;
+    }
+
     public Requester method(String method) {
         this.method = method;
         return this;
     }
 
-    public JSONObject parse(String url) throws Exception {
-        JSONObject json = null;
-        if (method.equals("GET")) {
-            json = (JSONObject) JSONValue.parse(Utilities.getStringFromStream(setupConnection(url).getInputStream()));
+    public <T> T parse(String url, Class<T> type) {
+        try {
+            if (method.equals("GET")) {
+                return gson.fromJson(Utilities.getStringFromStream(setupConnection(url).getInputStream()), type);
+            }
+        } catch (Exception e) {
+            System.out.println("Error parsing JSON from '" + url + "': " + e.getMessage());
         }
-        return json;
+        return null;
     }
 
-    public JSONArray parseArray(String url) throws Exception {
-        JSONArray json = null;
-        if (method.equals("GET")) {
-            json = (JSONArray) JSONValue.parse(Utilities.getStringFromStream(setupConnection(url).getInputStream()));
+    public JsonArray parseArray(String url) {
+        try {
+            if (method.equals("GET")) {
+                return new JsonParser().parse(Utilities.getStringFromStream(setupConnection(url).getInputStream())).getAsJsonArray();
+            }
+        } catch (Exception e) {
+            System.out.println("Error parsing JSON array from '" + url + "': " + e.getMessage());
         }
-        return json;
+        return null;
     }
 
     public HttpURLConnection githubConnection() throws Exception {

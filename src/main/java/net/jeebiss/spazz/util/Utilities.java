@@ -1,7 +1,6 @@
 package net.jeebiss.spazz.util;
 
-import net.minidev.json.JSONObject;
-import net.minidev.json.JSONValue;
+import net.jeebiss.spazz.github.Requester;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -230,17 +229,22 @@ public class Utilities {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
     public static String getShortUrl(String url) {
         String shortened = null;
         try {
-            shortened = (String) ((Map<String, Object>) getJSONFromMap((JSONObject) JSONValue.parse(
-                    getStringFromUrl("https://api-ssl.bitly.com/v3/shorten?login=spazzmatic&apiKey="
-                            + System.getProperty("spazz.bitly") + "&longUrl=" + url))).get("data")).get("url");
+            shortened = Requester.getGson().fromJson(getStringFromUrl("https://api-ssl.bitly.com/v3/shorten?login=spazzmatic&apiKey="
+                    + System.getProperty("spazz.bitly") + "&longUrl=" + url), BitlyResponse.class).data.url;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return shortened;
+    }
+    
+   private class BitlyResponse {
+        private Data data;
+        private class Data {
+            private String url;
+        }
     }
 
     public static String capitalize(String string) {
@@ -253,12 +257,31 @@ public class Utilities {
         return string.replaceFirst(firstLetter, firstLetter.toLowerCase());
     }
 
-    public static JSONObject getJSONFromMap(Map<String, Object> map) {
-        JSONObject json = new JSONObject();
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            json.put(entry.getKey(), entry.getValue());
+    public static String join(final Iterator<String> iterator, final String separator) {
+        if (iterator == null) {
+            return null;
         }
-        return json;
+        if (!iterator.hasNext()) {
+            return "";
+        }
+        final String first = iterator.next();
+        if (!iterator.hasNext()) {
+            return first;
+        }
+        final StringBuilder buf = new StringBuilder();
+        if (first != null) {
+            buf.append(first);
+        }
+        while (iterator.hasNext()) {
+            if (separator != null) {
+                buf.append(separator);
+            }
+            final String string = iterator.next();
+            if (string != null) {
+                buf.append(string);
+            }
+        }
+        return buf.toString();
     }
 
     public static String encodeBase64(String string) {

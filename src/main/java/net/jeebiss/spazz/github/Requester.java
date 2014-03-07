@@ -36,9 +36,7 @@ public class Requester {
             if (method.equals("GET")) {
                 return gson.fromJson(Utilities.getStringFromStream(setupConnection(url).getInputStream()), type);
             }
-        } catch (Exception e) {
-            System.out.println("Error parsing JSON from '" + url + "': " + e.getMessage());
-        }
+        } catch (Exception e) {}
         return null;
     }
 
@@ -47,10 +45,8 @@ public class Requester {
             if (method.equals("GET")) {
                 return new JsonParser().parse(Utilities.getStringFromStream(setupConnection(url).getInputStream())).getAsJsonArray();
             }
-        } catch (Exception e) {
-            System.out.println("Error parsing JSON array from '" + url + "': " + e.getMessage());
-        }
-        return null;
+        } catch (Exception e) {}
+        return new JsonArray();
     }
 
     public HttpURLConnection githubConnection() throws Exception {

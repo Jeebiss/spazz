@@ -19,8 +19,8 @@ public class IssuesEvent extends Event {
     @Override
     public void fire() {
         Issue issue = payload.getIssue();
-        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + issue.getUser().getLogin() + "<C> "
-                + payload.getAction() + " issue: \"<D>" + issue.getTitle().replace("<", "<LT>") + "<C>\" (<D>"
+        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> "
+                + payload.getAction() + " issue: <D>" + issue.getTitle().replace("<", "<LT>") + "<C> (<D>"
                 + issue.getNumber() + "<C>) -- " + issue.getShortUrl());
     }
 

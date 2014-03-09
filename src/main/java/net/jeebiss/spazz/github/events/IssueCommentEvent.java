@@ -21,9 +21,9 @@ public class IssueCommentEvent extends Event implements CommentEvent {
     public void fire() {
         IssueComment comment = getPayload().getComment();
         Issue issue = payload.getIssue();
-        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + comment.getUser().getLogin()
+        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin()
                 + "<C> commented on issue: <D>" + issue.getTitle().replace("<", "<LT>") + "<C> (<D>"
-                + issue.getNumber() + "<C>) by <D>" + issue.getUser().getLogin() + "<C> -- " + comment.getShortUrl());
+                + issue.getNumber() + "<C>) -- " + comment.getShortUrl());
     }
 
     public class Payload {

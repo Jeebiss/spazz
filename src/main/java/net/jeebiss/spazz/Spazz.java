@@ -64,9 +64,8 @@ public class Spazz extends ListenerAdapter {
     public static Pattern altIssuesPattern = Pattern.compile("(\\w+)\\s*#(\\d+)");
     public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "(.)");
 
-    public static int cachedMsgCount = 0;
-    public static ArrayList<String> cachedMessages = new ArrayList<String>();
-    public static Pattern sReplace = Pattern.compile("s/([^/]+)/(.+)/");
+    public static Map<String, List<Message>> cachedMessages = new HashMap<String, List<Message>>();
+    public static Pattern sReplace = Pattern.compile("^s/([^/]+)/([^/]+)/?([^\\s/]+)?", Pattern.CASE_INSENSITIVE);
 
     public static int messageDelay = 0;
 
@@ -315,8 +314,10 @@ public class Spazz extends ListenerAdapter {
     public static void send(String message) {
         if (send.equals("spazzmatic"))
             System.out.println("<spazzmatic> " + Colors.removeFormattingAndColors(message));
-        else
-            bot.sendMessage(send, address + chatColor + message);
+        else {
+            String msg = address + chatColor + message;
+            bot.sendMessage(send, msg.length() <= 400 ? msg : msg.substring(0, 400));
+        }
     }
 
     public static void sendNotice(String destination, String message) {
@@ -392,8 +393,11 @@ public class Spazz extends ListenerAdapter {
 
     @Override
     public void onAction(ActionEvent event) {
-        dUsers.get(event.getUser().getNick()).setLastSeen("performing an action in " + event.getChannel().getName()
-                + chatColor + ": " + event.getAction());
+        if (event.getChannel() != null) {
+            cacheMessage(new Message(event.getUser().getNick(), event.getAction(), true), event.getChannel().getName());
+            dUsers.get(event.getUser().getNick()).setLastSeen("performing an action in " + event.getChannel().getName()
+                    + chatColor + ": " + event.getAction());
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -402,9 +406,10 @@ public class Spazz extends ListenerAdapter {
         onMessage(new MessageEvent(bot, null, event.getUser(), event.getMessage()));
     }
 
-    public static void cacheMessage(String message) {
+    public static void cacheMessage(Message message, String channel) {
         if (send.equals("spazzmatic")) return;
-        cachedMessages.add(0, message);
+        if (!cachedMessages.containsKey(channel)) cachedMessages.put(channel, new ArrayList<Message>());
+        cachedMessages.get(channel).add(0, message);
     }
 
     private static String address = "";
@@ -433,12 +438,8 @@ public class Spazz extends ListenerAdapter {
         }
 
         String msgLwr = msg.toLowerCase();
-        final Matcher issuesMatcher = issuesPattern.matcher(msgLwr);
-        final Matcher altIssuesMatcher = altIssuesPattern.matcher(msgLwr);
         final String senderNick = usr.getNick();
         address = "";
-
-        cacheMessage("<" + senderNick + "> " + msg);
 
         if (charging) {
             if (System.currentTimeMillis() > (chargeInitiateTime + chargeFullTime + chargeFullTime / 2)) {
@@ -495,19 +496,25 @@ public class Spazz extends ListenerAdapter {
             }
         }
         */
+        Matcher m = sReplace.matcher(msg);
 
-        Matcher m = sReplace.matcher(msgLwr);
-
-        if (m.matches()) {
-            for (String message : cachedMessages) {
-                if (message.contains(m.group(1))) {
-                    String before = message.substring(0, message.indexOf('>'));
-                    message = before + message.substring(0, message.indexOf('>')).replace(m.group(1), m.group(2));
+        out: if (chnl != null) {
+            if (m.find()) {
+                boolean user = m.group(3) != null;
+                if (cachedMessages.containsKey(chnl.getName())) {
+                    for (Message message : cachedMessages.get(chnl.getName())) {
+                        if (user && !message.getUser().equals(m.group(3))) continue;
+                        if (message.matches("(?i)" + m.group(1))) {
+                            send(message.replaceAll("(?i)" + m.group(1), m.group(2)));
+                            break out;
+                        }
+                    }
                 }
             }
+            cacheMessage(new Message(senderNick, msg, false), chnl.getName());
         }
 
-        else if (msgLwr.startsWith(".hello")) {
+        if (msgLwr.startsWith(".hello")) {
             send("Hello World");
             return;
         }
@@ -682,7 +689,7 @@ public class Spazz extends ListenerAdapter {
             if (!dUsers.containsKey(args[1].toLowerCase()))
                 send("I've never seen that user '" + args[1] + "'.");
             else {
-                dUsers.get(args[1].toLowerCase()).addMessage(new Message(senderNick, msg));
+                dUsers.get(args[1].toLowerCase()).addMessage(new Message(senderNick, msg, false));
                 send("Message sent to: " + defaultColor + args[1] + chatColor + ".");
             }
         }
@@ -789,6 +796,10 @@ public class Spazz extends ListenerAdapter {
         }
         else if (msgLwr.startsWith(".thmf") || msgLwr.startsWith(".tfw")) {
             send("That hurt even my feelings. And I'm a robot.");
+        }
+        else if (msgLwr.startsWith(".tiafo") || msgLwr.startsWith(".tias")) {
+            if (Utilities.getRandomNumber(100) > 50) send("Try It And Find Out.");
+            else send("Try It And See.");
         }
         else if (msgLwr.startsWith(".cb") || msgLwr.startsWith(".coolbeans")) {
             send("That's cool beans.");
@@ -1203,10 +1214,9 @@ public class Spazz extends ListenerAdapter {
         else if (msgLwr.startsWith(".math ")) {
             try {
                 Double eval = new DoubleEvaluator().evaluate(msgLwr.substring(6));
-                bot.sendMessage(chnl, defaultColor + "<math:" + msgLwr.substring(6).replace(" ", "") + ">"
-                        + chatColor + " = " + eval);
+                send(defaultColor + "<math:" + msgLwr.substring(6).replace(" ", "") + ">" + chatColor + " = " + eval);
             } catch (Exception e) {
-                bot.sendMessage(chnl, chatColor + "Invalid math statement. Denizen will not parse that correctly.");
+                send("Invalid math statement. Denizen will not parse that correctly.");
             }
         }
 
@@ -1642,7 +1652,7 @@ public class Spazz extends ListenerAdapter {
                     else
                         msg = (String) msgObj;
                     String[] split = msg.split("_", 2);
-                    addMessage(new Message(split[0], split[1]));
+                    addMessage(new Message(split[0], split[1], false));
                 }
             }
         }
@@ -1769,18 +1779,30 @@ public class Spazz extends ListenerAdapter {
 
         private String user;
         private String message;
+        private boolean action;
 
-        public Message(String user, String message) {
+        public Message(String user, String message, boolean action) {
             this.user = user;
             this.message = message;
+            this.action = action;
         }
 
         public String getUser() {
             return this.user;
         }
 
-        public String getMessage() {
-            return this.message;
+        public String getMessage() { return this.message; }
+
+        public boolean matches(String s) {
+            return message.matches(String.format(".*(%s).*", s));
+        }
+
+        public String replaceAll(String target, String replacement) {
+            String ret = "";
+            if (action) ret += "* " + user;
+            else ret += "<" + user + ">";
+            message = message.replaceAll(target, replacement);
+            return ret + " " + message;
         }
 
     }

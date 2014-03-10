@@ -467,13 +467,14 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        /*
-        while (issuesMatcher.find()) {
-            if (repoManager.hasRepository(issuesMatcher.group(1), issuesMatcher.group(2))) {
-                Repository repo = repoManager.getRepository(issuesMatcher.group(2));
-                Issue issue = repo.getIssue(Integer.valueOf(issuesMatcher.group(3)));
+        Matcher m = issuesPattern.matcher(msgLwr);
+
+        while (m.find()) {
+            if (repoManager.hasRepository(m.group(1), m.group(2))) {
+                Repository repo = repoManager.getRepository(m.group(2));
+                Issue issue = repo.getIssue(Integer.valueOf(m.group(3)));
                 if (issue != null) {
-                    send("[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
+                    send("[" + optionalColor + repo.getFullName() + chatColor + "] " + defaultColor
                             + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
                             + " -- " + issue.getState().toLowerCase() + " " + (issue.isPullRequest() ? "pull request" : "issue")
                             + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getLastUpdatedSimple() + ".)");
@@ -481,13 +482,15 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        while (altIssuesMatcher.find()) {
-            String[] repoName = altIssuesMatcher.group(1).split("/");
+        m = altIssuesPattern.matcher(msgLwr);
+
+        while (m.find()) {
+            String[] repoName = m.group(1).split("/");
             if (repoManager.hasRepository(repoName[repoName.length - 1])) {
                 Repository repo = repoManager.getRepository(repoName[repoName.length - 1]);
-                Issue issue = repo.getIssue(Integer.valueOf(altIssuesMatcher.group(2)));
+                Issue issue = repo.getIssue(Integer.valueOf(m.group(2)));
                 if (issue != null) {
-                    send("[" + optionalColor + repo.getName() + chatColor + "] " + defaultColor
+                    send("[" + optionalColor + repo.getFullName() + chatColor + "] " + defaultColor
                             + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
                             + " -- " + issue.getState().toLowerCase() + " " + (issue.isPullRequest() ? "pull request" : "issue")
                             + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getLastUpdatedSimple() + ".) - "
@@ -495,8 +498,8 @@ public class Spazz extends ListenerAdapter {
                 }
             }
         }
-        */
-        Matcher m = sReplace.matcher(msg);
+
+        m = sReplace.matcher(msg);
 
         out: if (chnl != null) {
             if (m.find()) {

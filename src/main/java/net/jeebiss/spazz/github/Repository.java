@@ -75,6 +75,10 @@ public class Repository {
         return commits;
     }
 
+    public Issue getIssue(int number) {
+        return root.retrieve().parse(issues_url.replaceAll("\\{.+\\}", "/" + number), Issue.class);
+    }
+
     public void fireEvents() {
         JsonArray eventsList = root.retrieve().parseArray(events_url.replaceAll("\\{.+\\}", ""));
         for (int i = eventsList.size()-1; i > -1; i--) {

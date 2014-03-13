@@ -54,8 +54,6 @@ public class Spazz extends ListenerAdapter {
 
     public static boolean debugMode = false;
     public static boolean devMode = false;
-    public static boolean metaBackup = false;
-    public static boolean monkeybotScan = false;
     public static String chatChannel = "#denizen-dev";
     public static GitHub github = null;
     public static RepositoryManager repoManager = null;
@@ -67,7 +65,7 @@ public class Spazz extends ListenerAdapter {
     public static Map<String, List<Message>> cachedMessages = new HashMap<String, List<Message>>();
     public static Pattern sReplace = Pattern.compile("^s/([^/]+)/([^/]+)/?([^\\s/]+)?", Pattern.CASE_INSENSITIVE);
 
-    public static int messageDelay = 0;
+    public static long messageDelay = 0;
 
     public static QueryHandler queryHandler = null;
 
@@ -101,7 +99,7 @@ public class Spazz extends ListenerAdapter {
                 System.setProperty("spazz.github", (String) map.get("github"));
             }
             if (map.get("message-delay") instanceof Integer) {
-                messageDelay = (int) map.get("message-delay");
+                messageDelay = (long) map.get("message-delay");
             }
         } catch (Exception e) {
             if (!usersFolder.isDirectory() && !usersFolder.mkdir()) {
@@ -126,7 +124,6 @@ public class Spazz extends ListenerAdapter {
         bot.setVerbose(debugMode);
         bot.setAutoNickChange(true);
         bot.setAutoReconnect(true);
-        bot.identify(System.getProperty("spazz.password"));
 
         try {
             bot.connect("irc.esper.net");
@@ -135,26 +132,15 @@ public class Spazz extends ListenerAdapter {
             return;
         }
         bot.setMessageDelay(messageDelay);
-        if (!devMode) {
-            bot.joinChannel("#denizen-dev");
-        }
-        else {
-            String op = chatColor;
-            chatColor = defaultColor;
-            defaultColor = optionalColor;
-            optionalColor = op;
-        }
-        bot.joinChannel("#denizen-devs");
+
+        identify();
 
         new java.util.Timer().schedule(new java.util.TimerTask() {
             @Override
             public void run() {
-                boolean monkeybot = false;
                 for (Channel chnl : bot.getChannels()) {
                     for (User usr : chnl.getUsers()) {
                         String nick = usr.getNick().toLowerCase();
-                        if (nick.equals("monkeybot"))
-                            monkeybot = true;
                         if (dUsers.containsKey(nick) || bot.getName().equalsIgnoreCase(nick) || nick.length() == 0)
                             continue;
                         dUsers.put(nick, new dUser(usr.getNick()));
@@ -165,140 +151,8 @@ public class Spazz extends ListenerAdapter {
                     if (dUsers.containsKey(usr)) continue;
                     dUsers.put(usr, new dUser(usr));
                 }
-                if (!monkeybot) {
-                    // metaBackup = true;
-                }
             }
         }, 3000);
-
-        System.out.println("Successfully loaded Spazzmatic. You may now begin using console commands.");
-        System.out.println();
-        System.out.println("Available commands:");
-        System.out.println("/me <action>             Performs an action in the current chat channel.");
-        System.out.println("/msg <user> <msg>        Sends a private message to a user.");
-        System.out.println("/plain <msg>             Sends a non-colored message to the current chat channel.");
-        System.out.println("/join <channel>          Joins a channel.");
-        System.out.println("/leave <channel> <msg>   Leaves a channel with an optional message.");
-        System.out.println("/raw <protocol>          Sends a raw IRC protocol to the server.");
-        System.out.println("/disconnect              Saves user info and disconnects from the server.");
-        System.out.println("/chat <channel>          Set the current chat channel.");
-        System.out.println("/test <command>          Test Spazzmatic IRC commands (Ex: /test .botsnack)");
-        System.out.println("/debug                   Turns console debug on or off.");
-        System.out.println("<msg>                    Sends a message to the current chat channel.");
-        System.out.println();
-
-        Scanner scanner = new Scanner(System.in);
-        String rawInput = "";
-        String inputCommand = "";
-        String commandArgs = "";
-        String channel = "";
-
-        input: while (!shuttingDown && scanner.hasNext()) {
-
-            rawInput = scanner.nextLine();
-            String[] inputArgs = rawInput.split(" ");
-
-            if (rawInput.startsWith("/")) {
-                inputCommand = inputArgs[0].substring(1).toLowerCase();
-                if (inputArgs.length > 1) {
-                    channel = inputArgs[1];
-                    if (inputArgs.length > 2) {
-                        commandArgs = rawInput.substring(inputCommand.length() + inputArgs[1].length() + 3);
-                    }
-                }
-            }
-
-            switch (inputCommand) {
-
-                case "chat":
-                    if (bot.channelExists(channel))
-                        chatChannel = channel;
-                    else
-                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
-                    break;
-
-                case "debug":
-                    debugMode = !debugMode;
-                    System.out.println("Debug mode set to " + debugMode + ".");
-                    bot.setVerbose(debugMode);
-                    break;
-
-                case "disconnect":
-                    if (repoManager != null)
-                        repoManager.shutdown();
-                    Utilities.saveQuotes();
-                    bot.quitServer("Command sent by console: /disconnect");
-                    System.out.println();
-                    System.out.println();
-                    System.out.println("Disconnected.");
-                    shuttingDown = true;
-                    break input;
-
-                case "join":
-                    if (bot.channelExists(channel))
-                        System.out.println("Already in channel \"" + channel + "\".");
-                    else
-                        bot.joinChannel(channel);
-                    break;
-
-                case "leave":
-                    if (bot.channelExists(channel))
-                        bot.partChannel(bot.getChannel(channel), commandArgs);
-                    else
-                        System.out.println("Not connected to channel \"" + channel + "\".");
-                    break;
-
-                case "me":
-                    if (bot.channelExists(chatChannel))
-                        bot.sendAction(chatChannel, chatColor + channel + " " + commandArgs);
-                    else
-                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
-                    break;
-
-                case "msg":
-                    if (dUsers.containsKey(channel.toLowerCase()))
-                        bot.sendMessage(channel, chatColor + commandArgs);
-                    else if (bot.channelExists(channel))
-                        System.out.println("You can't use /msg for channels! Instead, use \"<channel> <message>\"!");
-                    else
-                        System.out.println("That user doesn't exist \"" + channel + "\".");
-                    break;
-
-                case "plain":
-                    if (bot.channelExists(chatChannel))
-                        bot.sendMessage(chatChannel, channel + " " + commandArgs);
-                    else
-                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
-                    break;
-
-                case "raw":
-                    bot.sendRawLineNow(channel.toUpperCase() + " " + commandArgs);
-                    break;
-
-                case "test":
-                    spazz.onMessage(new MessageEvent(bot, null, bot.getUserBot(), channel + " " + commandArgs));
-                    break;
-
-                default:
-                    if (rawInput.startsWith("/")) {
-                        System.out.println("Invalid command: " + inputCommand);
-                        break;
-                    }
-                    if (bot.channelExists(chatChannel))
-                        bot.sendMessage(chatChannel, chatColor + rawInput);
-                    else
-                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
-                    break;
-
-            }
-            rawInput = "";
-            inputCommand = "";
-            commandArgs = "";
-            channel = "";
-
-        }
-
-        scanner.close();
     }
 
     public static void sendToAllChannels(String message) {
@@ -378,7 +232,7 @@ public class Spazz extends ListenerAdapter {
 
     @Override
     public void onReconnect(ReconnectEvent event) {
-
+        identify();
     }
 
     @Override
@@ -397,6 +251,23 @@ public class Spazz extends ListenerAdapter {
             cacheMessage(new Message(event.getUser().getNick(), event.getAction(), true), event.getChannel().getName());
             dUsers.get(event.getUser().getNick()).setLastSeen("performing an action in " + event.getChannel().getName()
                     + chatColor + ": " + event.getAction());
+        }
+    }
+
+    @Override
+    public void onNotice(NoticeEvent event) {
+        if (event.getUser().getNick().equals("NickServ") &&
+                event.getMessage().equals("You are now identified for \u0002" + bot.getNick() + "\u0002.")) {
+            if (!devMode) {
+                bot.joinChannel("#denizen-dev");
+            }
+            else {
+                String op = chatColor;
+                chatColor = defaultColor;
+                defaultColor = optionalColor;
+                optionalColor = op;
+            }
+            bot.joinChannel("#denizen-devs");
         }
     }
 
@@ -987,7 +858,7 @@ public class Spazz extends ListenerAdapter {
                 send("That command is written as: .add [<object>]");
 
             if (args[1].startsWith("r")) {
-                if (!hasOp(usr, bot.getChannel("#denizen-devs")) && !hasVoice(usr, bot.getChannel("#denizen-devs")))
+                if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
                     send("Sorry, " + senderNick + ", that's only for the Dev Team.");
                 else if (args.length > 2 && args[2].contains("/")) {
                     String[] proj = args[2].split("/", 2);
@@ -1047,7 +918,7 @@ public class Spazz extends ListenerAdapter {
 
             String[] args = msgLwr.trim().split(" ");
 
-            if (!hasOp(usr, bot.getChannel("#denizen-devs")) && !hasVoice(usr, bot.getChannel("#denizen-dev")))
+            if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
                 send("Sorry, " + senderNick + ", that's only for the Dev Team.");
             else if (args[1].startsWith("r")) {
                 if (args.length > 2) {
@@ -1214,6 +1085,27 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
+        else if (msgLwr.startsWith(".edit")) {
+            if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
+                send("Sorry, " + senderNick + ", that's only for the Dev Team.");
+            else {
+                String[] args = msgLwr.trim().split(" ");
+                if (args.length < 2)
+                    send("That command is written as: .edit [<object>](:<key>) [<value>]");
+
+                if (args[1].startsWith("m") || args[1].startsWith("d")) {
+                    try {
+                        if (args.length < 3 || Double.valueOf(args[2]) == null) throw new Exception();
+                        messageDelay = Double.valueOf(args[2]).longValue() * 1000;
+                        bot.setMessageDelay(messageDelay);
+                        send("Message delay set to " + args[2] + "s.");
+                    } catch (Exception e) {
+                        send("That command is written as: .edit message-delay [<#.#>]");
+                    }
+                }
+            }
+        }
+
         else if (msgLwr.startsWith(".math ")) {
             try {
                 Double eval = new DoubleEvaluator().evaluate(msgLwr.substring(6));
@@ -1347,6 +1239,139 @@ public class Spazz extends ListenerAdapter {
                 .replace("<D>", defaultColor)
                 .replace("<O>", optionalColor)
                 .replace("<LT>", "<");
+    }
+
+    private static void identify() {
+        bot.identify(System.getProperty("spazz.password"));
+
+        System.out.println("Successfully loaded Spazzmatic. You may now begin using console commands.");
+        System.out.println();
+        System.out.println("Available commands:");
+        System.out.println("/me <action>             Performs an action in the current chat channel.");
+        System.out.println("/msg <user> <msg>        Sends a private message to a user.");
+        System.out.println("/plain <msg>             Sends a non-colored message to the current chat channel.");
+        System.out.println("/join <channel>          Joins a channel.");
+        System.out.println("/leave <channel> <msg>   Leaves a channel with an optional message.");
+        System.out.println("/raw <protocol>          Sends a raw IRC protocol to the server.");
+        System.out.println("/disconnect              Saves user info and disconnects from the server.");
+        System.out.println("/chat <channel>          Set the current chat channel.");
+        System.out.println("/test <command>          Test Spazzmatic IRC commands (Ex: /test .botsnack)");
+        System.out.println("/debug                   Turns console debug on or off.");
+        System.out.println("<msg>                    Sends a message to the current chat channel.");
+        System.out.println();
+
+        Scanner scanner = new Scanner(System.in);
+        String rawInput = "";
+        String inputCommand = "";
+        String commandArgs = "";
+        String channel = "";
+
+        input: while (!shuttingDown && scanner.hasNext()) {
+
+            rawInput = scanner.nextLine();
+            String[] inputArgs = rawInput.split(" ");
+
+            if (rawInput.startsWith("/")) {
+                inputCommand = inputArgs[0].substring(1).toLowerCase();
+                if (inputArgs.length > 1) {
+                    channel = inputArgs[1];
+                    if (inputArgs.length > 2) {
+                        commandArgs = rawInput.substring(inputCommand.length() + inputArgs[1].length() + 3);
+                    }
+                }
+            }
+
+            switch (inputCommand) {
+
+                case "chat":
+                    if (bot.channelExists(channel))
+                        chatChannel = channel;
+                    else
+                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
+                    break;
+
+                case "debug":
+                    debugMode = !debugMode;
+                    System.out.println("Debug mode set to " + debugMode + ".");
+                    bot.setVerbose(debugMode);
+                    break;
+
+                case "disconnect":
+                    if (repoManager != null)
+                        repoManager.shutdown();
+                    Utilities.saveQuotes();
+                    bot.quitServer("Command sent by console: /disconnect");
+                    System.out.println();
+                    System.out.println();
+                    System.out.println("Disconnected.");
+                    shuttingDown = true;
+                    break input;
+
+                case "join":
+                    if (bot.channelExists(channel))
+                        System.out.println("Already in channel \"" + channel + "\".");
+                    else
+                        bot.joinChannel(channel);
+                    break;
+
+                case "leave":
+                    if (bot.channelExists(channel))
+                        bot.partChannel(bot.getChannel(channel), commandArgs);
+                    else
+                        System.out.println("Not connected to channel \"" + channel + "\".");
+                    break;
+
+                case "me":
+                    if (bot.channelExists(chatChannel))
+                        bot.sendAction(chatChannel, chatColor + channel + " " + commandArgs);
+                    else
+                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
+                    break;
+
+                case "msg":
+                    if (dUsers.containsKey(channel.toLowerCase()))
+                        bot.sendMessage(channel, chatColor + commandArgs);
+                    else if (bot.channelExists(channel))
+                        System.out.println("You can't use /msg for channels! Instead, use \"<channel> <message>\"!");
+                    else
+                        System.out.println("That user doesn't exist \"" + channel + "\".");
+                    break;
+
+                case "plain":
+                    if (bot.channelExists(chatChannel))
+                        bot.sendMessage(chatChannel, channel + " " + commandArgs);
+                    else
+                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
+                    break;
+
+                case "raw":
+                    bot.sendRawLineNow(channel.toUpperCase() + " " + commandArgs);
+                    break;
+
+                case "test":
+                    spazz.onMessage(new MessageEvent(bot, null, bot.getUserBot(), channel + " " + commandArgs));
+                    break;
+
+                default:
+                    if (rawInput.startsWith("/")) {
+                        System.out.println("Invalid command: " + inputCommand);
+                        break;
+                    }
+                    if (bot.channelExists(chatChannel))
+                        bot.sendMessage(chatChannel, chatColor + rawInput);
+                    else
+                        System.out.println("Not connected to channel \"" + chatChannel + "\".");
+                    break;
+
+            }
+            rawInput = "";
+            inputCommand = "";
+            commandArgs = "";
+            channel = "";
+
+        }
+
+        scanner.close();
     }
 
     private static String parseUsage(String unparsed) {

@@ -49,6 +49,7 @@ public class CommitEvent {
         messages.add("[<O>" + repo.getFullName() + "<C>] <D>" + Utilities.join(users.iterator(), ", ") + "<C> pushed "
                 + commits.size() + " commit" + (commits.size() == 1 ? "" : "s") + " to master branch");
         for (Commit commit : commits) {
+            if (commit.isMerge()) continue;
             String message = commit.getDetails().getMessage().replace("<", "<LT>");
             if (message.contains("\n")) {
                 message = message.substring(0, message.indexOf('\n')) + "...";

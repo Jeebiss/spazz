@@ -27,7 +27,7 @@ public class Commit {
 
     public String getShortUrl() { return Utilities.getShortUrl(html_url); }
 
-    public boolean isPullRequest() { return commit.getMessage().startsWith("Merge pull request #"); }
+    public boolean isMerge() { return commit.getMessage().matches("Merge (pull request #\\d+ from|branch '.+' of).+"); }
 
     public class Details {
         private SimplifiedUser author;

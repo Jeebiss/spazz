@@ -1,6 +1,8 @@
 package net.jeebiss.spazz;
 
+import com.google.gson.*;
 import net.jeebiss.spazz.github.*;
+import net.jeebiss.spazz.github.events.*;
 import net.jeebiss.spazz.javaluator.DoubleEvaluator;
 import net.jeebiss.spazz.util.MinecraftServer;
 import net.jeebiss.spazz.util.Utilities;
@@ -57,9 +59,7 @@ public class Spazz extends ListenerAdapter {
     public static String chatChannel = "#denizen-dev";
     public static GitHub github = null;
     public static RepositoryManager repoManager = null;
-    public static Pattern issuesPattern = Pattern
-            .compile("http(?:s)?://(?:www\\.)?github\\.com/(\\w+)/(\\w+)/(?:issues|pulls)/(\\d+)", Pattern.CASE_INSENSITIVE);
-    public static Pattern altIssuesPattern = Pattern.compile("(\\w+)\\s*#(\\d+)");
+    public static Pattern issuesPattern = Pattern.compile("(\\w+)\\s*#(\\d+)");
     public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "(.)");
 
     public static Map<String, List<Message>> cachedMessages = new HashMap<String, List<Message>>();
@@ -169,7 +169,7 @@ public class Spazz extends ListenerAdapter {
         if (send.equals("spazzmatic"))
             System.out.println("<spazzmatic> " + Colors.removeFormattingAndColors(message));
         else {
-            String msg = address + chatColor + message;
+            String msg = address + chatColor + formatChat(message);
             bot.sendMessage(send, msg.length() <= 400 ? msg : msg.substring(0, 400));
         }
     }
@@ -341,31 +341,13 @@ public class Spazz extends ListenerAdapter {
         Matcher m = issuesPattern.matcher(msgLwr);
 
         while (m.find()) {
-            if (repoManager.hasRepository(m.group(1), m.group(2))) {
-                Repository repo = repoManager.getRepository(m.group(2));
-                Issue issue = repo.getIssue(Integer.valueOf(m.group(3)));
-                if (issue != null) {
-                    send("[" + optionalColor + repo.getFullName() + chatColor + "] " + defaultColor
-                            + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
-                            + " -- " + issue.getState().toLowerCase() + " " + (issue.isPullRequest() ? "pull request" : "issue")
-                            + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getLastUpdatedSimple() + ".)");
-                }
-            }
-        }
-
-        m = altIssuesPattern.matcher(msgLwr);
-
-        while (m.find()) {
             String[] repoName = m.group(1).split("/");
             if (repoManager.hasRepository(repoName[repoName.length - 1])) {
                 Repository repo = repoManager.getRepository(repoName[repoName.length - 1]);
                 Issue issue = repo.getIssue(Integer.valueOf(m.group(2)));
                 if (issue != null) {
-                    send("[" + optionalColor + repo.getFullName() + chatColor + "] " + defaultColor
-                            + issue.getTitle() + chatColor + " by " + optionalColor + issue.getUser().getLogin() + chatColor
-                            + " -- " + issue.getState().toLowerCase() + " " + (issue.isPullRequest() ? "pull request" : "issue")
-                            + ". (Created " + issue.getCreatedAtSimple() + ", last updated " + issue.getLastUpdatedSimple() + ".) - "
-                            + issue.getShortUrl());
+                    send("[<O>" + repo.getFullName() + "<C>] <D>" + issue.formatTitle() + "<C> (<D>" + issue.getNumber()
+                            + "<C>) by <D>" + issue.getUser().getLogin() + "<C> -- " + issue.getShortUrl());
                 }
             }
         }
@@ -379,7 +361,7 @@ public class Spazz extends ListenerAdapter {
                     for (Message message : cachedMessages.get(chnl.getName())) {
                         if (user && !message.getUser().equals(m.group(3))) continue;
                         if (message.matches("(?i)" + m.group(1))) {
-                            send(message.replaceAll("(?i)" + m.group(1), m.group(2)));
+                            send(message.replaceAll("(?i)" + m.group(1), Colors.BOLD + m.group(2) + Colors.NORMAL + "<C>"));
                             break out;
                         }
                     }
@@ -1211,6 +1193,30 @@ public class Spazz extends ListenerAdapter {
 
     }
 
+    private class SimplifiedIssuesEvent {
+        private String repo;
+        private String user;
+        private String action;
+        private SimplifiedIssue issue;
+
+        private class SimplifiedIssue {
+            private String title;
+            private String body;
+            private int number;
+        }
+    }
+
+    private class SimplifiedCommitEvent {
+        private String repo;
+        private List<SimplifiedCommit> commits;
+
+        private class SimplifiedCommit {
+            private String author;
+            private String message;
+            private boolean isMerge() { return message.matches("Merge (pull request #\\d+ from|branch '.+' of).+"); }
+        }
+    }
+
     private static void reloadSites(boolean debug) {
         boolean original = debugMode;
         if (!debugMode)
@@ -1304,7 +1310,17 @@ public class Spazz extends ListenerAdapter {
                     System.out.println();
                     System.out.println();
                     System.out.println("Disconnected.");
-                    shuttingDown = true;
+                    break;
+
+                case "reconnect":
+                    try {
+                        bot.connect("irc.esper.net");
+                    } catch (Exception e) {
+                        System.out.println("Failed to connect to EsperNet. Check your internet connection and try again.");
+                        return;
+                    }
+                    shuttingDown = false;
+                    identify();
                     break input;
 
                 case "join":
@@ -1364,7 +1380,6 @@ public class Spazz extends ListenerAdapter {
                     break;
 
             }
-            rawInput = "";
             inputCommand = "";
             commandArgs = "";
             channel = "";

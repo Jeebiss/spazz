@@ -81,12 +81,48 @@ public class Repository {
 
     public void fireEvents() {
         JsonArray eventsList = root.retrieve().parseArray(events_url.replaceAll("\\{.+\\}", ""));
+        IssueCommentEvent icEvent = null;
+        boolean ic = false;
         for (int i = eventsList.size()-1; i > -1; i--) {
             Event event = gson.fromJson(eventsList.get(i), Event.class);
             if (!events.contains(event.getId())) {
-                if (started && ((event instanceof CommentEvent && hasComments)
-                        || (event instanceof IssuesEvent && hasIssues)
-                        || (event instanceof PullRequestEvent && hasPulls))) event.fire();
+                if (started) {
+                    ic = false;
+                    if (event instanceof CommentEvent && hasComments) {
+                        if (event instanceof IssueCommentEvent && eventsList.size() - i > 0) {
+                            icEvent = (IssueCommentEvent) event;
+                            ic = true;
+                        }
+                        else {
+                            event.fire();
+                        }
+                    }
+                    else if ((event instanceof IssuesEvent && hasIssues)
+                            || (event instanceof PullRequestEvent && hasPulls)) {
+                        int number = event instanceof IssuesEvent
+                                ? ((IssuesEvent) event).getIssueNumber()
+                                : ((PullRequestEvent) event).getIssueNumber();
+                        if (icEvent != null) {
+                            if (event.getActor().getLogin().equals(icEvent.getActor().getLogin())
+                                    && number == icEvent.getIssueNumber()) {
+                                event.fire(icEvent.getPayload().getComment().getShortUrl());
+                                icEvent = null;
+                            }
+                            else {
+                                icEvent.fire();
+                                icEvent = null;
+                                event.fire();
+                            }
+                        }
+                        else {
+                            event.fire();
+                        }
+                    }
+                    if (icEvent != null && !ic) {
+                        icEvent.fire();
+                        icEvent = null;
+                    }
+                }
                 events.add(event.getId());
             }
         }

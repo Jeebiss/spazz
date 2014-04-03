@@ -15,6 +15,7 @@ public class Requester {
     private static final Gson gson = new GsonBuilder()
             .registerTypeAdapter(Event.class, new EventDeserializer())
             .create();
+    private static final JsonParser jsonParser = new JsonParser();
 
     private String method = "POST";
 
@@ -25,6 +26,7 @@ public class Requester {
     public static Gson getGson() {
         return gson;
     }
+    public static JsonParser getJsonParser() { return jsonParser; }
 
     public Requester method(String method) {
         this.method = method;
@@ -43,7 +45,7 @@ public class Requester {
     public JsonArray parseArray(String url) {
         try {
             if (method.equals("GET")) {
-                return new JsonParser().parse(Utilities.getStringFromStream(setupConnection(url).getInputStream())).getAsJsonArray();
+                return jsonParser.parse(Utilities.getStringFromStream(setupConnection(url).getInputStream())).getAsJsonArray();
             }
         } catch (Exception e) {}
         return new JsonArray();

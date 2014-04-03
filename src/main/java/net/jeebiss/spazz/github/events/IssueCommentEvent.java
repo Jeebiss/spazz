@@ -16,14 +16,15 @@ public class IssueCommentEvent extends Event implements CommentEvent {
     }
 
     public Payload getPayload() { return payload; }
+    public int getIssueNumber() { return payload.getIssue().getNumber(); }
 
     @Override
     public void fire() {
         IssueComment comment = getPayload().getComment();
         Issue issue = payload.getIssue();
-        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin()
-                + "<C> commented on issue: <D>" + issue.getTitle().replace("<", "<LT>") + "<C> (<D>"
-                + issue.getNumber() + "<C>) -- " + comment.getShortUrl());
+        String type = (issue.isPullRequest() ? "a pull request" : "an issue") + ": <D>";
+        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> commented on "
+                + type + issue.formatTitle() + "<C> (<D>" + issue.getNumber() + "<C>) -- " + comment.getShortUrl());
     }
 
     public class Payload {

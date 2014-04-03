@@ -30,9 +30,9 @@ public class Issue {
         return title;
     }
 
-    public String getBody() {
-        return body;
-    }
+    public String formatTitle() { return title.replace("<", "<LT>"); }
+
+    public String getBody() { return body; }
 
     public String getState() {
         return state.toLowerCase();

@@ -54,7 +54,7 @@ public class CommitEvent {
             if (message.contains("\n")) {
                 message = message.substring(0, message.indexOf('\n')) + "...";
             }
-            messages.add("<D>  " + commit.getAuthor().getLogin()  + "<C>: " + message + " -- " + commit.getShortUrl());
+            messages.add("<D>  " + commit.getAuthor().getLogin() + "<C>: " + message + " -- " + commit.getShortUrl());
         }
         for (String message : messages)
             Spazz.sendToAllChannels(message);

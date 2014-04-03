@@ -27,7 +27,8 @@ public class Event {
     public SimplifiedRepository getRepo() { return repo; }
     public String getCreatedAt() { return created_at; }
 
-    public void fire() {}
+    public void fire() { fire(null); }
+    public void fire(String info) {}
 
     public class SimplifiedUser {
         private String login;

@@ -14,18 +14,22 @@ public class PullRequestEvent extends Event {
         payload = Requester.getGson().fromJson(json.get("payload"), Payload.class);
     }
 
+    public Payload getPayload() { return payload; }
+    public int getIssueNumber() { return payload.getPullRequest().getNumber(); }
+
     private String getState() {
         String action = payload.getAction();
         if (action.equals("closed") && payload.getPullRequest().merged()) action = "pulled";
         return action;
     }
 
-    @Override
-    public void fire() {
-        PullRequest issue = payload.getPullRequest();
-        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] Pull request " + getState() + ": [<D>"
-                + issue.getNumber() + "<C>] \"<D>" + issue.getTitle() + "<C>\" by <D>" + issue.getUser().getLogin()
-                + "<C> -- " + issue.getShortUrl());
+    public void fire(String commentUrl) {
+        boolean c = commentUrl != null;
+        PullRequest pullRequest = payload.getPullRequest();
+        String action = payload.getAction() + (c ? " and commented on" : "");
+        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> " + action
+                + " a pull request: <D>" + pullRequest.formatTitle() + "<C> (<D>" + pullRequest.getNumber() + "<C>) -- "
+                + (c ? commentUrl : pullRequest.getShortUrl()));
     }
 
     public class Payload {

@@ -11,14 +11,14 @@ public class EventDeserializer implements JsonDeserializer<Event> {
     public Event deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
             throws JsonParseException {
         JsonObject jsonObject = json.getAsJsonObject();
-        switch (jsonObject.get("type").getAsString()) {
-            case "IssueCommentEvent":
+        switch (jsonObject.get("type").getAsString().toLowerCase().replaceAll("event", "")) {
+            case "issuecomment":
                 return new IssueCommentEvent(jsonObject);
-            case "CommitCommentEvent":
+            case "commitcomment":
                 return new CommitCommentEvent(jsonObject);
-            case "IssuesEvent":
+            case "issues":
                 return new IssuesEvent(jsonObject);
-            case "PullRequestEvent":
+            case "pullrequest":
                 return new PullRequestEvent(jsonObject);
             default:
                 return new Event(jsonObject);

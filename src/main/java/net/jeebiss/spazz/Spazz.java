@@ -249,7 +249,7 @@ public class Spazz extends ListenerAdapter {
     public void onAction(ActionEvent event) {
         if (event.getChannel() != null) {
             cacheMessage(new Message(event.getUser().getNick(), event.getAction(), true), event.getChannel().getName());
-            dUsers.get(event.getUser().getNick()).setLastSeen("performing an action in " + event.getChannel().getName()
+            dUsers.get(event.getUser().getNick().toLowerCase()).setLastSeen("performing an action in " + event.getChannel().getName()
                     + chatColor + ": " + event.getAction());
         }
     }

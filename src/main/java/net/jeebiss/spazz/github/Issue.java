@@ -51,7 +51,7 @@ public class Issue {
     }
 
     public boolean isPullRequest() {
-        return (pull_request.getUrl() != null);
+        return (pull_request != null);
     }
 
     public PullRequest asPullRequest() {

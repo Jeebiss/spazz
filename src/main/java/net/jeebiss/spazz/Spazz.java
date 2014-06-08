@@ -174,6 +174,11 @@ public class Spazz extends ListenerAdapter {
         }
     }
 
+    public static void sendToDev(String message) {
+        if (bot.getChannelsNames().contains("#denizen-devs"))
+            bot.sendMessage("#denizen-devs", message);
+    }
+
     public static void sendNotice(String destination, String message) {
         if (destination.equals("spazzmatic"))
             System.out.println("-spazzmatic- " + Colors.removeFormattingAndColors(message));

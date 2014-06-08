@@ -17,6 +17,7 @@ public class IssuesEvent extends Event {
     public Payload getPayload() { return payload; }
     public int getIssueNumber() { return payload.getIssue().getNumber(); }
 
+    @Override
     public void fire(String commentUrl) {
         boolean c = commentUrl != null;
         Issue issue = payload.getIssue();

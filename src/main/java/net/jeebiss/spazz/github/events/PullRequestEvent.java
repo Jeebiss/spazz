@@ -23,6 +23,7 @@ public class PullRequestEvent extends Event {
         return action;
     }
 
+    @Override
     public void fire(String commentUrl) {
         boolean c = commentUrl != null;
         PullRequest pullRequest = payload.getPullRequest();

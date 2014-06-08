@@ -16,14 +16,12 @@ public class CommitCommentEvent extends Event implements CommentEvent {
     }
 
     public Payload getPayload() { return payload; }
-    public Commit getCommit() { return getRepo().getFullRepo().getCommits().get(payload.getComment().getCommitId()); }
 
     @Override
     public void fire() {
         CommitComment comment = getPayload().getComment();
-        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin()
-                + "<C> commented on commit: <D>" + getCommit().getDetails().getMessage().replace("<", "<LT>")
-                + "<C> (<D>" + comment.getCommitId().substring(0, 7) + "<C>) -- " + comment.getShortUrl());
+        Spazz.sendToDev("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> commented on commit:" +
+                " <D>" + comment.getCommitId().substring(0, 7) + "<C> -- " + comment.getShortUrl());
     }
 
     public class Payload {

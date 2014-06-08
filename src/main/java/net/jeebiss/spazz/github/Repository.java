@@ -22,7 +22,7 @@ public class Repository {
     private boolean started = false;
 
     private List<String> events = new ArrayList<String>();
-    private HashMap<String, Commit> commits = new HashMap<String, Commit>();
+    private CommitHandler commitHandler;
 
     private String name;
     private String full_name;
@@ -42,6 +42,7 @@ public class Repository {
         this.hasIssues = hasIssues;
         this.hasComments = hasComments;
         this.hasPulls = hasPulls;
+        commitHandler = new CommitHandler(this);
         new Thread(new RepositoryChecker()).start();
         started = true;
         return this;
@@ -71,25 +72,26 @@ public class Repository {
         return hasComments;
     }
 
-    public HashMap<String, Commit> getCommits() {
-        return commits;
-    }
-
     public Issue getIssue(int number) {
         return root.retrieve().parse(issues_url.replaceAll("\\{.+\\}", "/" + number), Issue.class);
+    }
+
+    public Commit getCommit(String commitId) {
+        return root.retrieve().parse(commits_url.replaceAll("\\{.+\\}", "/" + commitId), Commit.class);
     }
 
     public void fireEvents() {
         JsonArray eventsList = root.retrieve().parseArray(events_url.replaceAll("\\{.+\\}", ""));
         IssueCommentEvent icEvent = null;
         boolean ic = false;
-        for (int i = eventsList.size()-1; i > -1; i--) {
+        for (int i = eventsList.size()-1; i >= 0; i--) {
             Event event = gson.fromJson(eventsList.get(i), Event.class);
             if (!events.contains(event.getId())) {
                 if (started) {
                     ic = false;
                     if (event instanceof CommentEvent && hasComments) {
-                        if (event instanceof IssueCommentEvent && eventsList.size() - i > 0) {
+                        if (event instanceof IssueCommentEvent) {
+                            if (icEvent != null) icEvent.fire();
                             icEvent = (IssueCommentEvent) event;
                             ic = true;
                         }
@@ -126,16 +128,8 @@ public class Repository {
                 events.add(event.getId());
             }
         }
-        JsonArray commitsArray = root.retrieve().parseArray(commits_url.replaceAll("\\{.+\\}", "") + "?per_page=100");
-        CommitEvent event = new CommitEvent(this);
-        for (int i = 0; i < commitsArray.size(); i++) {
-            Commit commit = gson.fromJson(commitsArray.get(i), Commit.class);
-            if (!commits.containsKey(commit.getCommitId())) {
-                if (started) event.add(commit);
-                commits.put(commit.getCommitId(), commit);
-            }
-        }
-        event.fire();
+        if (icEvent != null) icEvent.fire();
+        commitHandler.fire();
     }
 
     public User getOwner() {

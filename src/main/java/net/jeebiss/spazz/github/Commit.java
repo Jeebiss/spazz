@@ -1,5 +1,6 @@
 package net.jeebiss.spazz.github;
 
+import net.jeebiss.spazz.github.events.Event;
 import net.jeebiss.spazz.util.Utilities;
 
 import java.util.Date;
@@ -7,48 +8,31 @@ import java.util.Date;
 public class Commit {
 
     private String sha;
-    private Details commit;
-    private User author;
-    private User committer;
-    private String html_url;
-    private Repository repo;
+    private Author author;
+    private String message;
+    private boolean distinct;
+    private String url;
 
     public String getCommitId() { return sha; }
 
-    public Details getDetails() { return commit; }
+    public Author getAuthor() { return author; }
 
-    public User getAuthor() { return author; }
+    public String getMessage() { return message; }
 
-    public User getCommitter() {
-        return committer;
-    }
+    public boolean isDistinct() { return distinct; }
 
-    public String getUrl() { return html_url; }
+    public String getUrl() { return url; }
 
-    public String getShortUrl() { return Utilities.getShortUrl(html_url); }
+    public String getShortUrl() { return Utilities.getShortUrl(url); }
 
-    public boolean isMerge() { return commit.getMessage().matches("Merge (pull request #\\d+ from|branch '.+' of).+"); }
+    public boolean isMerge() { return message.matches("Merge (pull request #\\d+ from|branch '.+' of).+"); }
 
-    public class Details {
-        private SimplifiedUser author;
-        private SimplifiedUser committer;
-        private String message;
-        private int comment_count;
+    public class Author {
+        private String email;
+        private String name;
 
-        public SimplifiedUser getAuthor() { return author; }
-        public SimplifiedUser getCommitter() { return committer; }
-        public String getMessage() { return message; }
-        public int getCommentCount() { return comment_count; }
-
-        public class SimplifiedUser {
-            private String name;
-            private String email;
-            private String date;
-
-            public String getName() { return name; }
-            public String getEmail() { return email; }
-            public Date getDate() { return GitHub.parseDate(date); }
-        }
+        public String getEmail() { return email; }
+        public String getName() { return name; }
     }
 
 }

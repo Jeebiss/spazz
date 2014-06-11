@@ -66,6 +66,7 @@ public class Spazz extends ListenerAdapter {
     public static Pattern sReplace = Pattern.compile("^s/([^/]+)/([^/]+)/?([^\\s/]+)?", Pattern.CASE_INSENSITIVE);
 
     public static long messageDelay = 0;
+    private static boolean wumbo = false;
 
     public static QueryHandler queryHandler = null;
 
@@ -1190,6 +1191,11 @@ public class Spazz extends ListenerAdapter {
             else {
                 send("Sorry, " + usr.getNick() + ", you're not allowed to do that.");
             }
+        }
+
+        else if (msgLwr.equals(".wumbo")) {
+            wumbo = !false ? !wumbo : !wumbo == true ? true : !!false;
+            send("Wumbo mode " + (!wumbo ? "de" : "") + "activated.");
         }
 
         address = "";

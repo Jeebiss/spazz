@@ -37,12 +37,12 @@ public class Repository {
     public Repository _init(GitHub root, long updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) {
         this.root = root;
         this.gson = Requester.getGson();
+        commitHandler = new CommitHandler(this);
         fireEvents();
         this.updateDelay = updateDelay;
         this.hasIssues = hasIssues;
         this.hasComments = hasComments;
         this.hasPulls = hasPulls;
-        commitHandler = new CommitHandler(this);
         new Thread(new RepositoryChecker()).start();
         started = true;
         return this;

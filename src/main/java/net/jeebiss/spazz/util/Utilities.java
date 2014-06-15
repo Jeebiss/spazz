@@ -284,6 +284,19 @@ public class Utilities {
         return buf.toString();
     }
 
+    public static String getRandomString(String original) {
+        boolean endSpace = original.endsWith(" ");
+        String r = "";
+        String[] strings = original.trim().split("\\s+");
+        for (String string : strings) {
+            for (int i = 0; i < string.length(); i++) {
+                r += CS.charAt(random.nextInt(CS.length()-1));
+            }
+            r += " ";
+        }
+        return endSpace ? r : r.substring(0, r.length()-1);
+    }
+
     public static String encodeBase64(String string) {
         String encoded = "";
         byte[] stringArray;

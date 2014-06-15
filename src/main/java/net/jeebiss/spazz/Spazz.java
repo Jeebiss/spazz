@@ -20,6 +20,8 @@ import org.yaml.snakeyaml.error.YAMLException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
@@ -60,7 +62,8 @@ public class Spazz extends ListenerAdapter {
     public static GitHub github = null;
     public static RepositoryManager repoManager = null;
     public static Pattern issuesPattern = Pattern.compile("(\\w+)\\s*#(\\d+)");
-    public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "(.)");
+    public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "([0-9a-fA-Fl-oL-OrR])");
+    public static Pattern minecraftRandom = Pattern.compile("(" + (char) 0xa7 + "k([^" + (char) 0xa7 + "]+))");
 
     public static Map<String, List<Message>> cachedMessages = new HashMap<String, List<Message>>();
     public static Pattern sReplace = Pattern.compile("^s/([^/]+)/([^/]+)/?([^\\s/]+)?", Pattern.CASE_INSENSITIVE);
@@ -71,6 +74,8 @@ public class Spazz extends ListenerAdapter {
     public static QueryHandler queryHandler = null;
 
     public static void main(String[] args) {
+
+        bot.setEncoding(Charset.forName("UTF-8"));
 
         System.out.println("Starting Spazzmatic...");
 
@@ -124,14 +129,6 @@ public class Spazz extends ListenerAdapter {
         bot.setLogin("spazz");
         bot.setVerbose(debugMode);
         bot.setAutoNickChange(true);
-        bot.setAutoReconnect(true);
-
-        try {
-            bot.connect("irc.esper.net");
-        } catch (Exception e) {
-            System.out.println("Failed to connect to EsperNet. Check your internet connection and try again.");
-            return;
-        }
         bot.setMessageDelay(messageDelay);
 
         identify();
@@ -167,11 +164,15 @@ public class Spazz extends ListenerAdapter {
     }
 
     public static void send(String message) {
+        send(message, false);
+    }
+
+    public static void send(String message, boolean noLimit) {
         if (send.equals("spazzmatic"))
             System.out.println("<spazzmatic> " + Colors.removeFormattingAndColors(message));
         else {
             String msg = address + chatColor + formatChat(message);
-            bot.sendMessage(send, msg.length() <= 400 ? msg : msg.substring(0, 400));
+            bot.sendMessage(send, noLimit || msg.length() <= 400 ? msg : msg.substring(0, 400));
         }
     }
 
@@ -223,22 +224,23 @@ public class Spazz extends ListenerAdapter {
 
     @Override
     public void onDisconnect(DisconnectEvent event) {
-        repoManager.shutdown();
-        Utilities.saveQuotes();
-        for (dUser usr : dUsers.values()) {
-            try {
-                usr.saveAll();
-            } catch (Exception e) {
-                if (debugMode) e.printStackTrace();
-                else
-                    System.out.println("An error has occured while using saving user " + usr.getNick() + " on disconnect... Turn on debug for more information.");
+        if (shuttingDown) {
+            repoManager.shutdown();
+            Utilities.saveQuotes();
+            for (dUser usr : dUsers.values()) {
+                try {
+                    usr.saveAll();
+                } catch (Exception e) {
+                    if (debugMode) e.printStackTrace();
+                    else
+                        System.out.println("An error has occured while using saving user " + usr.getNick() + " on disconnect... Turn on debug for more information.");
+                }
             }
+            System.exit(0);
         }
-    }
-
-    @Override
-    public void onReconnect(ReconnectEvent event) {
-        identify();
+        else {
+            identify();
+        }
     }
 
     @Override
@@ -1121,6 +1123,20 @@ public class Spazz extends ListenerAdapter {
                 send("Invalid server specified.");
                 return;
             }
+            if (!args[1].contains(".") && !args[1].toLowerCase().contains("localhost")) {
+                if (dUsers.containsKey(args[1].toLowerCase())) {
+                    String s = dUsers.get(args[1].toLowerCase()).getServerAddress();
+                    if (s.equals("")) {
+                        send("Sorry, I don't know that user's server IP.");
+                        return;
+                    }
+                    else args[1] = s;
+                }
+                else {
+                    send("Invalid server specified.");
+                    return;
+                }
+            }
             int port = 25565;
             if (args[1].contains(":")) {
                 try {
@@ -1133,30 +1149,21 @@ public class Spazz extends ListenerAdapter {
             else try {
                 MinecraftServer.StatusResponse response = server.ping();
                 MinecraftServer.Players players = response.getPlayers();
-                String serverInfo = response.getDescription() + Colors.NORMAL + chatColor + " - " + response.getVersion().getName()
-                        + " - " + players.getOnline() + "/" + players.getMax();
+                InetSocketAddress address = server.getAddress();
+                String serverInfo = address.getHostName() + ":" + address.getPort() + " - " + response.getDescription()
+                        + (char) 0xa7 + "r" + chatColor + " - " + response.getVersion().getName() + " - "
+                        + players.getOnline() + "/" + players.getMax();
+                m = minecraftRandom.matcher(serverInfo);
+                while (m.find()) {
+                    serverInfo = serverInfo.replaceFirst(m.group(1), Utilities.getRandomString(m.group(2)));
+                }
                 m = minecraftColor.matcher(serverInfo);
                 String lastColor = "";
                 while (m.find()) {
                     String color = Colors.NORMAL + (m.group(1).matches("l|o|n") ? lastColor : "") + parseColor("&" + m.group(1));
                     serverInfo = serverInfo.replaceFirst((char) 0xa7 + m.group(1), lastColor = color);
                 }
-                send(serverInfo.replace(String.valueOf((char) 0xc2), "").replaceAll("\\s+", " "));
-                if (server.getAddress().getHostName().equals("mc.luminatics.net")
-                        && Utilities.getRandomNumber(100) <= 25) {
-                    response = server.ping();
-                    players = response.getPlayers();
-                    serverInfo = response.getDescription() + Colors.NORMAL + chatColor + " - " + response.getVersion().getName()
-                            + " - " + players.getOnline() + "/" + players.getMax();
-                    m = minecraftColor.matcher(serverInfo);
-                    lastColor = "";
-                    while (m.find()) {
-                        String color = Colors.NORMAL + (m.group(1).matches("l|o|n") ? lastColor : "") + parseColor("&" + m.group(1));
-                        serverInfo = serverInfo.replaceFirst((char) 0xa7 + m.group(1), lastColor = color);
-                    }
-                    send("That's interesting Laura... tell me more.");
-                    send(serverInfo.replace(String.valueOf((char) 0xc2), "").replaceAll("\\s+", " "));
-                }
+                send(serverInfo.replace(String.valueOf((char) 0xc2), "").replaceAll("\\s+|\r|\n", " "));
             } catch (Exception e) {
                 e.printStackTrace();
                 send("Error contacting that server. (" + e.getMessage() + ")");
@@ -1196,6 +1203,16 @@ public class Spazz extends ListenerAdapter {
         else if (msgLwr.equals(".wumbo")) {
             wumbo = !false ? !wumbo : !wumbo == true ? true : !!false;
             send("Wumbo mode " + (!wumbo ? "de" : "") + "activated.");
+        }
+
+        else if (msgLwr.startsWith(".myip")) {
+            String[] args = msg.split(" ");
+            if (args.length < 2 || args[1].isEmpty()) {
+                send("That command is used like: .myip <your_server>");
+                return;
+            }
+            dusr.setServerAddress(args[1]);
+            send("Your server has been set, and can now be accessed by other users via '.mcping " + dusr.getNick() + "'");
         }
 
         address = "";
@@ -1259,6 +1276,13 @@ public class Spazz extends ListenerAdapter {
     }
 
     private static void identify() {
+        try {
+            bot.connect("irc.esper.net");
+        } catch (Exception e) {
+            System.out.println("Failed to connect to EsperNet. Check your internet connection and try again.");
+            return;
+        }
+
         bot.identify(System.getProperty("spazz.password"));
 
         System.out.println("Successfully loaded Spazzmatic. You may now begin using console commands.");
@@ -1619,14 +1643,15 @@ public class Spazz extends ListenerAdapter {
         private String lastSeen;
         private Date lastSeenTime;
         private String nick;
-        private boolean status;
         private MessageList messages;
+        private String serverAddress;
 
         public dUser(String nick) {
             if (nick == null || nick.equals("")) return;
             this.nick = nick;
             this.messages = new MessageList();
             setLastSeen("Existing");
+            serverAddress = "";
             if (!new File(System.getProperty("user.dir") + "/users/" + nick.toLowerCase().replace('|', '_') + ".yml").exists()) {
                 try {
                     saveAll();
@@ -1648,6 +1673,10 @@ public class Spazz extends ListenerAdapter {
 
         }
 
+        void setServerAddress(String serverAddress) {
+            this.serverAddress = serverAddress;
+        }
+
         void setLastSeen(String lastSeen) {
             this.lastSeenTime = Calendar.getInstance().getTime();
             this.lastSeen = Utilities.uncapitalize(lastSeen);
@@ -1655,10 +1684,6 @@ public class Spazz extends ListenerAdapter {
 
         void setLastSeenRaw(String lastSeen) {
             this.lastSeen = lastSeen;
-        }
-
-        void setStatus(boolean status) {
-            this.status = status;
         }
 
         void addMessage(Message msg) {
@@ -1677,6 +1702,7 @@ public class Spazz extends ListenerAdapter {
             seenTime.setTime(getLastSeenTime());
             data.put("lasttime", new SimpleDateFormat((seenTime.getTimeInMillis() < 0 ? "-yyyy" : "yyyy") + "-MM-dd HH:mm:ss.SSS zzz").format(getLastSeenTime()));
             data.put("messages", getMessages().getMessages());
+            data.put("server_address", getServerAddress());
             if (getNick().equals("spazzmatic")) {
                 data.put("password", System.getProperty("spazz.password"));
                 data.put("bitly", System.getProperty("spazz.bitly"));
@@ -1691,33 +1717,16 @@ public class Spazz extends ListenerAdapter {
             writer.close();
         }
 
-        @SuppressWarnings("unchecked")
-        void loadMessages() throws Exception {
-            LinkedHashMap map = null;
-            Yaml yaml = new Yaml();
-            File f = new File(usersFolder + "/" + getNick().toLowerCase().replace('|', '_') + ".yml");
-            InputStream is = f.toURI().toURL().openStream();
-            map = (LinkedHashMap) yaml.load(is);
-            if (map.get("messages") instanceof HashMap<?, ?>) {
-                for (Object msgObj : ((HashMap<Integer, Object>) map.get("messages")).values()) {
-                    String msg;
-                    if (msgObj instanceof byte[])
-                        msg = new String((byte[]) msgObj);
-                    else
-                        msg = (String) msgObj;
-                    String[] split = msg.split("_", 2);
-                    addMessage(new Message(split[0], split[1], false));
-                }
-            }
-        }
-
-        void loadLastSeen() throws Exception {
+        void loadAll() throws Exception {
             LinkedHashMap map = null;
             Yaml yaml = new Yaml();
             File f = new File(usersFolder + "/" + getNick().toLowerCase().replace('|', '_') + ".yml");
             f.mkdirs();
             InputStream is = f.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
+
+            // loadLastSeen()
+            if (debugMode) System.out.println("Loading lastseen for \"" + getNick() + "\"...");
             if (map.get("lastseen") instanceof byte[]) {
                 this.lastSeen = new String((byte[]) map.get("lastseen"));
                 this.lastSeenTime = dateFormat.parse((String) map.get("lasttime"));
@@ -1729,17 +1738,32 @@ public class Spazz extends ListenerAdapter {
             }
             else
                 setLastSeen("Existing");
-
-            if (debugMode) System.out.println("Loaded user with lasttime: " + dateFormat.format(getLastSeenTime()));
-        }
-
-        void loadAll() throws Exception {
-            if (debugMode) System.out.println("Loading messages for \"" + getNick() + "\"...");
-            loadMessages();
-            if (debugMode) System.out.println("Messages loaded: " + this.messages.getMessages());
-            if (debugMode) System.out.println("Loading lastseen for \"" + getNick() + "\"...");
-            loadLastSeen();
             if (debugMode) System.out.println("Lastseen loaded: " + this.lastSeen);
+            if (debugMode) System.out.println("Loaded user with lasttime: " + dateFormat.format(getLastSeenTime()));
+
+            // loadMessages()
+            if (debugMode) System.out.println("Loading messages for \"" + getNick() + "\"...");
+            if (map.get("messages") instanceof HashMap<?, ?>) {
+                for (Object msgObj : ((HashMap<Integer, Object>) map.get("messages")).values()) {
+                    String msg;
+                    if (msgObj instanceof byte[])
+                        msg = new String((byte[]) msgObj);
+                    else
+                        msg = (String) msgObj;
+                    String[] split = msg.split("_", 2);
+                    addMessage(new Message(split[0], split[1], false));
+                }
+            }
+            if (debugMode) System.out.println("Messages loaded: " + this.messages.getMessages());
+
+            // loadServerAddress()
+            if (debugMode) System.out.println("Loading server address for \"" + getNick() + "\"...");
+            if (map.get("server_address") instanceof String) {
+                this.serverAddress = ((String) map.get("server_address"));
+            }
+
+            // Close the InputStream
+            is.close();
         }
 
         public String getLastSeen() {
@@ -1754,9 +1778,7 @@ public class Spazz extends ListenerAdapter {
             return this.nick;
         }
 
-        public boolean getStatus() {
-            return this.status;
-        }
+        public String getServerAddress() { return this.serverAddress; }
 
         public void checkMessages() {
             if (this.messages.isEmpty()) return;

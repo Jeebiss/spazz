@@ -1163,7 +1163,7 @@ public class Spazz extends ListenerAdapter {
                     String color = Colors.NORMAL + (m.group(1).matches("l|o|n") ? lastColor : "") + parseColor("&" + m.group(1));
                     serverInfo = serverInfo.replaceFirst((char) 0xa7 + m.group(1), lastColor = color);
                 }
-                send(serverInfo.replace(String.valueOf((char) 0xc2), "").replaceAll("\\s+|\r|\n", " "));
+                send(serverInfo.replace(String.valueOf((char) 0xc2), "").replaceAll("\\s+|\r|\n", " "), true);
             } catch (Exception e) {
                 e.printStackTrace();
                 send("Error contacting that server. (" + e.getMessage() + ")");
@@ -1726,7 +1726,6 @@ public class Spazz extends ListenerAdapter {
             map = (LinkedHashMap) yaml.load(is);
 
             // loadLastSeen()
-            if (debugMode) System.out.println("Loading lastseen for \"" + getNick() + "\"...");
             if (map.get("lastseen") instanceof byte[]) {
                 this.lastSeen = new String((byte[]) map.get("lastseen"));
                 this.lastSeenTime = dateFormat.parse((String) map.get("lasttime"));
@@ -1738,11 +1737,8 @@ public class Spazz extends ListenerAdapter {
             }
             else
                 setLastSeen("Existing");
-            if (debugMode) System.out.println("Lastseen loaded: " + this.lastSeen);
-            if (debugMode) System.out.println("Loaded user with lasttime: " + dateFormat.format(getLastSeenTime()));
 
             // loadMessages()
-            if (debugMode) System.out.println("Loading messages for \"" + getNick() + "\"...");
             if (map.get("messages") instanceof HashMap<?, ?>) {
                 for (Object msgObj : ((HashMap<Integer, Object>) map.get("messages")).values()) {
                     String msg;
@@ -1754,10 +1750,8 @@ public class Spazz extends ListenerAdapter {
                     addMessage(new Message(split[0], split[1], false));
                 }
             }
-            if (debugMode) System.out.println("Messages loaded: " + this.messages.getMessages());
 
             // loadServerAddress()
-            if (debugMode) System.out.println("Loading server address for \"" + getNick() + "\"...");
             if (map.get("server_address") instanceof String) {
                 this.serverAddress = ((String) map.get("server_address"));
             }

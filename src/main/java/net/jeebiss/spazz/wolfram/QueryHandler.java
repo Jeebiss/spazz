@@ -33,11 +33,9 @@ public class QueryHandler {
             QueryResult output = new QueryResult(doc);
 
             if (output.isError()) {
-                System.out.println("Query errored.");
                 return null;
             }
             else if (!output.isSuccess()) {
-                System.out.println("Query not successful.");
                 return null;
             }
 

@@ -120,6 +120,9 @@ public class Repository {
                             event.fire();
                         }
                     }
+                    else if (event instanceof PushEvent) {
+                        commitHandler.push((PushEvent) event);
+                    }
                     if (icEvent != null && !ic) {
                         icEvent.fire();
                         icEvent = null;

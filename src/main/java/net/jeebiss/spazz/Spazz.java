@@ -61,7 +61,7 @@ public class Spazz extends ListenerAdapter {
     public static String chatChannel = "#denizen-dev";
     public static GitHub github = null;
     public static RepositoryManager repoManager = null;
-    public static Pattern issuesPattern = Pattern.compile("(\\w+)\\s*#(\\d+)");
+    public static Pattern issuesPattern = Pattern.compile("(\\w+/\\w+)\\s*#(\\d+)");
     public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "([0-9a-fA-Fl-oL-OrR])");
     public static Pattern minecraftRandom = Pattern.compile("(" + (char) 0xa7 + "k([^" + (char) 0xa7 + "]+))");
 

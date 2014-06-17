@@ -38,8 +38,8 @@ public class GitHub {
         return (retrieve().githubConnection().getResponseCode() == 200);
     }
 
-    public Repository getRepository(String owner, String project) throws Exception {
-        return retrieve().parse(GITHUB_URL + "/repos/" + owner + "/" + project, Repository.class);
+    public Repository getRepository(String ownerProject) throws Exception {
+        return retrieve().parse(GITHUB_URL + "/repos/" + ownerProject, Repository.class);
     }
 
     public Requester retrieve() {

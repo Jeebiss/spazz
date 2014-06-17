@@ -24,18 +24,18 @@ public class RepositoryManager {
             loadAll();
         } catch (Exception e) {
             System.out.println("Failed to load 'storage/repositories.yml'... Loading default repositories.");
-            addRepository("aufdemrand", "Denizen", 20, true, true, true);
-            addRepository("Morphan1", "Depenizen", 30, true, true, true);
-            addRepository("CitizensDev", "Citizens2", 20, false, false, false);
-            addRepository("CitizensDev", "CitizensAPI", 30, false, false, false);
-            addRepository("Jeebiss", "spazz", 60, true, true, true);
-            addRepository("jrbudda", "Sentry", 100, true, true, false);
+            addRepository("aufdemrand/Denizen", 20, true, true, true);
+            addRepository("Morphan1/Depenizen", 30, true, true, true);
+            addRepository("CitizensDev/Citizens2", 20, false, false, false);
+            addRepository("CitizensDev/CitizensAPI", 30, false, false, false);
+            addRepository("Jeebiss/spazz", 60, true, true, true);
+            addRepository("jrbudda/Sentry", 100, true, true, false);
         }
     }
 
-    public Repository getRepository(String project) {
-        if (repositories.containsKey(project.toLowerCase()))
-            return repositories.get(project.toLowerCase());
+    public Repository getRepository(String ownerProject) {
+        if (repositories.containsKey(ownerProject.toLowerCase()))
+            return repositories.get(ownerProject.toLowerCase());
         else
             return null;
     }
@@ -57,24 +57,24 @@ public class RepositoryManager {
         return root;
     }
 
-    public boolean addRepository(String owner, String project, double updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) {
+    public boolean addRepository(String ownerProject, double updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) {
         try {
-            repositories.put(project.toLowerCase(), root.getRepository(owner, project)
+            repositories.put(ownerProject.toLowerCase(), root.getRepository(ownerProject)
                     ._init(root, (long) updateDelay * 1000, hasIssues, hasComments, hasPulls));
             return true;
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Failure adding repository '" + owner + "/" + project + "': " + e.getMessage());
+            System.out.println("Failure adding repository '" + ownerProject + "': " + e.getMessage());
             return false;
         }
     }
 
-    public boolean removeRepository(String project) {
+    public boolean removeRepository(String ownerProject) {
         try {
-            if (!repositories.containsKey(project))
+            if (!repositories.containsKey(ownerProject))
                 return false;
-            repositories.get(project).shutdown();
-            repositories.remove(project);
+            repositories.get(ownerProject).shutdown();
+            repositories.remove(ownerProject);
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -82,13 +82,8 @@ public class RepositoryManager {
         }
     }
 
-    public boolean hasRepository(String author, String project) {
-        return (repositories.containsKey(project.toLowerCase())
-                && repositories.get(project).getOwner().getLogin().equalsIgnoreCase(author));
-    }
-
-    public boolean hasRepository(String project) {
-        return repositories.containsKey(project.toLowerCase());
+    public boolean hasRepository(String ownerProject) {
+        return repositories.containsKey(ownerProject.toLowerCase());
     }
 
     public void saveAll() throws Exception {
@@ -122,7 +117,7 @@ public class RepositoryManager {
         map = (HashMap<String, HashMap<String, HashMap<String, Object>>>) yaml.load(is);
         for (Entry<String, HashMap<String, HashMap<String, Object>>> owner : map.entrySet()) {
             for (Entry<String, HashMap<String, Object>> repo : owner.getValue().entrySet()) {
-                addRepository(owner.getKey(), repo.getKey(),
+                addRepository(owner.getKey() + "/" + repo.getKey(),
                         (double) repo.getValue().get("delay"), (boolean) repo.getValue().get("has_issues"),
                         (boolean) repo.getValue().get("has_comments"), (boolean) repo.getValue().get("has_pulls"));
             }

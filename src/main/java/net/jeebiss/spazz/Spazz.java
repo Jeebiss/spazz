@@ -349,9 +349,9 @@ public class Spazz extends ListenerAdapter {
         Matcher m = issuesPattern.matcher(msgLwr);
 
         while (m.find()) {
-            String[] repoName = m.group(1).split("/");
-            if (repoManager.hasRepository(repoName[repoName.length - 1])) {
-                Repository repo = repoManager.getRepository(repoName[repoName.length - 1]);
+            if (!m.group(1).contains("/")) send("Please specify the owner of the project. For example, aufdemrand/Denizen#123");
+            if (repoManager.hasRepository(m.group(1))) {
+                Repository repo = repoManager.getRepository(m.group(1));
                 Issue issue = repo.getIssue(Integer.valueOf(m.group(2)));
                 if (issue != null) {
                     send("[<O>" + repo.getFullName() + "<C>] <D>" + issue.formatTitle() + "<C> (<D>" + issue.getNumber()
@@ -851,22 +851,25 @@ public class Spazz extends ListenerAdapter {
                 if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
                     send("Sorry, " + senderNick + ", that's only for the Dev Team.");
                 else if (args.length > 2 && args[2].contains("/")) {
-                    String[] proj = args[2].split("/", 2);
-                    if (repoManager.hasRepository(proj[1]))
-                        send("I'm already tracking a \"" + proj[1] + "\" project!");
-                    else {
-                        double updateDelay = 60;
-                        for (String arg : args) {
-                            if (arg.startsWith("delay:") && Double.valueOf(arg.split(":")[1]) != null)
-                                updateDelay = Double.valueOf(arg.split(":")[1]);
-                        }
-                        if (repoManager.addRepository(proj[0], proj[1], updateDelay, !msgLwr.contains("no_issues"), !msgLwr.contains("no_comments"),
-                                !msgLwr.contains("no_pulls")))
-                            send("I am now tracking " + proj[1]
-                                    + " with a delay of " + updateDelay + ".");
-                        else
-                            send("Error while adding repository " + args[2] + "...");
+                    String ownerProject = args[2];
+                    boolean i = true;
+                    boolean c = true;
+                    boolean p = true;
+                    double updateDelay = 60;
+                    for (String arg : args) {
+                        if (arg.startsWith("delay:") && Double.valueOf(arg.split(":")[1]) != null)
+                            updateDelay = Double.valueOf(arg.split(":")[1]);
+                        else if (arg.equals("no_issues")) i = false;
+                        else if (arg.equals("no_comments")) c = false;
+                        else if (arg.equals("no_pulls")) p = false;
                     }
+                    if (repoManager.addRepository(ownerProject, updateDelay, i, c, p))
+                        send("I am now tracking " + ownerProject + " with a delay of " + updateDelay
+                                + (!i ? !c || !p ? ", no issues" : " and no issues" : "")
+                                + (!c ? !p ? ", no comments" : (!i ? "," : "") + " and no comments" : "")
+                                + (!p ? (!i || !c ? "," : "") + " and no pulls" : "") + ".");
+                    else
+                        send("Error while adding repository " + args[2] + "...");
                 }
                 else
                     send("That command is written as: "
@@ -913,7 +916,7 @@ public class Spazz extends ListenerAdapter {
             else if (args[1].startsWith("r")) {
                 if (args.length > 2) {
                     if (!repoManager.hasRepository(args[2]))
-                        send("I am not tracking any projects by that name.");
+                        send("I am not tracking any projects by that name. (Did you specify the owner?)");
                     else if (repoManager.removeRepository(args[2]))
                         send("I am now no longer tracking " + args[2] + ".");
                     else

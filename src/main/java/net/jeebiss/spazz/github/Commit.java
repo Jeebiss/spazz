@@ -23,7 +23,7 @@ public class Commit {
 
     public String getUrl() { return url.replace("api.github.com/repos", "github.com").replace("commits", "commit"); }
 
-    public String getShortUrl() { return Utilities.getShortUrl(url); }
+    public String getShortUrl() { return Utilities.getShortUrl(getUrl()); }
 
     public boolean isMerge() { return message.matches("Merge (pull request #\\d+ from|branch '.+' of).+"); }
 

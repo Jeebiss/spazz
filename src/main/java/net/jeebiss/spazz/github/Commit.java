@@ -21,7 +21,7 @@ public class Commit {
 
     public boolean isDistinct() { return distinct; }
 
-    public String getUrl() { return url; }
+    public String getUrl() { return url.replace("api.github.com/repos", "github.com").replace("commits", "commit"); }
 
     public String getShortUrl() { return Utilities.getShortUrl(url); }
 

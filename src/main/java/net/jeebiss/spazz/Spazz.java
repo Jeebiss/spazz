@@ -349,7 +349,6 @@ public class Spazz extends ListenerAdapter {
         Matcher m = issuesPattern.matcher(msgLwr);
 
         while (m.find()) {
-            if (!m.group(1).contains("/")) send("Please specify the owner of the project. For example, aufdemrand/Denizen#123");
             if (repoManager.hasRepository(m.group(1))) {
                 Repository repo = repoManager.getRepository(m.group(1));
                 Issue issue = repo.getIssue(Integer.valueOf(m.group(2)));

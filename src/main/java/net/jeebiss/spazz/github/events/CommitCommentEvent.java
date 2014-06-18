@@ -20,7 +20,7 @@ public class CommitCommentEvent extends Event implements CommentEvent {
     @Override
     public void fire() {
         CommitComment comment = getPayload().getComment();
-        Spazz.sendToDev("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> commented on commit:" +
+        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> commented on commit:" +
                 " <D>" + comment.getCommitId().substring(0, 7) + "<C> -- " + comment.getShortUrl());
     }
 

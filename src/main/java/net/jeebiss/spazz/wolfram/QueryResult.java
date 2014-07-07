@@ -22,7 +22,8 @@ public class QueryResult {
         NodeList pods = document.getElementsByTagName("pod");
         for (int x = 0; x < pods.getLength(); x++) {
             Element pod = (Element) pods.item(x);
-            if (pod.getAttribute("primary").equals("true"))
+            if (pod.hasAttribute("primary")
+                    && pod.getAttribute("primary").equals("true"))
                 primaryPod = pod.getAttribute("id");
             this.podList.put(pod.getAttribute("id"), pod);
         }
@@ -51,7 +52,8 @@ public class QueryResult {
         else if (containsPod("Result")) {
             return getSubPodTextContent("Result");
         }
-        else if (containsPodStartingWith("Identification:") || containsPodStartingWith("CityLocation:")) {
+        else if (containsPodStartingWith("Identification:") || containsPodStartingWith("CityLocation:")
+                || containsPodStartingWith("Definition:")) {
             return getSubPodTextContent(cachedPodId);
         }
         else if (primaryPod != null) {

@@ -1109,14 +1109,14 @@ public class Spazz extends ListenerAdapter {
         }
 
         else if (msgLwr.matches("\\.(realmath|define|wolfram) .+")) {
-            String input = msg.substring(msg.split("\\s+")[0].length());
+            String input = msg.substring(msg.split("\\s+")[0].length()+1);
             QueryResult output = queryHandler.parseMath(input);
+            String result = output.getResult();
 
-            if (output.isError() || !output.isSuccess()) {
+            if (output.isError() || !output.isSuccess() || result == null) {
                 send("There was an error while parsing that statement.");
             }
             else {
-                String result = output.getResult();
                 if (result.contains("="))
                     send(result);
                 else

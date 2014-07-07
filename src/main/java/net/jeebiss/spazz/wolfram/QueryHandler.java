@@ -21,7 +21,7 @@ public class QueryHandler {
         } catch (Exception e) {}
     }
 
-    public String parseMath(String input) {
+    public QueryResult parseMath(String input) {
         try {
             if (dBuilder == null) {
                 System.out.println("dBuilder is null.");
@@ -30,16 +30,8 @@ public class QueryHandler {
 
             String url = WOLFRAM_API + "/query?input=" + URLEncoder.encode(input, "UTF-8") + "&appid=" + WOLFRAM_KEY + "&format=plaintext";
             Document doc = dBuilder.parse(Utilities.getStreamFromUrl(url));
-            QueryResult output = new QueryResult(doc);
 
-            if (output.isError()) {
-                return null;
-            }
-            else if (!output.isSuccess()) {
-                return null;
-            }
-
-            return output.getResult();
+            return new QueryResult(doc);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

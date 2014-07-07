@@ -7,6 +7,7 @@ import net.jeebiss.spazz.javaluator.DoubleEvaluator;
 import net.jeebiss.spazz.util.MinecraftServer;
 import net.jeebiss.spazz.util.Utilities;
 import net.jeebiss.spazz.wolfram.QueryHandler;
+import net.jeebiss.spazz.wolfram.QueryResult;
 import org.pircbotx.Channel;
 import org.pircbotx.Colors;
 import org.pircbotx.PircBotX;
@@ -1107,15 +1108,19 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.matches("\\.realmath .+")) {
-            String input = msgLwr.substring(10).trim();
-            String output = queryHandler.parseMath(input);
+        else if (msgLwr.matches("\\.(realmath|define|wolfram) .+")) {
+            String input = msg.substring(msg.split("\\s+")[0].length());
+            QueryResult output = queryHandler.parseMath(input);
 
-            if (output == null) {
-                send("Invalid math statement.");
+            if (output.isError() || !output.isSuccess()) {
+                send("There was an error while parsing that statement.");
             }
             else {
-                send(input + " = " + output);
+                String result = output.getResult();
+                if (result.contains("="))
+                    send(result);
+                else
+                    send(output.getInput() + " = " + result);
             }
         }
 

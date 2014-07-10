@@ -33,6 +33,7 @@ public class Repository {
     private String pulls_url;
     private String commits_url;
     private String events_url;
+    private boolean has_issues; // boolean to check if issues are disabled on the repo
 
     public Repository _init(GitHub root, long updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) {
         this.root = root;
@@ -73,7 +74,8 @@ public class Repository {
     }
 
     public Issue getIssue(int number) {
-        return root.retrieve().parse(issues_url.replaceAll("\\{.+\\}", "/" + number), Issue.class);
+        String url = has_issues ? issues_url : pulls_url;
+        return root.retrieve().parse(url.replaceAll("\\{.+\\}", "/" + number), Issue.class);
     }
 
     public Commit getCommit(String commitId) {

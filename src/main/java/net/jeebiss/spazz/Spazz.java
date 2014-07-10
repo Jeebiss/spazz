@@ -357,6 +357,9 @@ public class Spazz extends ListenerAdapter {
                     send("[<O>" + repo.getFullName() + "<C>] <D>" + issue.formatTitle() + "<C> (<D>" + issue.getNumber()
                             + "<C>) by <D>" + issue.getUser().getLogin() + "<C> -- " + issue.getShortUrl());
                 }
+                else {
+                    send("That repository does not have an issue or pull request by that number.");
+                }
             }
         }
 

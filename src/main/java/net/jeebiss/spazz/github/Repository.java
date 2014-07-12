@@ -2,6 +2,7 @@ package net.jeebiss.spazz.github;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import net.jeebiss.spazz.Spazz;
 import net.jeebiss.spazz.github.events.*;
 
 import java.util.ArrayList;
@@ -34,6 +35,12 @@ public class Repository {
     private String commits_url;
     private String events_url;
     private boolean has_issues; // boolean to check if issues are disabled on the repo
+    private Repository parent;
+    private boolean fork;
+
+    public String parentName = null;
+    public boolean weHaveParent = false;
+    public StringBuilder lazyCommitsThing = new StringBuilder();
 
     public Repository _init(GitHub root, long updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) {
         this.root = root;
@@ -44,6 +51,7 @@ public class Repository {
         this.hasIssues = hasIssues;
         this.hasComments = hasComments;
         this.hasPulls = hasPulls;
+        if (parent != null) parentName = parent.getFullName();
         new Thread(new RepositoryChecker()).start();
         started = true;
         return this;
@@ -60,6 +68,8 @@ public class Repository {
     public double getUpdateDelay() {
         return updateDelay / 1000;
     }
+
+    public boolean isFork() { return fork; }
 
     public boolean hasIssues() {
         return hasIssues;
@@ -83,6 +93,9 @@ public class Repository {
     }
 
     public void fireEvents() {
+        if (!weHaveParent && parentName != null) {
+            weHaveParent = Spazz.repoManager.hasRepository(parentName);
+        }
         JsonArray eventsList = root.retrieve().parseArray(events_url.replaceAll("\\{.+\\}", ""));
         IssueCommentEvent icEvent = null;
         boolean ic = false;

@@ -18,8 +18,21 @@ public class CommitHandler {
         this.waiting_commits = new ArrayList<Commit>(){
             @Override
             public boolean addAll(Collection<? extends Commit> c) {
+                Repository repo = CommitHandler.this.repo;
+                StringBuilder commitsThing = null;
+                if (repo.weHaveParent)
+                    commitsThing = Spazz.repoManager.getRepository(repo.parentName).lazyCommitsThing;
                 for (Commit commit : c) {
-                    if (commit.isDistinct()) add(commit);
+                    if (commit.isDistinct() && !commit.isMerge()) {
+                        if (commitsThing != null) {
+                            if (commitsThing.lastIndexOf(commit.getCommitId().substring(0, 7)) != -1)
+                                continue;
+                        }
+                        else if (!repo.isFork()) {
+                            repo.lazyCommitsThing.append(",").append(commit.getCommitId().substring(0, 7));
+                        }
+                        add(commit);
+                    }
                 }
                 return true;
             }
@@ -39,7 +52,6 @@ public class CommitHandler {
         messages.add("[<O>" + repo.getFullName() + "<C>] <D>" + Utilities.join(users.iterator(), ", ") + "<C> pushed "
                 + waiting_commits.size() + " commit" + (waiting_commits.size() == 1 ? "" : "s") + " to master branch");
         for (Commit commit : waiting_commits) {
-            if (commit.isMerge()) continue;
             String message = commit.getMessage().replace("<", "<LT>");
             if (message.contains("\n")) {
                 message = message.substring(0, message.indexOf('\n')) + "...";

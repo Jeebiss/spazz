@@ -25,7 +25,7 @@ public class Commit {
 
     public String getShortUrl() { return Utilities.getShortUrl(getUrl()); }
 
-    public boolean isMerge() { return message.matches("Merge (pull request #\\d+ from|branch '.+' of).+"); }
+    public boolean isMerge() { return message.toLowerCase().matches("merge (pull request #\\d+|branch '.+').+"); }
 
     public class Author {
         private String email;

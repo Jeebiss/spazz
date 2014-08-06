@@ -1356,6 +1356,7 @@ public class Spazz extends ListenerAdapter {
                     System.out.println();
                     System.out.println();
                     System.out.println("Disconnected.");
+                    shuttingDown = true;
                     break;
 
                 case "reconnect":

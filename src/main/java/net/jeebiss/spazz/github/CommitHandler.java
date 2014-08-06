@@ -52,10 +52,8 @@ public class CommitHandler {
         messages.add("[<O>" + repo.getFullName() + "<C>] <D>" + Utilities.join(users.iterator(), ", ") + "<C> pushed "
                 + waiting_commits.size() + " commit" + (waiting_commits.size() == 1 ? "" : "s") + " to master branch");
         for (Commit commit : waiting_commits) {
-            String message = commit.getMessage().replace("<", "<LT>");
-            if (message.contains("\n")) {
-                message = message.substring(0, message.indexOf('\n')) + "...";
-            }
+            String message = commit.getMessage().replace("<", "<LT>")
+                    .replaceAll("\n+", " - ");
             messages.add("<D>  " + commit.getAuthor().getName() + "<C>: " + message + " -- " + commit.getShortUrl());
             commits.put(commit.getCommitId(), commit);
         }

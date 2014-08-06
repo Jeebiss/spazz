@@ -177,11 +177,6 @@ public class Spazz extends ListenerAdapter {
         }
     }
 
-    public static void sendToDev(String message) {
-        if (bot.getChannelsNames().contains("#denizen-devs"))
-            bot.sendMessage("#denizen-devs", message);
-    }
-
     public static void sendNotice(String destination, String message) {
         if (destination.equals("spazzmatic"))
             System.out.println("-spazzmatic- " + Colors.removeFormattingAndColors(message));
@@ -312,8 +307,11 @@ public class Spazz extends ListenerAdapter {
             setSend(usr.getNick());
             chnl = bot.getChannel(chatChannel);
         }
-        else {
+        else if (!chnl.getName().equals(send)) {
             setSend(chnl.getName());
+            dusr.setLastSeen("Saying \"" + msg + chatColor + "\" in " + send);
+        }
+        else {
             dusr.setLastSeen("Saying \"" + msg + chatColor + "\" in " + send);
         }
 
@@ -585,6 +583,9 @@ public class Spazz extends ListenerAdapter {
                 }
                 else if (args[1].contains("citizensnpcs")) {
                     rawYaml = Utilities.getStringFromUrl("http://scripts.citizensnpcs.co/raw/" + url[4]);
+                }
+                else if (args[1].contains("mcmonkey")) {
+                    rawYaml = Utilities.getStringFromUrl("http://mcmonkey.org/paste/" + url[4] + ".txt");
                 }
                 else {
                     send(address + Colors.RED + "I can't get your script from that website :(");
@@ -1227,7 +1228,6 @@ public class Spazz extends ListenerAdapter {
 
         address = "";
         dusr.checkMessages();
-        setSend("");
 
     }
 
@@ -1282,7 +1282,8 @@ public class Spazz extends ListenerAdapter {
         return message.replace("<C>", chatColor)
                 .replace("<D>", defaultColor)
                 .replace("<O>", optionalColor)
-                .replace("<LT>", "<");
+                .replace("<LT>", "<")
+                .replace("\n", " - ").replace("\r", "");
     }
 
     private static void identify() {
@@ -1656,14 +1657,18 @@ public class Spazz extends ListenerAdapter {
         private MessageList messages;
         private String serverAddress;
 
+        private File userFile = null;
+
         public dUser(String nick) {
             if (nick == null || nick.equals("")) return;
             this.nick = nick;
             this.messages = new MessageList();
             setLastSeen("Existing");
             serverAddress = "";
-            if (!new File(System.getProperty("user.dir") + "/users/" + nick.toLowerCase().replace('|', '_') + ".yml").exists()) {
+            userFile = new File(System.getProperty("user.dir") + "/users/" + nick.toLowerCase().replace('|', '_') + ".yml");
+            if (!userFile.exists()) {
                 try {
+                    userFile.mkdirs();
                     saveAll();
                 } catch (Exception e) {
                     if (debugMode) e.printStackTrace();
@@ -1722,7 +1727,7 @@ public class Spazz extends ListenerAdapter {
                 data.put("message-delay", messageDelay);
             }
 
-            FileWriter writer = new FileWriter(usersFolder + "/" + getNick().toLowerCase().replace('|', '_') + ".yml");
+            FileWriter writer = new FileWriter(userFile);
             writer.write(yaml.dump(data));
             writer.close();
         }
@@ -1730,9 +1735,7 @@ public class Spazz extends ListenerAdapter {
         void loadAll() throws Exception {
             LinkedHashMap map = null;
             Yaml yaml = new Yaml();
-            File f = new File(usersFolder + "/" + getNick().toLowerCase().replace('|', '_') + ".yml");
-            f.mkdirs();
-            InputStream is = f.toURI().toURL().openStream();
+            InputStream is = userFile.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
 
             // loadLastSeen()

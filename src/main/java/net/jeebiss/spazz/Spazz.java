@@ -1,8 +1,6 @@
 package net.jeebiss.spazz;
 
-import com.google.gson.*;
 import net.jeebiss.spazz.github.*;
-import net.jeebiss.spazz.github.events.*;
 import net.jeebiss.spazz.javaluator.DoubleEvaluator;
 import net.jeebiss.spazz.util.MinecraftServer;
 import net.jeebiss.spazz.util.Utilities;
@@ -85,7 +83,9 @@ public class Spazz extends ListenerAdapter {
 
             LinkedHashMap map = null;
             Yaml yaml = new Yaml();
-            InputStream is = new File(usersFolder + "/spazzmatic.yml").toURI().toURL().openStream();
+            File sf = new File(usersFolder + "/spazzmatic.yml");
+            sf.mkdirs();
+            InputStream is = sf.toURI().toURL().openStream();
             map = (LinkedHashMap) yaml.load(is);
             if (map.get("password") instanceof String) {
                 System.setProperty("spazz.password", (String) map.get("password"));
@@ -108,8 +108,9 @@ public class Spazz extends ListenerAdapter {
             if (map.get("message-delay") instanceof Integer) {
                 messageDelay = (long) map.get("message-delay");
             }
+            is.close();
         } catch (Exception e) {
-            if (!usersFolder.isDirectory() && !usersFolder.mkdir()) {
+            if (!usersFolder.isDirectory() && !usersFolder.mkdirs()) {
                 System.out.println("Could not load users folder. Password for Spazzmatic not found. Cancelling startup...");
                 return;
             }
@@ -173,7 +174,7 @@ public class Spazz extends ListenerAdapter {
             System.out.println("<spazzmatic> " + Colors.removeFormattingAndColors(message));
         else {
             String msg = address + chatColor + formatChat(message);
-            bot.sendMessage(send, noLimit || msg.length() <= 400 ? msg : msg.substring(0, 400));
+            bot.sendMessage(send, noLimit || msg.length() <= 500 ? msg : msg.substring(0, 450));
         }
     }
 
@@ -223,6 +224,7 @@ public class Spazz extends ListenerAdapter {
         if (shuttingDown) {
             repoManager.shutdown();
             Utilities.saveQuotes();
+            queryHandler.saveDefinitions();
             for (dUser usr : dUsers.values()) {
                 try {
                     usr.saveAll();
@@ -762,6 +764,7 @@ public class Spazz extends ListenerAdapter {
             else {
                 repoManager.shutdown();
                 Utilities.saveQuotes();
+                queryHandler.saveDefinitions();
                 for (dUser duser : dUsers.values()) {
                     try {
                         duser.saveAll();
@@ -775,6 +778,7 @@ public class Spazz extends ListenerAdapter {
                 send(quotes[new Random().nextInt(quotes.length)]);
                 bot.quitServer(senderNick + " said so.");
                 shuttingDown = true;
+                bot.disconnect();
                 return;
             }
         }
@@ -907,6 +911,16 @@ public class Spazz extends ListenerAdapter {
                     }
                 }
             }
+            else if (args[1].startsWith("d")) {
+                if (args.length > 2 && msg.contains(":")) {
+                    String key = msg.substring(args[0].length() + args[1].length() + 2, msg.indexOf(':'));
+                    String value = msg.substring(args[0].length() + args[1].length() + key.length() + 3);
+                    queryHandler.addDefinition(key, value);
+                    send("Definition '" + key + "' added as: " + value);
+                }
+                else
+                    send("That command is written as: .add definition [<phrase>:<definition>]");
+            }
             else
                 send("That command is written as: .add [<object>]");
         }
@@ -946,6 +960,17 @@ public class Spazz extends ListenerAdapter {
                 }
                 else
                     send("That command is written as: .remove quote [<#>]");
+            }
+            else if (args[1].startsWith("d")) {
+                if (args.length > 2) {
+                    String key = msg.substring(args[0].length() + args[1].length() + 2);
+                    if (queryHandler.removeDefinition(key))
+                        send("Definition '" + key + "' has been removed.");
+                    else
+                        send("Definition '" + key + "' does not exist.");
+                }
+                else
+                    send("That command is written as: .remove definition [<phrase>]");
             }
             else
                 send("That command is written as: .remove [<object>]");
@@ -1024,7 +1049,7 @@ public class Spazz extends ListenerAdapter {
                     repoManager.saveAll();
                     send("Successfully saved all repository information.");
                 } catch (Exception e) {
-                    send("Error while saving repository information...");
+                    send("Error while saving repository information... Report this to " + Colors.CYAN + "Morphan1");
                 }
             }
             else if (args[1].startsWith("q")) {
@@ -1037,14 +1062,22 @@ public class Spazz extends ListenerAdapter {
                     try {
                         dusr2.saveAll();
                     } catch (Exception e) {
-                        send(Colors.RED + "ERROR. Failed to save user information: " + defaultColor + dusr2.getNick());
+                        send(Colors.RED + "ERROR. Failed to save user information: " + defaultColor + dusr2.getNick()
+                                + "... Report this to " + Colors.CYAN + "Morphan1");
                         if (debugMode) e.printStackTrace();
                         else
-                            System.out.println("An error has occured while using .save-all for user " + dusr2.getNick() + "... Turn on debug for more information.");
+                            System.out.println("An error has occured while using .save-all for user " + dusr2.getNick()
+                                    + "... Turn on debug for more information.");
                         return;
                     }
                 }
                 send("Successfully saved all user information.");
+            }
+            else if (args[1].startsWith("d")) {
+                if (queryHandler.saveDefinitions())
+                    send("Successfully saved all definitions.");
+                else
+                    send("Error while saving definitions... Report this to " + Colors.CYAN + "Morphan1");
             }
         }
 
@@ -1058,7 +1091,7 @@ public class Spazz extends ListenerAdapter {
                     repoManager.loadAll();
                     send("Successfully loaded all repository information.");
                 } catch (Exception e) {
-                    send("Error while loading repository information...");
+                    send("Error while loading repository information... Report this to " + Colors.CYAN + "Morphan1");
                 }
             }
             else if (args[1].startsWith("q")) {
@@ -1071,7 +1104,8 @@ public class Spazz extends ListenerAdapter {
                     try {
                         dusr2.loadAll();
                     } catch (Exception e) {
-                        send(Colors.RED + "ERROR. Failed to load user information: " + defaultColor + dusr2.getNick());
+                        send(Colors.RED + "ERROR. Failed to load user information: " + defaultColor + dusr2.getNick()
+                                + "... Report this to " + Colors.CYAN + "Morphan1");
                         if (debugMode) e.printStackTrace();
                         else
                             System.out.println("An error has occured while using .load for user " + dusr2.getNick() + "... Turn on debug for more information.");
@@ -1079,6 +1113,12 @@ public class Spazz extends ListenerAdapter {
                     }
                 }
                 send("Successfully loaded all user information.");
+            }
+            else if (args[1].startsWith("d")) {
+                if (queryHandler.loadDefinitions())
+                    send("Successfully loaded all definitions.");
+                else
+                    send(Colors.RED + "Error while loading definitions... Report this to " + Colors.CYAN + "Morphan1");
             }
         }
 
@@ -1112,19 +1152,16 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.matches("\\.(realmath|define|wolfram) .+")) {
-            String input = msg.substring(msg.split("\\s+")[0].length()+1);
-            QueryResult output = queryHandler.parseMath(input);
+        else if (msgLwr.matches("\\.(realmath|define|wolfram|parse) .+")) {
+            String input = msg.substring(msg.split("\\s+")[0].length() + 1);
+            QueryResult output = queryHandler.parse(input);
             String result = output.getResult();
 
             if (output.isError() || !output.isSuccess() || result == null) {
                 send("There was an error while parsing that statement.");
             }
             else {
-                if (result.contains("="))
-                    send(result);
-                else
-                    send(output.getInput() + " = " + result);
+                send(output.getInput() + " = " + result);
             }
         }
 
@@ -1352,6 +1389,7 @@ public class Spazz extends ListenerAdapter {
                     if (repoManager != null)
                         repoManager.shutdown();
                     Utilities.saveQuotes();
+                    queryHandler.saveDefinitions();
                     bot.quitServer("Command sent by console: /disconnect");
                     System.out.println();
                     System.out.println();
@@ -1667,9 +1705,11 @@ public class Spazz extends ListenerAdapter {
             setLastSeen("Existing");
             serverAddress = "";
             userFile = new File(System.getProperty("user.dir") + "/users/" + nick.toLowerCase().replace('|', '_') + ".yml");
-            if (!userFile.exists()) {
+            if (!userFile.exists() || userFile.isDirectory()) {
                 try {
-                    userFile.mkdirs();
+                    if (userFile.isDirectory())
+                        userFile.delete();
+                    userFile.createNewFile();
                     saveAll();
                 } catch (Exception e) {
                     if (debugMode) e.printStackTrace();
@@ -1723,7 +1763,7 @@ public class Spazz extends ListenerAdapter {
                 data.put("password", System.getProperty("spazz.password"));
                 data.put("bitly", System.getProperty("spazz.bitly"));
                 data.put("dev-mode", devMode);
-                data.put("wolfram", queryHandler.WOLFRAM_KEY);
+                data.put("wolfram", queryHandler.getKey());
                 data.put("github", System.getProperty("spazz.github"));
                 data.put("message-delay", messageDelay);
             }

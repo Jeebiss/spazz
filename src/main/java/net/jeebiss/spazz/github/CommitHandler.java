@@ -13,26 +13,24 @@ public class CommitHandler {
     private Map<String, Commit> commits;
     private List<String> users;
 
-    public CommitHandler(Repository repo) {
+    public CommitHandler(final Repository repo) {
         this.repo = repo;
         this.waiting_commits = new ArrayList<Commit>(){
             @Override
             public boolean addAll(Collection<? extends Commit> c) {
-                Repository repo = CommitHandler.this.repo;
                 StringBuilder commitsThing = null;
                 if (repo.weHaveParent)
                     commitsThing = Spazz.repoManager.getRepository(repo.parentName).lazyCommitsThing;
                 for (Commit commit : c) {
-                    if (commit.isDistinct() && !commit.isMerge()) {
-                        if (commitsThing != null) {
-                            if (commitsThing.lastIndexOf(commit.getCommitId().substring(0, 7)) != -1)
-                                continue;
-                        }
-                        else if (!repo.isFork()) {
-                            repo.lazyCommitsThing.append(",").append(commit.getCommitId().substring(0, 7));
-                        }
-                        add(commit);
+                    if (commit.isMerge() || !commit.isDistinct()) continue;
+                    if (commitsThing != null) {
+                        if (commitsThing.lastIndexOf(commit.getCommitId().substring(0, 7)) != -1)
+                            continue;
                     }
+                    else if (!repo.isFork()) {
+                        repo.lazyCommitsThing.append(",").append(commit.getCommitId().substring(0, 7));
+                    }
+                    add(commit);
                 }
                 return true;
             }

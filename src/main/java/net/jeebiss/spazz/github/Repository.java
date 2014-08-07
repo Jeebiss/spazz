@@ -6,7 +6,6 @@ import net.jeebiss.spazz.Spazz;
 import net.jeebiss.spazz.github.events.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class Repository {

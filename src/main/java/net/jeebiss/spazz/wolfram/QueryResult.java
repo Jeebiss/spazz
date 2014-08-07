@@ -10,87 +10,145 @@ import java.util.regex.Pattern;
 
 public class QueryResult {
 
-    private Pattern hasVars = Pattern.compile("[a-zA-Z]");
-    private Document document;
-    private HashMap<String, Element> podList;
-    private String primaryPod;
-    private String cachedPodId;
+    private final static Pattern hasVars = Pattern.compile("[a-zA-Z]");
+    private final static String[] equals = new String[] {
+            "Substitution", "UnitSystem"
+    };
+    private final static String[] startsWith = new String[] {
+            "Identification", "CityLocation", "Definition", "BasicInformation", "Taxonomy", "BasicProperties",
+            "PhysicalCharacteristics"
+    };
 
-    public QueryResult(Document doc) {
-        this.document = doc;
-        this.podList = new HashMap<String, Element>();
-        NodeList pods = document.getElementsByTagName("pod");
+    private String podId;
+    private String futureTopic;
+    private String suggestion;
+    private String result;
+    private String input;
+
+    private boolean success;
+    private boolean error;
+
+    public QueryResult(Document doc, String inputFallback) {
+        this.success = Boolean.parseBoolean(doc.getDocumentElement().getAttribute("success"));
+        this.error = Boolean.parseBoolean(doc.getDocumentElement().getAttribute("error"));
+        this.input = inputFallback;
+        NodeList pods = doc.getElementsByTagName("pod");
+        Element resultPod = null;
         for (int x = 0; x < pods.getLength(); x++) {
             Element pod = (Element) pods.item(x);
-            if (pod.hasAttribute("primary")
-                    && pod.getAttribute("primary").equals("true"))
-                primaryPod = pod.getAttribute("id");
-            this.podList.put(pod.getAttribute("id"), pod);
+            String id = pod.getAttribute("id");
+            if (id.equals("Input")) {
+                input = ((Element) pod.getElementsByTagName("subpod").item(0))
+                        .getElementsByTagName("plaintext").item(0).getTextContent();
+                continue;
+            }
+            if (id.equals("Result")) {
+                resultPod = pod;
+                continue;
+            }
+            if (checkForResult(pod)) {
+                podId = id;
+                result = ((Element) pod.getElementsByTagName("subpod").item(0))
+                        .getElementsByTagName("plaintext").item(0).getTextContent();
+                return;
+            }
+        }
+        if (resultPod != null) {
+            podId = "Result";
+            result = ((Element) resultPod.getElementsByTagName("subpod").item(0))
+                    .getElementsByTagName("plaintext").item(0).getTextContent();
+            return;
+        }
+        NodeList future = doc.getElementsByTagName("futuretopic");
+        if (future.getLength() > 0) {
+            Element futurePod = (Element) future.item(0);
+            result = futurePod.getAttribute("topic") + " = " + futurePod.getAttribute("msg");
+            return;
+        }
+        NodeList suggestions = doc.getElementsByTagName("didyoumeans");
+        if (suggestions.getLength() > 0) {
+            NodeList didyoumeans = ((Element) suggestions.item(0)).getElementsByTagName("didyoumean");
+            for (int x = 0; x < didyoumeans.getLength(); x++) {
+                Element didyoumean = (Element) didyoumeans.item(x);
+                if (Double.parseDouble(didyoumean.getAttribute("score")) >= 0.4
+                        || didyoumean.getAttribute("level").equals("high")) {
+                    suggestion = didyoumean.getTextContent();
+                    return;
+                }
+            }
         }
     }
 
+    public QueryResult(String input, String result) {
+        this.success = true;
+        this.input = input;
+        this.result = result;
+    }
+
     public String getResult() {
-        if (containsPod("Substitution")) {
-            String ret = getSubPodTextContent("Substitution");
-            if (ret.contains("=")) {
-                String leftSide = ret.split(" = ")[0];
-                ret = ret.replace(leftSide, leftSide.replace(" ", "*"));
-            }
+        return result;
+    }
+
+    public String getInput() {
+        return input;
+    }
+
+    private boolean checkForResult(Element pod) {
+        if (pod.hasAttribute("primary")) return true;
+        String podId = pod.getAttribute("id");
+        for (String s : equals)
+            if (podId.equals(s)) return true;
+        if (podId.contains(":")) {
+            for (String s : startsWith)
+                if (podId.startsWith(s)) return true;
+        }
+        return false;
+    }
+
+    private void setResult(String result) {
+        if (podId.equals("Substitution")) {
+            //if (result.contains("=")) {
+            //    String leftSide = result.split(" = ")[0].trim();
+            //    result = result.replace(leftSide, leftSide.replace(" ", "*"));
+            //}
             HashMap<String, String> substitutions = new HashMap<String, String>();
             for (String sub : getInput().replaceAll("\\{|\\}", "").split(", ")) {
                 if (!sub.contains("=")) continue;
                 String[] s = sub.split("=");
                 substitutions.put(s[0].replace(" ", ""), s[1].replace(" ", ""));
             }
-            Matcher m = hasVars.matcher(ret);
+            Matcher m = hasVars.matcher(result);
             while (m.find()) {
                 if (!substitutions.containsKey(m.group(0))) continue;
-                ret = ret.replace(m.group(0), substitutions.get(m.group(0)));
+                result = result.replace(m.group(0), substitutions.get(m.group(0)));
             }
-            return ret;
-        }
-        else if (containsPod("Result")) {
-            return getSubPodTextContent("Result");
-        }
-        else if (containsPodStartingWith("Identification:") || containsPodStartingWith("CityLocation:")
-                || containsPodStartingWith("Definition:")) {
-            return getSubPodTextContent(cachedPodId);
-        }
-        else if (primaryPod != null) {
-            return getSubPodTextContent(primaryPod);
-        }
-        return null;
-    }
-
-    public String getInput() {
-        return getSubPodTextContent("Input");
-    }
-
-    private boolean containsPod(String podId) {
-        return podList.containsKey(podId);
-    }
-
-    private boolean containsPodStartingWith(String podIdStart) {
-        for (String podId : podList.keySet()) {
-            if (podId.startsWith(podIdStart)) {
-                cachedPodId = podId;
-                return true;
+            if (result.contains("=")) {
+                String[] split = result.split("=");
+                this.input = split[0].trim();
+                result = result.substring(split[0].length());
             }
         }
-        return false;
+        this.result = result.trim();
     }
 
-    private String getSubPodTextContent(String podId) {
-        return ((Element) podList.get(podId).getElementsByTagName("subpod").item(0))
-                .getElementsByTagName("plaintext").item(0).getTextContent();
+    public boolean isFutureTopic() {
+        return futureTopic != null;
     }
 
     public boolean isSuccess() {
-        return Boolean.parseBoolean(document.getDocumentElement().getAttribute("success"));
+        return success || isFutureTopic();
+    }
+
+    public boolean hasSuggestion() {
+        return suggestion != null;
+    }
+
+    public String getSuggestion() {
+        return suggestion;
     }
 
     public boolean isError() {
-        return Boolean.parseBoolean(document.getDocumentElement().getAttribute("error"));
+        return error;
     }
 
 }

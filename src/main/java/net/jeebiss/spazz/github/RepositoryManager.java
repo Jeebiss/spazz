@@ -103,6 +103,9 @@ public class RepositoryManager {
             data.get(proj[0]).get(proj[1]).put("has_pulls", repo.hasPulls());
         }
 
+        File rf = new File(System.getProperty("user.dir") + "/storage/repositories.yml");
+        if (!rf.exists())
+            rf.createNewFile();
         FileWriter writer = new FileWriter(System.getProperty("user.dir") + "/storage/repositories.yml");
         writer.write(yaml.dump(data));
         writer.close();

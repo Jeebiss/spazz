@@ -4,8 +4,11 @@ import net.jeebiss.spazz.github.events.Event;
 import net.jeebiss.spazz.util.Utilities;
 
 import java.util.Date;
+import java.util.regex.Pattern;
 
 public class Commit {
+
+    private static final Pattern isMerge = Pattern.compile("^Merge (pull request #\\d+|branch '.+').+$");
 
     private String sha;
     private Author author;
@@ -25,7 +28,7 @@ public class Commit {
 
     public String getShortUrl() { return Utilities.getShortUrl(getUrl()); }
 
-    public boolean isMerge() { return message.toLowerCase().matches("merge (pull request #\\d+|branch '.+').+"); }
+    public boolean isMerge() { return isMerge.matcher(getMessage()).matches(); }
 
     public class Author {
         private String email;

@@ -69,8 +69,7 @@ public class QueryHandler {
             return dBuilder.parse(Utilities.getStreamFromUrl(
                     WOLFRAM_QUERY + URLEncoder.encode(input, "UTF-8") + WOLFRAM_KEY + WOLFRAM_FORMAT
             ));
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch(Exception e) {
             return null;
         }
     }

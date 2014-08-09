@@ -3,8 +3,7 @@ package net.jeebiss.spazz.util;
 import com.google.gson.Gson;
 
 import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.net.*;
 import java.util.List;
 
 /**
@@ -69,7 +68,13 @@ public class MinecraftServer {
 
         socket.setSoTimeout(this.timeout);
 
-        socket.connect(host, timeout);
+        try {
+            socket.connect(host, timeout);
+        } catch (SocketTimeoutException e) {
+            try {
+                socket.connect(host, timeout);
+            } catch (Exception ignored) {}
+        }
 
         outputStream = socket.getOutputStream();
         dataOutputStream = new DataOutputStream(outputStream);

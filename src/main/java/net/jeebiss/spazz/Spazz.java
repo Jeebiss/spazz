@@ -81,12 +81,11 @@ public class Spazz extends ListenerAdapter {
         try {
             usersFolder = new File(System.getProperty("user.dir") + "/users");
 
-            LinkedHashMap map = null;
             Yaml yaml = new Yaml();
             File sf = new File(usersFolder + "/spazzmatic.yml");
             sf.mkdirs();
             InputStream is = sf.toURI().toURL().openStream();
-            map = (LinkedHashMap) yaml.load(is);
+            LinkedHashMap map = (LinkedHashMap) yaml.load(is);
             if (map.get("password") instanceof String) {
                 System.setProperty("spazz.password", (String) map.get("password"));
             }
@@ -299,11 +298,10 @@ public class Spazz extends ListenerAdapter {
         String msg = event.getMessage();
         User usr = event.getUser();
 
-        dUser dusr = null;
         if (!dUsers.containsKey(usr.getNick().toLowerCase()))
             dUsers.put(usr.getNick().toLowerCase(), new dUser(usr.getNick()));
 
-        dusr = dUsers.get(usr.getNick().toLowerCase());
+        dUser dusr = dUsers.get(usr.getNick().toLowerCase());
 
         if (chnl == null) {
             setSend(usr.getNick());
@@ -333,17 +331,10 @@ public class Spazz extends ListenerAdapter {
 
         }
 
-        if (msg.endsWith("@@")) {
-            String args[] = msg.split(" ");
-            if (debugMode) System.out.println(args.length);
-            for (int x = 0; x < args.length; x++) {
-                if (!args[x].contains("@@"))
-                    continue;
-                else {
-                    address = args[x];
-                    address = address.substring(0, address.length() - 2);
-                    address = address + ": ";
-                }
+        if (msg.contains("@")) {
+            String[] addressTest = msg.split(" ");
+            if (addressTest[addressTest.length - 1].contains("@")) {
+                address = addressTest[addressTest.length-1].replace("@", "") + ": ";
             }
         }
 
@@ -1304,15 +1295,11 @@ public class Spazz extends ListenerAdapter {
     }
 
     private boolean hasVoice(User chatter, Channel channel) {
-        if (channel.hasVoice(chatter))
-            return true;
-        return false;
+        return channel.hasVoice(chatter);
     }
 
     private boolean hasOp(User chatter, Channel channel) {
-        if (channel.isOp(chatter))
-            return true;
-        return false;
+        return channel.isOp(chatter);
     }
 
     private static String formatChat(String message) {
@@ -1350,14 +1337,13 @@ public class Spazz extends ListenerAdapter {
         System.out.println();
 
         Scanner scanner = new Scanner(System.in);
-        String rawInput = "";
         String inputCommand = "";
         String commandArgs = "";
         String channel = "";
 
         input: while (!shuttingDown && scanner.hasNext()) {
 
-            rawInput = scanner.nextLine();
+            String rawInput = scanner.nextLine();
             String[] inputArgs = rawInput.split(" ");
 
             if (rawInput.startsWith("/")) {
@@ -1594,45 +1580,48 @@ public class Spazz extends ListenerAdapter {
 
         if (colorName.contains("&")) {
             String symbol = colorName.substring(1, colorName.length()).toLowerCase();
-            if (symbol.equals("0"))
-                return Colors.BLACK;
-            else if (symbol.equals("1"))
-                return Colors.DARK_BLUE;
-            else if (symbol.equals("2"))
-                return Colors.DARK_GREEN;
-            else if (symbol.equals("3"))
-                return Colors.TEAL;
-            else if (symbol.equals("4"))
-                return Colors.RED;
-            else if (symbol.equals("5"))
-                return Colors.PURPLE;
-            else if (symbol.equals("6"))
-                return Colors.OLIVE;
-            else if (symbol.equals("7"))
-                return Colors.LIGHT_GRAY;
-            else if (symbol.equals("8"))
-                return Colors.DARK_GRAY;
-            else if (symbol.equals("9"))
-                return Colors.BLUE;
-            else if (symbol.equals("a"))
-                return Colors.GREEN;
-            else if (symbol.equals("b"))
-                return Colors.CYAN;
-            else if (symbol.equals("c"))
-                return Colors.RED;
-            else if (symbol.equals("d"))
-                return Colors.MAGENTA;
-            else if (symbol.equals("e"))
-                return Colors.YELLOW;
-            else if (symbol.equals("f"))
-                return Colors.WHITE;
-            else if (symbol.equals("l"))
-                return Colors.BOLD;
-            else if (symbol.equals("n"))
-                return Colors.UNDERLINE;
-            else if (symbol.equals("r"))
-                return Colors.NORMAL;
-            else return null;
+            switch (symbol) {
+                case "0":
+                    return Colors.BLACK;
+                case "1":
+                    return Colors.DARK_BLUE;
+                case "2":
+                    return Colors.DARK_GREEN;
+                case "3":
+                    return Colors.TEAL;
+                case "4":
+                    return Colors.RED;
+                case "5":
+                    return Colors.PURPLE;
+                case "6":
+                    return Colors.OLIVE;
+                case "7":
+                    return Colors.LIGHT_GRAY;
+                case "8":
+                    return Colors.DARK_GRAY;
+                case "9":
+                    return Colors.BLUE;
+                case "a":
+                    return Colors.GREEN;
+                case "b":
+                    return Colors.CYAN;
+                case "c":
+                    return Colors.RED;
+                case "d":
+                    return Colors.MAGENTA;
+                case "e":
+                    return Colors.YELLOW;
+                case "f":
+                    return Colors.WHITE;
+                case "l":
+                    return Colors.BOLD;
+                case "n":
+                    return Colors.UNDERLINE;
+                case "r":
+                    return Colors.NORMAL;
+                default:
+                    return null;
+            }
         }
 
         if (colorName.equalsIgnoreCase("black"))
@@ -1774,10 +1763,9 @@ public class Spazz extends ListenerAdapter {
         }
 
         void loadAll() throws Exception {
-            LinkedHashMap map = null;
             Yaml yaml = new Yaml();
             InputStream is = userFile.toURI().toURL().openStream();
-            map = (LinkedHashMap) yaml.load(is);
+            LinkedHashMap map = (LinkedHashMap) yaml.load(is);
 
             // loadLastSeen()
             if (map.get("lastseen") instanceof byte[]) {

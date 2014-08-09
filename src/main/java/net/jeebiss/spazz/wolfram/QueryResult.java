@@ -11,12 +11,13 @@ import java.util.regex.Pattern;
 public class QueryResult {
 
     private final static Pattern hasVars = Pattern.compile("[a-zA-Z]");
+    private final static Pattern hasUnicode = Pattern.compile("\\\\:(....)");
     private final static String[] equals = new String[] {
             "Substitution", "UnitSystem"
     };
     private final static String[] startsWith = new String[] {
             "Identification", "CityLocation", "Definition", "BasicInformation", "Taxonomy", "BasicProperties",
-            "PhysicalCharacteristics"
+            "PhysicalCharacteristics", "TranslationsToEnglish", "HostInformationPodIP"
     };
 
     private String podId;
@@ -48,15 +49,13 @@ public class QueryResult {
             }
             if (checkForResult(pod)) {
                 podId = id;
-                result = ((Element) pod.getElementsByTagName("subpod").item(0))
-                        .getElementsByTagName("plaintext").item(0).getTextContent();
+                setResult(pod);
                 return;
             }
         }
         if (resultPod != null) {
             podId = "Result";
-            result = ((Element) resultPod.getElementsByTagName("subpod").item(0))
-                    .getElementsByTagName("plaintext").item(0).getTextContent();
+            setResult(resultPod);
             return;
         }
         NodeList future = doc.getElementsByTagName("futuretopic");
@@ -70,8 +69,7 @@ public class QueryResult {
             NodeList didyoumeans = ((Element) suggestions.item(0)).getElementsByTagName("didyoumean");
             for (int x = 0; x < didyoumeans.getLength(); x++) {
                 Element didyoumean = (Element) didyoumeans.item(x);
-                if (Double.parseDouble(didyoumean.getAttribute("score")) >= 0.4
-                        || didyoumean.getAttribute("level").equals("high")) {
+                if (Double.parseDouble(didyoumean.getAttribute("score")) >= 0.3) {
                     suggestion = didyoumean.getTextContent();
                     return;
                 }
@@ -103,6 +101,16 @@ public class QueryResult {
                 if (podId.startsWith(s)) return true;
         }
         return false;
+    }
+
+    private void setResult(Element pod) {
+        String result = ((Element) pod.getElementsByTagName("subpod").item(0))
+                .getElementsByTagName("plaintext").item(0).getTextContent();
+        Matcher m = hasUnicode.matcher(result);
+        while (m.find()) {
+            result = result.replaceFirst(m.group(0), String.valueOf((char) Integer.parseInt(m.group(1), 16)));
+        }
+        setResult(result);
     }
 
     private void setResult(String result) {

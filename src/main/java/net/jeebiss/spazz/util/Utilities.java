@@ -257,7 +257,7 @@ public class Utilities {
         return string.replaceFirst(firstLetter, firstLetter.toLowerCase());
     }
 
-    public static String join(final Iterator<String> iterator, final String separator) {
+    public static String formattedList(final Iterator<String> iterator) {
         if (iterator == null) {
             return null;
         }
@@ -270,15 +270,20 @@ public class Utilities {
         }
         final StringBuilder buf = new StringBuilder();
         if (first != null) {
-            buf.append(first);
+            buf.append(first).append(", ");
         }
+        int i = 0;
         while (iterator.hasNext()) {
-            if (separator != null) {
-                buf.append(separator);
-            }
             final String string = iterator.next();
-            if (string != null) {
-                buf.append(string);
+            if (!iterator.hasNext()) {
+                if (i == 0) {
+                    buf.append(" ");
+                }
+                buf.append("and ");
+            }
+            buf.append(string);
+            if (iterator.hasNext()) {
+                buf.append(", ");
             }
         }
         return buf.toString();

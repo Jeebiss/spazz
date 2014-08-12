@@ -2,6 +2,7 @@ package net.jeebiss.spazz;
 
 import net.jeebiss.spazz.github.*;
 import net.jeebiss.spazz.javaluator.DoubleEvaluator;
+import net.jeebiss.spazz.urban.*;
 import net.jeebiss.spazz.util.MinecraftServer;
 import net.jeebiss.spazz.util.Utilities;
 import net.jeebiss.spazz.wolfram.QueryHandler;
@@ -1153,6 +1154,20 @@ public class Spazz extends ListenerAdapter {
             }
             else {
                 send(output.getInput() + " = " + result);
+            }
+        }
+
+        else if (msgLwr.startsWith(".urban")) {
+            String input = msg.substring(6).replaceAll("\\s+", " ").trim();
+            Response response = UrbanDictionary.getDefinition(input);
+            if (response.getResultType() == Response.Result.NONE) {
+                send("No definition found.");
+            }
+            else {
+                List<Definition> definitions = response.getDefinitions();
+                Definition definition = definitions.get(Utilities.getRandomNumber(definitions.size()));
+                send(definition.getWord() + ": " + definition.getDefinition());
+                send("Example: " + definition.getExample());
             }
         }
 

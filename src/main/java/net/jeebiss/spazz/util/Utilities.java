@@ -270,7 +270,7 @@ public class Utilities {
         }
         final StringBuilder buf = new StringBuilder();
         if (first != null) {
-            buf.append(first).append(", ");
+            buf.append(first);
         }
         int i = 0;
         while (iterator.hasNext()) {

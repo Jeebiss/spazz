@@ -1,8 +1,6 @@
 package net.jeebiss.spazz.wolfram;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 
 import java.util.HashMap;
 import java.util.regex.Matcher;

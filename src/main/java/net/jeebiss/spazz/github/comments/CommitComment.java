@@ -3,8 +3,6 @@ package net.jeebiss.spazz.github.comments;
 import net.jeebiss.spazz.github.User;
 import net.jeebiss.spazz.util.Utilities;
 
-import java.util.Map;
-
 public class CommitComment implements Comment {
 
     private long id;

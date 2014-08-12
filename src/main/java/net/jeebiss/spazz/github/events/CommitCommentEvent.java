@@ -2,7 +2,6 @@ package net.jeebiss.spazz.github.events;
 
 import com.google.gson.JsonObject;
 import net.jeebiss.spazz.Spazz;
-import net.jeebiss.spazz.github.Commit;
 import net.jeebiss.spazz.github.Requester;
 import net.jeebiss.spazz.github.comments.CommitComment;
 

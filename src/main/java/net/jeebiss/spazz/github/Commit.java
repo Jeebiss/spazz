@@ -1,9 +1,7 @@
 package net.jeebiss.spazz.github;
 
-import net.jeebiss.spazz.github.events.Event;
 import net.jeebiss.spazz.util.Utilities;
 
-import java.util.Date;
 import java.util.regex.Pattern;
 
 public class Commit {

@@ -4,7 +4,6 @@ import net.jeebiss.spazz.Spazz;
 import net.jeebiss.spazz.util.Utilities;
 
 import java.util.Date;
-import java.util.Map;
 
 public class Issue {
 

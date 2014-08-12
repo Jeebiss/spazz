@@ -7,9 +7,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URLEncoder;
 import java.util.*;
 

@@ -4,7 +4,8 @@ import com.google.gson.Gson;
 import net.jeebiss.spazz.util.Utilities;
 
 import java.io.InputStream;
-import java.net.*;
+import java.net.URL;
+import java.net.URLEncoder;
 
 public class UrbanDictionary {
 

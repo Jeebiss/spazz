@@ -2,9 +2,7 @@ package net.jeebiss.spazz.javaluator;
 
 import java.text.NumberFormat;
 import java.text.ParsePosition;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Locale;
+import java.util.*;
 
 /**
  * An evaluator that is able to evaluate arithmetic expressions on real numbers.

@@ -1,12 +1,7 @@
 package net.jeebiss.spazz.github;
 
-import net.jeebiss.spazz.util.Utilities;
-
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
 public class GitHub {
 

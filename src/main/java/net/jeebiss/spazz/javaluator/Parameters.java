@@ -1,9 +1,6 @@
 package net.jeebiss.spazz.javaluator;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The parameters of an evaluator.

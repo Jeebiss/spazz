@@ -5,8 +5,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
@@ -149,6 +148,15 @@ public class Utilities {
         String ret = sc.useDelimiter("\\A").next();
         sc.close();
         return ret;
+    }
+
+    public static String getIPAddress(String hostMask) {
+        try {
+            return InetAddress.getByName(hostMask).getHostAddress();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static void unzipFileFromURL(String url, String outputFolder) {

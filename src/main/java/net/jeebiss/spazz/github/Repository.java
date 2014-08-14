@@ -56,6 +56,13 @@ public class Repository {
         return this;
     }
 
+    public void setStuff(long updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) {
+        this.updateDelay = updateDelay;
+        this.hasIssues = hasIssues;
+        this.hasComments = hasComments;
+        this.hasPulls = hasPulls;
+    }
+
     public void shutdown() {
         shutdown = true;
     }

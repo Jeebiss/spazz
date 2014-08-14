@@ -15,6 +15,7 @@ public class QueryHandler {
 
     private static final String WOLFRAM_QUERY = "http://api.wolframalpha.com/v2/query?input=";
     private static final String WOLFRAM_FORMAT = "&format=plaintext";
+    private static final String IP_PARAM = "&ip=";
 
     private String WOLFRAM_KEY = "&appid=";
     private DocumentBuilder dBuilder = null;
@@ -30,7 +31,7 @@ public class QueryHandler {
         } catch (Exception e) {}
     }
 
-    public QueryResult parse(String input) {
+    public QueryResult parse(String input, String hostMask) {
         if (dBuilder == null) {
             System.out.println("dBuilder is null.");
             return null;
@@ -43,7 +44,7 @@ public class QueryHandler {
                 definitionLayers.add(in);
                 String alias = def.trim().substring(9).toLowerCase().replaceAll("\\s+", " ");
                 if (!definitionLayers.contains(alias)) {
-                    return parse(alias);
+                    return parse(alias, hostMask);
                 }
             }
             else {
@@ -52,20 +53,21 @@ public class QueryHandler {
             }
         }
 
-        QueryResult result = new QueryResult(parseDoc(input), input);
+        QueryResult result = new QueryResult(parseDoc(input, hostMask), input);
 
         if (!result.isSuccess() && result.hasSuggestion()) {
-            result = parse(result.getSuggestion());
+            result = parse(result.getSuggestion(), hostMask);
         }
 
         definitionLayers.clear();
         return result;
     }
 
-    private Document parseDoc(String input) {
+    private Document parseDoc(String input, String hostMask) {
         try {
             return dBuilder.parse(Utilities.getStreamFromUrl(
                     WOLFRAM_QUERY + URLEncoder.encode(input, "UTF-8") + WOLFRAM_KEY + WOLFRAM_FORMAT
+                            + IP_PARAM + hostMask
             ));
         } catch(Exception e) {
             return null;

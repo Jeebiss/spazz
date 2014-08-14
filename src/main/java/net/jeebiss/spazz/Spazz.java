@@ -868,8 +868,7 @@ public class Spazz extends ListenerAdapter {
                         send("Error while adding repository " + args[2] + "...");
                 }
                 else
-                    send("That command is written as: "
-                            + parseUsage(".add repo [<author>/<project>] (no_issues) (no_comments) (no_pulls) (delay:<#.#>)"));
+                    send("That command is written as: .add repo [<owner>/<project>] (no_issues) (no_comments) (no_pulls) (delay:<#.#>)");
             }
             else if (args[1].startsWith("q")) {
                 if (args.length > 2) {
@@ -929,7 +928,7 @@ public class Spazz extends ListenerAdapter {
                         send("Error while removing repository " + args[2] + "...");
                 }
                 else
-                    send("That command is written as: .remove repo [<project>]");
+                    send("That command is written as: .remove repo [<owner>/<project>]");
             }
             else if (args[1].startsWith("q")) {
                 if (args.length > 2) {
@@ -970,7 +969,7 @@ public class Spazz extends ListenerAdapter {
             if (args[1].startsWith("r")) {
                 if (args.length > 2) {
                     if (!repoManager.hasRepository(args[2]))
-                        send("I am not tracking any projects by that name.");
+                        send("I am not tracking any projects by that name. (Did you specify the owner?)");
                     else {
                         Repository repo = repoManager.getRepository(args[2]);
                         send(repo.getFullName() + ": Delay("
@@ -979,7 +978,7 @@ public class Spazz extends ListenerAdapter {
                     }
                 }
                 else
-                    send("That command is written as: .info repo [<project>]");
+                    send("That command is written as: .info repo [<owner>/<project>]");
             }
             else if (args[1].startsWith("u")) {
                 if (args.length > 2) {
@@ -1128,6 +1127,38 @@ public class Spazz extends ListenerAdapter {
                         send("That command is written as: .edit message-delay [<#.#>]");
                     }
                 }
+                else if (args[1].startsWith("r")) {
+                    if (args.length > 3) {
+                        if (!repoManager.hasRepository(args[2]))
+                            send("I am not tracking any projects by that name. (Did you specify the owner?)");
+                        else {
+                            try {
+                                Repository repo = repoManager.getRepository(args[2]);
+                                double delay = repo.getUpdateDelay();
+                                boolean issues = repo.hasIssues();
+                                boolean comments = repo.hasComments();
+                                boolean pulls = repo.hasPulls();
+                                for (int i = 3; i < args.length; i++) {
+                                    String[] arg = args[i].split(":");
+                                    if (arg[0].equalsIgnoreCase("delay"))
+                                        delay = Double.parseDouble(arg[1]);
+                                    else if (arg[0].equalsIgnoreCase("issues"))
+                                        issues = Boolean.parseBoolean(arg[1]);
+                                    else if (arg[0].equalsIgnoreCase("comments"))
+                                        comments = Boolean.parseBoolean(arg[1]);
+                                    else if (arg[0].equalsIgnoreCase("pulls"))
+                                        pulls = Boolean.parseBoolean(arg[1]);
+                                }
+                                repo.setStuff((long) delay * 1000, issues, comments, pulls);
+                                send("Done.");
+                            } catch (Exception e) {
+                                send("That command is written as: .edit repo [<owner>/<project>] (delay:<#.#>) (issues:true/false) (comments:true/false) (pulls:true/false)");
+                            }
+                        }
+                    }
+                    else
+                        send("That command is written as: .edit repo [<owner>/<project>] (delay:<#.#>) (issues:true/false) (comments:true/false) (pulls:true/false)");
+                }
             }
         }
 
@@ -1142,7 +1173,7 @@ public class Spazz extends ListenerAdapter {
 
         else if (msgLwr.matches("\\.(realmath|define|wolfram|parse) .+")) {
             String input = msg.substring(msg.split("\\s+")[0].length() + 1);
-            QueryResult output = queryHandler.parse(input);
+            QueryResult output = queryHandler.parse(input, Utilities.getIPAddress(usr.getHostmask()));
             String result = output.getResult();
 
             if (output.isError() || !output.isSuccess() || result == null) {
@@ -1210,7 +1241,9 @@ public class Spazz extends ListenerAdapter {
                 m = minecraftColor.matcher(serverInfo);
                 String lastColor = "";
                 while (m.find()) {
-                    String color = Colors.NORMAL + (m.group(1).matches("l|o|n") ? lastColor : "") + parseColor("&" + m.group(1));
+                    String color = Colors.NORMAL + (m.group(1).toLowerCase().matches("o") ? lastColor
+                            : m.group(1).toLowerCase().matches("n|l") ? lastColor + parseColor("&" + m.group(1))
+                            : parseColor("&" + m.group(1)));
                     serverInfo = serverInfo.replaceFirst((char) 0xa7 + m.group(1), lastColor = color);
                 }
                 send(serverInfo.replace(String.valueOf((char) 0xc2), "").replaceAll("\\s+|\r|\n", " "), true);

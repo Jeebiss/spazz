@@ -15,7 +15,7 @@ public class QueryResult {
     };
     private final static String[] startsWith = new String[] {
             "Identification", "CityLocation", "Definition", "BasicInformation", "Taxonomy", "BasicProperties",
-            "PhysicalCharacteristics", "TranslationsToEnglish", "HostInformationPodIP"
+            "PhysicalCharacteristics", "TranslationsToEnglish", "HostInformationPodIP", "FlightStatus"
     };
 
     private String podId;

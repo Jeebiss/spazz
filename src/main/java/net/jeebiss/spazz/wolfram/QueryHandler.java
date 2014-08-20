@@ -53,14 +53,8 @@ public class QueryHandler {
             }
         }
 
-        QueryResult result = new QueryResult(parseDoc(input, hostMask), input);
-
-        if (!result.isSuccess() && result.hasSuggestion()) {
-            result = parse(result.getSuggestion(), hostMask);
-        }
-
         definitionLayers.clear();
-        return result;
+        return new QueryResult(parseDoc(input, hostMask), input);
     }
 
     private Document parseDoc(String input, String hostMask) {

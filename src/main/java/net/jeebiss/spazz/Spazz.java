@@ -169,7 +169,9 @@ public class Spazz extends ListenerAdapter {
         if (send.equals("spazzmatic"))
             System.out.println("<spazzmatic> " + Colors.removeFormattingAndColors(message));
         else {
-            String msg = address + chatColor + formatChat(message);
+            String msg = address + chatColor + formatChat(message)
+                    .replace("Citizens", (char) 0x10A + "itizens")
+                    .replace("fullwall", "f" + (char) 0x1B0 + "llwall");
             bot.sendMessage(send, noLimit || msg.length() <= 500 ? msg : msg.substring(0, 450));
         }
     }
@@ -250,7 +252,9 @@ public class Spazz extends ListenerAdapter {
     @Override
     public void onAction(ActionEvent event) {
         if (event.getChannel() != null) {
-            cacheMessage(new Message(event.getUser().getNick(), event.getAction(), true), event.getChannel().getName());
+            cacheMessage(new Message(event.getUser().getNick(), event.getAction().replace("<", "<LT>")
+                    .replace("Citizens", (char) 0x10A + "itizens").replace("fullwall", "f" + (char) 0x1B0 + "llwall"),
+                    true), event.getChannel().getName());
             dUsers.get(event.getUser().getNick().toLowerCase()).setLastSeen("performing an action in " + event.getChannel().getName()
                     + chatColor + ": " + event.getAction());
         }
@@ -366,7 +370,8 @@ public class Spazz extends ListenerAdapter {
                     }
                 }
             }
-            cacheMessage(new Message(senderNick, msg, false), chnl.getName());
+            cacheMessage(new Message(senderNick, msg.replace("<", "<LT>").replace("Citizens", (char) 0x10A + "itizens")
+                    .replace("fullwall", "f" + (char) 0x1B0 + "llwall"), false), chnl.getName());
         }
 
         if (msgLwr.startsWith(".hello")) {
@@ -1177,9 +1182,13 @@ public class Spazz extends ListenerAdapter {
             String result = output.getResult();
 
             if (output.isError() || !output.isSuccess() || result == null) {
-                send("There was an error while parsing that statement.");
+                if (output.hasSuggestion())
+                    send("Sorry, I don't know the definition of that. Did you mean '" + output.getSuggestion() + "'?");
+                else
+                    send("There was an error while parsing that statement.");
             }
             else {
+                if (output.hasSpellCheck()) send(output.getSpellCheck());
                 send(output.getInput() + " = " + result);
             }
         }
@@ -1222,7 +1231,7 @@ public class Spazz extends ListenerAdapter {
             if (args[1].contains(":")) {
                 try {
                     port = Integer.valueOf(args[1].split(":")[1].replace("/", ""));
-                } catch (Exception e) {}
+                } catch (Exception ignored) {}
             }
             MinecraftServer server = new MinecraftServer(args[1].contains(":") ? args[1].split(":")[0] : args[1], port);
             if (server.getAddress().isUnresolved())
@@ -1248,7 +1257,6 @@ public class Spazz extends ListenerAdapter {
                 }
                 send(serverInfo.replace(String.valueOf((char) 0xc2), "").replaceAll("\\s+|\r|\n", " "), true);
             } catch (Exception e) {
-                e.printStackTrace();
                 send("Error contacting that server. (" + e.getMessage() + ")");
             }
         }
@@ -1488,8 +1496,12 @@ public class Spazz extends ListenerAdapter {
                         System.out.println("Invalid command: " + inputCommand);
                         break;
                     }
-                    if (bot.channelExists(chatChannel))
-                        bot.sendMessage(chatChannel, chatColor + rawInput);
+                    if (bot.channelExists(chatChannel)) {
+                        String prev = send;
+                        send = chatChannel;
+                        send(chatColor + rawInput);
+                        send = prev;
+                    }
                     else
                         System.out.println("Not connected to channel \"" + chatChannel + "\".");
                     break;

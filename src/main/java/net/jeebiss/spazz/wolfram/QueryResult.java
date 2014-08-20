@@ -9,18 +9,19 @@ import java.util.regex.Pattern;
 public class QueryResult {
 
     private final static Pattern hasVars = Pattern.compile("[a-zA-Z]");
-    private final static Pattern hasUnicode = Pattern.compile("\\\\:(....)");
+    private final static Pattern hasUnicode = Pattern.compile("\\\\:([a-fA-F0-9]+)");
     private final static String[] equals = new String[] {
-            "Substitution", "UnitSystem"
+            "Substitution", "UnitSystem", "Encodings"
     };
     private final static String[] startsWith = new String[] {
             "Identification", "CityLocation", "Definition", "BasicInformation", "Taxonomy", "BasicProperties",
-            "PhysicalCharacteristics", "TranslationsToEnglish", "HostInformationPodIP", "FlightStatus"
+            "PhysicalCharacteristics", "TranslationsToEnglish", "HostInformationPodIP", "FlightStatus", "Area"
     };
 
     private String podId;
     private String futureTopic;
     private String suggestion;
+    private String spellCheck;
     private String result;
     private String input;
 
@@ -31,6 +32,13 @@ public class QueryResult {
         this.success = Boolean.parseBoolean(doc.getDocumentElement().getAttribute("success"));
         this.error = Boolean.parseBoolean(doc.getDocumentElement().getAttribute("error"));
         this.input = inputFallback;
+        NodeList warnings = doc.getElementsByTagName("warnings");
+        if (warnings.getLength() > 0) {
+            NodeList spellchecks = ((Element) warnings.item(0)).getElementsByTagName("spellcheck");
+            if (spellchecks.getLength() > 0) {
+                spellCheck = ((Element) spellchecks.item(0)).getAttribute("text").replace("&quot;", "'");
+            }
+        }
         NodeList pods = doc.getElementsByTagName("pod");
         Element resultPod = null;
         for (int x = 0; x < pods.getLength(); x++) {
@@ -65,12 +73,9 @@ public class QueryResult {
         NodeList suggestions = doc.getElementsByTagName("didyoumeans");
         if (suggestions.getLength() > 0) {
             NodeList didyoumeans = ((Element) suggestions.item(0)).getElementsByTagName("didyoumean");
-            for (int x = 0; x < didyoumeans.getLength(); x++) {
-                Element didyoumean = (Element) didyoumeans.item(x);
-                if (Double.parseDouble(didyoumean.getAttribute("score")) >= 0.3) {
-                    suggestion = didyoumean.getTextContent();
-                    return;
-                }
+            if (didyoumeans.getLength() > 0) {
+                suggestion = didyoumeans.item(0).getTextContent();
+                return;
             }
         }
     }
@@ -89,6 +94,8 @@ public class QueryResult {
         return input;
     }
 
+    public String getSpellCheck() { return spellCheck; }
+
     private boolean checkForResult(Element pod) {
         if (pod.hasAttribute("primary")) return true;
         String podId = pod.getAttribute("id");
@@ -105,10 +112,12 @@ public class QueryResult {
         String result = ((Element) pod.getElementsByTagName("subpod").item(0))
                 .getElementsByTagName("plaintext").item(0).getTextContent();
         Matcher m = hasUnicode.matcher(result);
+        boolean f = false;
         while (m.find()) {
             result = result.replaceFirst(m.group(0), String.valueOf((char) Integer.parseInt(m.group(1), 16)));
+            f = true;
         }
-        setResult(result);
+        setResult(f ? result.replace("\\", "") : result);
     }
 
     private void setResult(String result) {
@@ -148,6 +157,8 @@ public class QueryResult {
     public boolean hasSuggestion() {
         return suggestion != null;
     }
+
+    public boolean hasSpellCheck() { return spellCheck != null; }
 
     public String getSuggestion() {
         return suggestion;

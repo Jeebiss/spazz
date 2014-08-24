@@ -169,9 +169,7 @@ public class Spazz extends ListenerAdapter {
         if (send.equals("spazzmatic"))
             System.out.println("<spazzmatic> " + Colors.removeFormattingAndColors(message));
         else {
-            String msg = address + chatColor + formatChat(message)
-                    .replace("Citizens", (char) 0x10A + "itizens")
-                    .replace("fullwall", "f" + (char) 0x1B0 + "llwall");
+            String msg = address + chatColor + formatChat(message);
             bot.sendMessage(send, noLimit || msg.length() <= 500 ? msg : msg.substring(0, 450));
         }
     }
@@ -252,11 +250,10 @@ public class Spazz extends ListenerAdapter {
     @Override
     public void onAction(ActionEvent event) {
         if (event.getChannel() != null) {
-            cacheMessage(new Message(event.getUser().getNick(), event.getAction().replace("<", "<LT>")
-                    .replace("Citizens", (char) 0x10A + "itizens").replace("fullwall", "f" + (char) 0x1B0 + "llwall"),
-                    true), event.getChannel().getName());
-            dUsers.get(event.getUser().getNick().toLowerCase()).setLastSeen("performing an action in " + event.getChannel().getName()
-                    + chatColor + ": " + event.getAction());
+            cacheMessage(new Message(event.getUser().getNick(), event.getAction().replace("<", "<LT>"),true),
+                    event.getChannel().getName());
+            dUsers.get(event.getUser().getNick().toLowerCase()).setLastSeen("performing an action in "
+                    + event.getChannel().getName() + chatColor + ": " + event.getAction());
         }
     }
 
@@ -296,7 +293,7 @@ public class Spazz extends ListenerAdapter {
 
         Channel chnl = event.getChannel();
 
-        String msg = event.getMessage();
+        String msg = event.getMessage().trim();
         User usr = event.getUser();
 
         if (!dUsers.containsKey(usr.getNick().toLowerCase()))
@@ -316,7 +313,6 @@ public class Spazz extends ListenerAdapter {
             dusr.setLastSeen("Saying \"" + msg + chatColor + "\" in " + send);
         }
 
-        String msgLwr = msg.toLowerCase();
         final String senderNick = usr.getNick();
         address = "";
 
@@ -336,8 +332,11 @@ public class Spazz extends ListenerAdapter {
             String[] addressTest = msg.split(" ");
             if (addressTest[addressTest.length - 1].contains("@")) {
                 address = addressTest[addressTest.length-1].replace("@", "") + ": ";
+                msg = msg.replaceAll("\\s+" + addressTest[addressTest.length - 1] + "$", "");
             }
         }
+        
+        String msgLwr = msg.toLowerCase();
 
         Matcher m = issuesPattern.matcher(msgLwr);
 
@@ -370,8 +369,7 @@ public class Spazz extends ListenerAdapter {
                     }
                 }
             }
-            cacheMessage(new Message(senderNick, msg.replace("<", "<LT>").replace("Citizens", (char) 0x10A + "itizens")
-                    .replace("fullwall", "f" + (char) 0x1B0 + "llwall"), false), chnl.getName());
+            cacheMessage(new Message(senderNick, msg.replace("<", "<LT>"), false), chnl.getName());
         }
 
         if (msgLwr.startsWith(".hello")) {
@@ -489,13 +487,13 @@ public class Spazz extends ListenerAdapter {
         }
         else if (msgLwr.startsWith(".paste") || msgLwr.startsWith(".pastie") || msgLwr.startsWith(".hastebin") || msgLwr.startsWith(".pastebin")) {
             send("Need help with a script issue or server error?");
-            send("Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + chatColor + "server log to " + Colors.BLUE + "http://hastebin.com");
+            send("Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + chatColor + "server log to " + Colors.BLUE + "http://mcmonkey.org");
             send("From there, save the page and paste the link back in this channel.");
             return;
         }
         else if (msgLwr.startsWith(".update")) {
             send("Due to the nature of our project, Denizen is always built against the " + Colors.RED + "development" + chatColor + " builds of Craftbukkit and Citizens.");
-            send("Most errors can be fixed by updating all 3. (NOTE: We build on Bukkit and therefore do not support Spigot issues!)");
+            send("Most errors can be fixed by updating all 3.");
             send(Colors.BOLD + "Denizen" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/1aaGB3T");
 
             if (msgLwr.split(" ").length > 1 && msgLwr.split(" ")[1].equals("depenizen"))
@@ -1355,11 +1353,11 @@ public class Spazz extends ListenerAdapter {
     }
 
     private static String formatChat(String message) {
-        return message.replace("<C>", chatColor)
-                .replace("<D>", defaultColor)
-                .replace("<O>", optionalColor)
-                .replace("<LT>", "<")
-                .replace("\n", " - ").replace("\r", "");
+        return message.replace("<C>", chatColor).replace("<D>", defaultColor)
+                .replace("<O>", optionalColor).replace("<LT>", "<")
+                .replace("\n", " - ").replace("\r", "")
+                .replace("Citizens", (char) 0x10A + "itizens")
+                .replace("fullwall", "f" + (char) 0x1B0 + "llwall");
     }
 
     private static void identify() {

@@ -287,11 +287,11 @@ public class Utilities {
                 if (i == 0) {
                     buf.append(" ");
                 }
-                buf.append("and ");
+                buf.append("and ").append(string);
             }
-            buf.append(string);
-            if (iterator.hasNext()) {
-                buf.append(", ");
+            else {
+                buf.append(string).append(", ");
+                i++;
             }
         }
         return buf.toString();

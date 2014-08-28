@@ -1,7 +1,7 @@
 package net.jeebiss.spazz;
 
 import net.jeebiss.spazz.github.*;
-import net.jeebiss.spazz.javaluator.DoubleEvaluator;
+import net.jeebiss.spazz.util.javaluator.DoubleEvaluator;
 import net.jeebiss.spazz.urban.*;
 import net.jeebiss.spazz.util.MinecraftServer;
 import net.jeebiss.spazz.util.Utilities;
@@ -153,7 +153,7 @@ public class Spazz extends ListenerAdapter {
 
     public static void sendToAllChannels(String message) {
         for (Channel chnl : bot.getChannels())
-            bot.sendMessage(chnl, chatColor + formatChat(message));
+            bot.sendMessage(chnl, chatColor + formatChat(message, false)[0]);
     }
 
     private static String send = "";
@@ -165,12 +165,36 @@ public class Spazz extends ListenerAdapter {
         send(message, false);
     }
 
-    public static void send(String message, boolean noLimit) {
+    public static void send(String message, boolean raiseLimit) {
         if (send.equals("spazzmatic"))
             System.out.println("<spazzmatic> " + Colors.removeFormattingAndColors(message));
         else {
-            String msg = address + chatColor + formatChat(message);
-            bot.sendMessage(send, noLimit || msg.length() <= 500 ? msg : msg.substring(0, 450));
+            String[] formatted = formatChat(message, raiseLimit);
+            String first = address + chatColor + formatted[0];
+            if (raiseLimit) {
+                if (first.length() > 400) {
+                    bot.sendMessage(send, first.substring(0, 400));
+                    bot.sendMessage(send, chatColor + first.substring(401, first.length()));
+                }
+                else {
+                    bot.sendMessage(send, first);
+                }
+                if (formatted.length > 1) {
+                    for (int i = 1; i < formatted.length; i++) {
+                        String next = formatted[i];
+                        if (next.length() > 400) {
+                            bot.sendMessage(send, chatColor + next.substring(0, 400));
+                            bot.sendMessage(send, chatColor + next.substring(401, first.length()));
+                        }
+                        else {
+                            bot.sendMessage(send, next);
+                        }
+                    }
+                }
+            }
+            else {
+                bot.sendMessage(send, first);
+            }
         }
     }
 
@@ -335,7 +359,7 @@ public class Spazz extends ListenerAdapter {
                 msg = msg.replaceAll("\\s+" + addressTest[addressTest.length - 1] + "$", "");
             }
         }
-        
+
         String msgLwr = msg.toLowerCase();
 
         Matcher m = issuesPattern.matcher(msgLwr);
@@ -1352,12 +1376,15 @@ public class Spazz extends ListenerAdapter {
         return channel.isOp(chatter);
     }
 
-    private static String formatChat(String message) {
-        return message.replace("<C>", chatColor).replace("<D>", defaultColor)
-                .replace("<O>", optionalColor).replace("<LT>", "<")
-                .replace("\n", " - ").replace("\r", "")
+    private static String[] formatChat(String message, boolean newLines) {
+        message = message.replace("<C>", chatColor).replace("<D>", defaultColor)
+                .replace("<O>", optionalColor).replace("<LT>", "<").replace("\r", "")
                 .replace("Citizens", (char) 0x10A + "itizens")
                 .replace("fullwall", "f" + (char) 0x1B0 + "llwall");
+        if (newLines)
+            return message.split("\n");
+        else
+            return new String[]{message.replace("\n", " - ")};
     }
 
     private static void identify() {

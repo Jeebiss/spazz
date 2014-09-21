@@ -682,13 +682,15 @@ public class Spazz extends ListenerAdapter {
         else if (msgLwr.startsWith(".thmf") || msgLwr.startsWith(".tfw")) {
             send("That hurt even my feelings. And I'm a robot.");
         }
-        else if (msgLwr.startsWith(".tiafo") || msgLwr.startsWith(".tias")) {
-            if (Utilities.getRandomNumber(100) > 50) send("Try It And Find Out.");
-            else send("Try It And See.");
+        else if (msgLwr.startsWith(".tiafo")) {
+            send("Try It And Find Out.");
+        }
+
+        else if (msgLwr.startsWith(".tias")) {
+            send("Try It And See.");
         }
         else if (msgLwr.startsWith(".cb") || msgLwr.startsWith(".coolbeans")) {
             send("That's cool beans.");
-            return;
         }
         else if (msgLwr.equals(".sound") || msgLwr.equals(".sounds")) {
             send("Here is the list of all valid bukkit sounds - " + Colors.BLUE + "http://bit.ly/14NYbvi");
@@ -696,7 +698,6 @@ public class Spazz extends ListenerAdapter {
         else if (msgLwr.startsWith(".hb") || msgLwr.startsWith(".handbook")) {
             send("Current Documentation - " + Colors.BLUE + "http://bit.ly/XaWBLN");
             send("PDF download (always current) - " + Colors.BLUE + "http://bit.ly/159JBgM");
-            return;
         }
         else if (msgLwr.startsWith(".getstarted") || msgLwr.startsWith(".gs")) {
             send("So, you're trying to use 0.9 for the first time?");
@@ -705,7 +706,6 @@ public class Spazz extends ListenerAdapter {
             send(Colors.BOLD + "Denizen Wiki " + Colors.NORMAL + chatColor + "- http://bit.ly/14o3kdq");
             send(Colors.BOLD + "Beginner's Guide" + Colors.NORMAL + chatColor + "- http://bit.ly/1bHkByR");
             send("Please keep in mind that documentation is a work in progress. You will likely not find everything.");
-            return;
         }
         else if (msgLwr.startsWith(".fire")) {
             if (hasOp(usr, chnl) || hasVoice(usr, chnl)) {
@@ -886,11 +886,15 @@ public class Spazz extends ListenerAdapter {
                         else if (arg.equals("no_comments")) c = false;
                         else if (arg.equals("no_pulls")) p = false;
                     }
-                    if (repoManager.addRepository(ownerProject, updateDelay, i, c, p))
+                    if (repoManager.addRepository(ownerProject, updateDelay, i, c, p)) {
                         send("I am now tracking " + ownerProject + " with a delay of " + updateDelay
                                 + (!i ? !c || !p ? ", no issues" : " and no issues" : "")
                                 + (!c ? !p ? ", no comments" : (!i ? "," : "") + " and no comments" : "")
                                 + (!p ? (!i || !c ? "," : "") + " and no pulls" : "") + ".");
+                        try {
+                            repoManager.saveAll();
+                        } catch (Exception ignored) {}
+                    }
                     else
                         send("Error while adding repository " + args[2] + "...");
                 }
@@ -904,6 +908,7 @@ public class Spazz extends ListenerAdapter {
                         send("Quote must have at least 5 characters.");
                     else {
                         send("Added quote as #" + Utilities.addQuote(quoteMsg, senderNick) + ".");
+                        Utilities.saveQuotes();
                     }
                 }
                 else
@@ -919,6 +924,7 @@ public class Spazz extends ListenerAdapter {
                         else {
                             Utilities.addToQuote(number, quoteMsg);
                             send("Added line to quote #" + number);
+                            Utilities.saveQuotes();
                         }
                     } catch (Exception e) {
                         send("That command is written as: .add toquote [<#>] [<message>]");
@@ -931,6 +937,7 @@ public class Spazz extends ListenerAdapter {
                     String value = msg.substring(args[0].length() + args[1].length() + key.length() + 3);
                     queryHandler.addDefinition(key, value);
                     send("Definition '" + key + "' added as: " + value);
+                    queryHandler.saveDefinitions();
                 }
                 else
                     send("That command is written as: .add definition [<phrase>:<definition>]");
@@ -953,6 +960,9 @@ public class Spazz extends ListenerAdapter {
                         send("I am now no longer tracking " + args[2] + ".");
                     else
                         send("Error while removing repository " + args[2] + "...");
+                    try {
+                        repoManager.saveAll();
+                    } catch (Exception ignored) {}
                 }
                 else
                     send("That command is written as: .remove repo [<owner>/<project>]");
@@ -964,6 +974,7 @@ public class Spazz extends ListenerAdapter {
                         if (Utilities.hasQuote(number)) {
                             Utilities.removeQuote(number);
                             send("Quote #" + number + " removed.");
+                            Utilities.saveQuotes();
                         }
                         else
                             send("That quote doesn't exist.");
@@ -978,8 +989,10 @@ public class Spazz extends ListenerAdapter {
             else if (args[1].startsWith("d")) {
                 if (args.length > 2) {
                     String key = msg.substring(args[0].length() + args[1].length() + 2);
-                    if (queryHandler.removeDefinition(key))
+                    if (queryHandler.removeDefinition(key)) {
                         send("Definition '" + key + "' has been removed.");
+                        queryHandler.saveDefinitions();
+                    }
                     else
                         send("Definition '" + key + "' does not exist.");
                 }
@@ -1314,7 +1327,7 @@ public class Spazz extends ListenerAdapter {
         }
 
         else if (msgLwr.equals(".wumbo")) {
-            wumbo = !false ? !wumbo : !wumbo == true ? true : !!false;
+            wumbo = !wumbo == false ? !!!!!wumbo : !wumbo == true ? true : !!false;
             send("Wumbo mode " + (!wumbo ? "de" : "") + "activated.");
         }
 

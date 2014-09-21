@@ -20,7 +20,7 @@ public class RepositoryManager {
             loadAll();
         } catch (Exception e) {
             System.out.println("Failed to load 'storage/repositories.yml'... Loading default repositories.");
-            addRepository("aufdemrand/Denizen", 20, true, true, true);
+            addRepository("DenizenScript/Denizen-for-Bukkit", 20, true, true, true);
             addRepository("Morphan1/Depenizen", 30, true, true, true);
             addRepository("CitizensDev/Citizens2", 20, true, true, true);
             addRepository("CitizensDev/CitizensAPI", 30, true, true, true);

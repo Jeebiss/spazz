@@ -128,6 +128,8 @@ public class Spazz extends ListenerAdapter {
         bot.setVerbose(debugMode);
         bot.setAutoNickChange(true);
         bot.setMessageDelay(messageDelay);
+        bot.setAutoReconnect(true);
+        bot.setAutoReconnectChannels(true);
 
         identify();
 
@@ -1344,30 +1346,6 @@ public class Spazz extends ListenerAdapter {
         address = "";
         dusr.checkMessages();
 
-    }
-
-    private class SimplifiedIssuesEvent {
-        private String repo;
-        private String user;
-        private String action;
-        private SimplifiedIssue issue;
-
-        private class SimplifiedIssue {
-            private String title;
-            private String body;
-            private int number;
-        }
-    }
-
-    private class SimplifiedCommitEvent {
-        private String repo;
-        private List<SimplifiedCommit> commits;
-
-        private class SimplifiedCommit {
-            private String author;
-            private String message;
-            private boolean isMerge() { return message.matches("Merge (pull request #\\d+ from|branch '.+' of).+"); }
-        }
     }
 
     private static void reloadSites(boolean debug) {

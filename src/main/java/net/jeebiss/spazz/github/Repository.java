@@ -149,8 +149,8 @@ public class Repository {
                         icEvent = null;
                     }
                 }
-                events.add(event.getId());
             }
+            events.add(event.getId());
         }
         if (icEvent != null) icEvent.fire();
         commitHandler.fire();

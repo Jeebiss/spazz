@@ -89,6 +89,9 @@ public class Spazz extends ListenerAdapter {
             if (map.get("bitly") instanceof String) {
                 System.setProperty("spazz.bitly", (String) map.get("bitly"));
             }
+            if (map.get("bitly-backup") instanceof String) {
+                System.setProperty("spazz.bitly-backup", (String) map.get("bitly-backup"));
+            }
             if (map.get("dev-mode") instanceof Boolean) {
                 devMode = (boolean) map.get("dev-mode");
             }
@@ -849,15 +852,12 @@ public class Spazz extends ListenerAdapter {
         //}
 
         else if (msgLwr.startsWith(".rate")) {
-            RateLimit.Data rateLimit = github.getRateLimit();
+            RateLimit.Data rateLimit = github.getRateLimit().getRate();
             sendNotice(senderNick, "Max rate limit: " + rateLimit.getLimit());
             sendNotice(senderNick, "Remaining rate limit: " + rateLimit.getRemaining());
 
-            long currentTime = Calendar.getInstance().getTimeInMillis();
-            Calendar seen = Calendar.getInstance();
-            seen.setTime(new Date(rateLimit.getReset()*1000));
-            long seenTime = seen.getTimeInMillis();
-            long seconds = (seenTime - currentTime) / 1000;
+            long now = Calendar.getInstance().getTimeInMillis();
+            long seconds = ((rateLimit.getReset() * 1000) - now) / 1000;
             long minutes = seconds / 60;
             seconds = seconds - (minutes * 60);
 
@@ -1823,6 +1823,7 @@ public class Spazz extends ListenerAdapter {
             if (getNick().equals("spazzmatic")) {
                 data.put("password", System.getProperty("spazz.password"));
                 data.put("bitly", System.getProperty("spazz.bitly"));
+                data.put("bitly-backup", System.getProperty("spazz.bitly-backup"));
                 data.put("dev-mode", devMode);
                 data.put("wolfram", queryHandler.getKey());
                 data.put("github", System.getProperty("spazz.github"));

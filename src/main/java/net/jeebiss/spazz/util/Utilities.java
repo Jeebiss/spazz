@@ -1,5 +1,6 @@
 package net.jeebiss.spazz.util;
 
+import com.google.gson.JsonSyntaxException;
 import net.jeebiss.spazz.github.Requester;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -240,10 +241,19 @@ public class Utilities {
     public static String getShortUrl(String url) {
         String shortened = null;
         try {
-            shortened = Requester.getGson().fromJson(getStringFromUrl("https://api-ssl.bitly.com/v3/shorten?login=spazzmatic&apiKey="
-                    + System.getProperty("spazz.bitly") + "&longUrl=" + url), BitlyResponse.class).data.url;
+            BitlyResponse response = null;
+            try {
+                response = Requester.getGson().fromJson(getStringFromUrl("https://api-ssl.bitly.com/v3/shorten?login=spazzmatic&apiKey="
+                        + System.getProperty("spazz.bitly") + "&longUrl=" + url), BitlyResponse.class);
+            } catch (JsonSyntaxException e) {
+                response = Requester.getGson().fromJson(getStringFromUrl("https://api-ssl.bitly.com/v3/shorten?login=morphan1&apiKey="
+                        + System.getProperty("spazz.bitly-backup") + "&longUrl=" + url), BitlyResponse.class);
+            }
+            if (response != null) {
+                shortened = response.data.url;
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("An exception has occurred while bitly-fying a link: " + e.getMessage());
         }
         return shortened;
     }

@@ -49,9 +49,9 @@ public class GitHub {
         return requester;
     }
 
-    public RateLimit.Data getRateLimit() {
+    public RateLimit getRateLimit() {
         try {
-            return retrieve().parse(GITHUB_URL + "/rate_limit", RateLimit.class).getRate();
+            return retrieve().parse(GITHUB_URL + "/rate_limit", RateLimit.class);
         } catch(Exception e) {
             System.out.println("Could not retrieve rate limit: " + e.getMessage());
             return null;

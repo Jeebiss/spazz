@@ -683,7 +683,7 @@ public class Spazz extends ListenerAdapter {
             send("Your argument is invalid.");
             return;
         }
-        else if (msgLwr.startsWith(".thmf") || msgLwr.startsWith(".tfw")) {
+        else if (msgLwr.startsWith(".thmf")) {
             send("That hurt even my feelings. And I'm a robot.");
         }
         else if (msgLwr.startsWith(".tiafo")) {

@@ -516,7 +516,7 @@ public class Spazz extends ListenerAdapter {
         }
         else if (msgLwr.startsWith(".paste") || msgLwr.startsWith(".pastie") || msgLwr.startsWith(".hastebin") || msgLwr.startsWith(".pastebin")) {
             send("Need help with a script issue or server error?");
-            send("Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + chatColor + "server log to " + Colors.BLUE + "http://mcmonkey.org");
+            send("Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + chatColor + "server log to " + Colors.BLUE + "http://mcmonkey.org/paste");
             send("From there, save the page and paste the link back in this channel.");
             return;
         }

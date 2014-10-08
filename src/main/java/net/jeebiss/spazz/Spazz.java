@@ -1452,6 +1452,10 @@ public class Spazz extends ListenerAdapter {
 
                 case "reconnect":
                     try {
+                        try {
+                            bot.shutdown();
+                        }
+                        catch (Exception e) {}
                         bot.connect("irc.esper.net");
                     } catch (Exception e) {
                         System.out.println("Failed to connect to EsperNet. Check your internet connection and try again.");

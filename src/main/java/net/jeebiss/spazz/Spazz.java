@@ -1298,7 +1298,7 @@ public class Spazz extends ListenerAdapter {
         }
 
         else if (msgLwr.equals(".dev")) {
-            if (usr.getNick().startsWith("Morph") && hasVoice(usr, bot.getChannel("#denizen-devs"))) {
+            if (hasOp(usr, bot.getChannel("#denizen-devs")) || hasVoice(usr, bot.getChannel("#denizen-devs"))) {
                 if (!devMode) {
                     devMode = true;
                     send("Entering dev mode...");

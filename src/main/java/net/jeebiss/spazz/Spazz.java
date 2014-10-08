@@ -556,7 +556,7 @@ public class Spazz extends ListenerAdapter {
         }
         else if (msgLwr.startsWith(".tutorials")) {
             send("Here's a list of video tutorials on how to use Denizen (Thanks " + optionalColor + "Jeebiss and mcmonkey" + chatColor + "!)");
-            send(defaultColor + "All videos are viewable here" + chatColor + " - http://mcmonkey.org/denizen/vids");
+            send(defaultColor + "All videos are viewable here" + chatColor + " - http://bit.ly/1BTzSqD");
         }
         else if (msgLwr.startsWith(".shorten")) {
             String[] args = msg.split(" ");

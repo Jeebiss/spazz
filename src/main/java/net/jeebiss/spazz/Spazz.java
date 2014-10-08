@@ -898,7 +898,7 @@ public class Spazz extends ListenerAdapter {
                         } catch (Exception ignored) {}
                     }
                     else
-                        send("Error while adding repository " + args[2] + "...");
+                        send("Error while adding repository " + args[2] + ": are you sure a repo by that name exists?");
                 }
                 else
                     send("That command is written as: .add repo [<owner>/<project>] (no_issues) (no_comments) (no_pulls) (delay:<#.#>)");

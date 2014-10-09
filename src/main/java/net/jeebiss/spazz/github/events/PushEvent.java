@@ -18,7 +18,9 @@ public class PushEvent extends Event {
     public Payload getPayload() { return payload; }
 
     public class Payload {
+        private String ref;
         private List<Commit> commits;
+        public String getBranch() { return ref.substring(ref.lastIndexOf('/')); };
         public List<Commit> getCommits() { return commits; }
     }
 

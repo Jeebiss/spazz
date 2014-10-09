@@ -32,7 +32,7 @@ public class CommitHandler {
     }
 
     public void fire() {
-        if (current_push == null) return;
+        if (current_push == null || waiting_commits == null || waiting_commits.isEmpty()) return;
         List<String> users = new ArrayList<String>();
         List<String> messages = new ArrayList<String>();
         for (Commit commit : waiting_commits) {

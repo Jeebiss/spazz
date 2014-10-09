@@ -20,7 +20,7 @@ public class PushEvent extends Event {
     public class Payload {
         private String ref;
         private List<Commit> commits;
-        public String getBranch() { return ref.substring(ref.lastIndexOf('/')); };
+        public String getBranch() { return ref.substring(ref.lastIndexOf('/')+1); };
         public List<Commit> getCommits() { return commits; }
     }
 

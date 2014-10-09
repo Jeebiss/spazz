@@ -516,7 +516,7 @@ public class Spazz extends ListenerAdapter {
         }
         else if (msgLwr.startsWith(".paste") || msgLwr.startsWith(".pastie") || msgLwr.startsWith(".hastebin") || msgLwr.startsWith(".pastebin")) {
             send("Need help with a script issue or server error?");
-            send("Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + chatColor + "server log to " + Colors.BLUE + "http://mcmonkey.org");
+            send("Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + chatColor + "server log to " + Colors.BLUE + "http://mcmonkey.org/paste");
             send("From there, save the page and paste the link back in this channel.");
             return;
         }
@@ -555,9 +555,8 @@ public class Spazz extends ListenerAdapter {
             bot.setVerbose(debugMode);
         }
         else if (msgLwr.startsWith(".tutorials")) {
-            send("Here's a list of video tutorials on how to use Denizen (Thanks " + optionalColor + "Jeebiss" + chatColor + "!)");
-            send("1) " + defaultColor + "Hello World" + chatColor + " - http://bit.ly/1dgwyOn");
-            send("2) " + defaultColor + "Questing 101" + chatColor + " - http://bit.ly/13RT8JY");
+            send("Here's a list of video tutorials on how to use Denizen (Thanks " + optionalColor + "Jeebiss and mcmonkey" + chatColor + "!)");
+            send(defaultColor + "All videos are viewable here" + chatColor + " - http://bit.ly/1BTzSqD");
         }
         else if (msgLwr.startsWith(".shorten")) {
             String[] args = msg.split(" ");
@@ -684,7 +683,7 @@ public class Spazz extends ListenerAdapter {
             send("Your argument is invalid.");
             return;
         }
-        else if (msgLwr.startsWith(".thmf") || msgLwr.startsWith(".tfw")) {
+        else if (msgLwr.startsWith(".thmf")) {
             send("That hurt even my feelings. And I'm a robot.");
         }
         else if (msgLwr.startsWith(".tiafo")) {
@@ -898,7 +897,7 @@ public class Spazz extends ListenerAdapter {
                         } catch (Exception ignored) {}
                     }
                     else
-                        send("Error while adding repository " + args[2] + "...");
+                        send("Error while adding repository " + args[2] + ": are you sure a repo by that name exists?");
                 }
                 else
                     send("That command is written as: .add repo [<owner>/<project>] (no_issues) (no_comments) (no_pulls) (delay:<#.#>)");
@@ -1299,7 +1298,7 @@ public class Spazz extends ListenerAdapter {
         }
 
         else if (msgLwr.equals(".dev")) {
-            if (usr.getNick().startsWith("Morph") && hasVoice(usr, bot.getChannel("#denizen-devs"))) {
+            if (hasOp(usr, bot.getChannel("#denizen-devs")) || hasVoice(usr, bot.getChannel("#denizen-devs"))) {
                 if (!devMode) {
                     devMode = true;
                     send("Entering dev mode...");
@@ -1453,6 +1452,10 @@ public class Spazz extends ListenerAdapter {
 
                 case "reconnect":
                     try {
+                        try {
+                            bot.shutdown();
+                        }
+                        catch (Exception e) {}
                         bot.connect("irc.esper.net");
                     } catch (Exception e) {
                         System.out.println("Failed to connect to EsperNet. Check your internet connection and try again.");

@@ -1296,7 +1296,7 @@ public class Spazz extends ListenerAdapter {
 
         List<IRCMessage> messages = ircUser.getMessages();
         if (!messages.isEmpty()) {
-            address = senderNick;
+            address = senderNick + ": ";
             Spazz.send("You have messages!");
             String lastNick = null;
             for (IRCMessage message : messages) {

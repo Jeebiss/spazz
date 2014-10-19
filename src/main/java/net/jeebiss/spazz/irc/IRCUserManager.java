@@ -84,7 +84,7 @@ public class IRCUserManager {
         Yaml yaml = new Yaml(yamlOptions);
         FileWriter writer = null;
         try {
-            writer = new FileWriter(userDirectory + user.getNick().toLowerCase().replace('|', '_'));
+            writer = new FileWriter(userDirectory + "/" + user.getNick().toLowerCase().replace('|', '_') + ".yml");
             writer.write(yaml.dump(user.getData()));
         } catch (Exception e) {
             e.printStackTrace();

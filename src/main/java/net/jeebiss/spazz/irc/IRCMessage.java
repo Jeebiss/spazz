@@ -32,24 +32,20 @@ public class IRCMessage {
         return this.action;
     }
 
-    public IRCMessage setUser(String user) {
+    public void setUser(String user) {
         this.user = user;
-        return this;
     }
 
-    public IRCMessage setMessage(String message) {
+    public void setMessage(String message) {
         this.message = message;
-        return this;
     }
 
-    public IRCMessage setTime(long time) {
+    public void setTime(long time) {
         this.time = time;
-        return this;
     }
 
-    public IRCMessage setAction(boolean action) {
+    public void setAction(boolean action) {
         this.action = action;
-        return this;
     }
 
     public boolean matches(String s) {
@@ -58,7 +54,7 @@ public class IRCMessage {
 
     public String replaceAll(String target, String replacement) {
         String ret = "";
-        if (action) ret += "* " + user;
+        if (isAction()) ret += "* " + user;
         else ret += "<" + user + ">";
         message = message.replaceAll(target, replacement);
         return ret + " " + message;

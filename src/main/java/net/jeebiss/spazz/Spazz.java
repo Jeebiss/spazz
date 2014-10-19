@@ -1,6 +1,9 @@
 package net.jeebiss.spazz;
 
 import net.jeebiss.spazz.github.*;
+import net.jeebiss.spazz.irc.IRCMessage;
+import net.jeebiss.spazz.irc.IRCUser;
+import net.jeebiss.spazz.irc.IRCUserManager;
 import net.jeebiss.spazz.util.javaluator.DoubleEvaluator;
 import net.jeebiss.spazz.urban.*;
 import net.jeebiss.spazz.util.MinecraftServer;
@@ -30,11 +33,9 @@ public class Spazz extends ListenerAdapter {
     public static Spazz spazz = new Spazz();
     public static PircBotX bot = new PircBotX();
 
-    public static File usersFolder = null;
+    public static IRCUserManager userManager = null;
 
     public static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS zzz");
-
-    public static Map<String, dUser> dUsers = new HashMap<String, dUser>();
 
     String[] temp;
     public static String chatColor = Colors.TEAL;
@@ -61,7 +62,7 @@ public class Spazz extends ListenerAdapter {
     public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "([0-9a-fA-Fl-oL-OrR])");
     public static Pattern minecraftRandom = Pattern.compile("(" + (char) 0xa7 + "k([^" + (char) 0xa7 + "]+))");
 
-    public static Map<String, List<Message>> cachedMessages = new HashMap<String, List<Message>>();
+    public static Map<String, List<IRCMessage>> cachedMessages = new HashMap<String, List<IRCMessage>>();
     public static Pattern sReplace = Pattern.compile("^s/([^/]+)/([^/]+)/?([^\\s/]+)?", Pattern.CASE_INSENSITIVE);
 
     public static long messageDelay = 0;
@@ -76,13 +77,9 @@ public class Spazz extends ListenerAdapter {
         System.out.println("Starting Spazzmatic...");
 
         try {
-            usersFolder = new File(System.getProperty("user.dir") + "/users");
+            userManager = new IRCUserManager();
 
-            Yaml yaml = new Yaml();
-            File sf = new File(usersFolder + "/spazzmatic.yml");
-            sf.mkdirs();
-            InputStream is = sf.toURI().toURL().openStream();
-            LinkedHashMap map = (LinkedHashMap) yaml.load(is);
+            LinkedHashMap map = userManager.getUser("spazzmatic").getRawData();
             if (map.get("password") instanceof String) {
                 System.setProperty("spazz.password", (String) map.get("password"));
             }
@@ -105,14 +102,10 @@ public class Spazz extends ListenerAdapter {
                 System.setProperty("spazz.github", (String) map.get("github"));
             }
             if (map.get("message-delay") instanceof Integer) {
-                messageDelay = (long) map.get("message-delay");
+                messageDelay = (long) ((int) map.get("message-delay"));
             }
-            is.close();
         } catch (Exception e) {
-            if (!usersFolder.isDirectory() && !usersFolder.mkdirs()) {
-                System.out.println("Could not load users folder. Password for Spazzmatic not found. Cancelling startup...");
-                return;
-            }
+            e.printStackTrace();
         }
 
         github = GitHub.connect(System.getProperty("spazz.github"));
@@ -141,16 +134,11 @@ public class Spazz extends ListenerAdapter {
             public void run() {
                 for (Channel chnl : bot.getChannels()) {
                     for (User usr : chnl.getUsers()) {
-                        String nick = usr.getNick().toLowerCase();
-                        if (dUsers.containsKey(nick) || bot.getName().equalsIgnoreCase(nick) || nick.length() == 0)
+                        String nick = usr.getNick();
+                        if (userManager.hasUser(nick) || bot.getName().equals(nick) || nick.length() == 0)
                             continue;
-                        dUsers.put(nick, new dUser(usr.getNick()));
+                        userManager.initUser(nick);
                     }
-                }
-                for (String usr : findUserFiles()) {
-                    usr = usr.replace(".yml", "");
-                    if (dUsers.containsKey(usr)) continue;
-                    dUsers.put(usr, new dUser(usr));
                 }
             }
         }, 3000);
@@ -220,12 +208,12 @@ public class Spazz extends ListenerAdapter {
     @Override
     public void onJoin(JoinEvent event) {
 
-        User usr = event.getUser();
+        String nick = event.getUser().getNick();
 
-        if (!dUsers.containsKey(usr.getNick().toLowerCase()))
-            dUsers.put(usr.getNick().toLowerCase(), new dUser(usr.getNick()));
+        if (!userManager.hasUser(nick))
+            userManager.initUser(nick);
 
-        if (usr.getNick().equals("spazzmatic")) {
+        if (nick.equals(bot.getNick())) {
             if (devMode) {
                 chatChannel = "#denizen-devs";
                 bot.sendMessage(chatChannel, chatColor + "Dev mode enabled.");
@@ -250,15 +238,7 @@ public class Spazz extends ListenerAdapter {
             repoManager.shutdown();
             Utilities.saveQuotes();
             queryHandler.saveDefinitions();
-            for (dUser usr : dUsers.values()) {
-                try {
-                    usr.saveAll();
-                } catch (Exception e) {
-                    if (debugMode) e.printStackTrace();
-                    else
-                        System.out.println("An error has occured while using saving user " + usr.getNick() + " on disconnect... Turn on debug for more information.");
-                }
-            }
+            userManager.saveUserFiles();
             System.exit(0);
         }
         else {
@@ -278,11 +258,13 @@ public class Spazz extends ListenerAdapter {
 
     @Override
     public void onAction(ActionEvent event) {
+        Channel channel = event.getChannel();
         if (event.getChannel() != null) {
-            cacheMessage(new Message(event.getUser().getNick(), event.getAction().replace("<", "<LT>"),true),
-                    event.getChannel().getName());
-            dUsers.get(event.getUser().getNick().toLowerCase()).setLastSeen("performing an action in "
-                    + event.getChannel().getName() + chatColor + ": " + event.getAction());
+            String channelName = channel.getName();
+            String nick = event.getUser().getNick();
+            String action = event.getAction();
+            cacheMessage(new IRCMessage(nick, action.replace("<", "<LT>"), true), channelName);
+            userManager.setLastSeen(nick, "performing an action in " + channelName + chatColor + ": " + action);
         }
     }
 
@@ -309,9 +291,9 @@ public class Spazz extends ListenerAdapter {
         onMessage(new MessageEvent(bot, null, event.getUser(), event.getMessage()));
     }
 
-    public static void cacheMessage(Message message, String channel) {
+    public static void cacheMessage(IRCMessage message, String channel) {
         if (send.equals("spazzmatic")) return;
-        if (!cachedMessages.containsKey(channel)) cachedMessages.put(channel, new ArrayList<Message>());
+        if (!cachedMessages.containsKey(channel)) cachedMessages.put(channel, new ArrayList<IRCMessage>());
         cachedMessages.get(channel).add(0, message);
     }
 
@@ -324,11 +306,12 @@ public class Spazz extends ListenerAdapter {
 
         String msg = event.getMessage().trim();
         User usr = event.getUser();
+        final String senderNick = usr.getNick();
 
-        if (!dUsers.containsKey(usr.getNick().toLowerCase()))
-            dUsers.put(usr.getNick().toLowerCase(), new dUser(usr.getNick()));
+        if (!userManager.hasUser(senderNick))
+            userManager.initUser(senderNick);
 
-        dUser dusr = dUsers.get(usr.getNick().toLowerCase());
+        IRCUser ircUser = userManager.getUser(senderNick);
 
         if (chnl == null) {
             setSend(usr.getNick());
@@ -336,13 +319,12 @@ public class Spazz extends ListenerAdapter {
         }
         else if (!chnl.getName().equals(send)) {
             setSend(chnl.getName());
-            dusr.setLastSeen("Saying \"" + msg + chatColor + "\" in " + send);
+            userManager.setLastSeen(senderNick, "Saying \"" + msg + chatColor + "\" in " + send);
         }
         else {
-            dusr.setLastSeen("Saying \"" + msg + chatColor + "\" in " + send);
+            userManager.setLastSeen(senderNick, "Saying \"" + msg + chatColor + "\" in " + send);
         }
 
-        final String senderNick = usr.getNick();
         address = "";
 
         if (charging) {
@@ -389,7 +371,7 @@ public class Spazz extends ListenerAdapter {
             if (m.find()) {
                 boolean user = m.group(3) != null;
                 if (cachedMessages.containsKey(chnl.getName())) {
-                    for (Message message : cachedMessages.get(chnl.getName())) {
+                    for (IRCMessage message : cachedMessages.get(chnl.getName())) {
                         if (user && !message.getUser().equals(m.group(3))) continue;
                         if (message.matches("(?i)" + m.group(1))) {
                             send(message.replaceAll("(?i)" + m.group(1), Colors.BOLD + m.group(2) + Colors.NORMAL + "<C>"));
@@ -398,7 +380,7 @@ public class Spazz extends ListenerAdapter {
                     }
                 }
             }
-            cacheMessage(new Message(senderNick, msg.replace("<", "<LT>"), false), chnl.getName());
+            cacheMessage(new IRCMessage(senderNick, msg.replace("<", "<LT>"), false), chnl.getName());
         }
 
         if (msgLwr.startsWith(".hello")) {
@@ -572,10 +554,10 @@ public class Spazz extends ListenerAdapter {
                 return;
             }
             msg = msg.replaceFirst(args[0] + " " + args[1] + " ", "");
-            if (!dUsers.containsKey(args[1].toLowerCase()))
+            if (!userManager.hasUser(args[1]))
                 send("I've never seen that user '" + args[1] + "'.");
             else {
-                dUsers.get(args[1].toLowerCase()).addMessage(new Message(senderNick, msg, false));
+                userManager.sendMessage(args[1], new IRCMessage(senderNick, msg, false));
                 send("Message sent to: " + defaultColor + args[1] + chatColor + ".");
             }
         }
@@ -784,15 +766,7 @@ public class Spazz extends ListenerAdapter {
                 repoManager.shutdown();
                 Utilities.saveQuotes();
                 queryHandler.saveDefinitions();
-                for (dUser duser : dUsers.values()) {
-                    try {
-                        duser.saveAll();
-                    } catch (Exception e) {
-                        if (debugMode) e.printStackTrace();
-                        else
-                            System.out.println("An error has occured while saving for user " + duser.getNick() + "... Turn on debug for more information.");
-                    }
-                }
+                userManager.saveUserFiles();
                 String[] quotes = {"Ain't nobody got time for that...", "I'm backin' up, backin' up...", "Hide yo kids, hide yo wife..."};
                 send(quotes[new Random().nextInt(quotes.length)]);
                 bot.quitServer(senderNick + " said so.");
@@ -805,19 +779,20 @@ public class Spazz extends ListenerAdapter {
         else if (msgLwr.startsWith(".seen")) {
             String[] args = msg.split(" ");
             String user = null;
-            dUser dusr2 = null;
+            IRCUser ircUser2;
             if (args.length > 1)
                 user = args[1];
-            if (!dUsers.containsKey(user.toLowerCase())) {
+            if (!userManager.hasUser(user)) {
                 send("I've never seen that user: " + defaultColor + user);
+                return;
             }
             else {
-                dusr2 = dUsers.get(user.toLowerCase());
+                ircUser2 = userManager.getUser(user);
             }
             Calendar now = Calendar.getInstance();
             long currentTime = now.getTimeInMillis();
             Calendar seen = Calendar.getInstance();
-            seen.setTime(dusr2.getLastSeenTime());
+            seen.setTime(ircUser2.getLastSeenTime());
             long seenTime = seen.getTimeInMillis();
             long seconds = (currentTime - seenTime) / 1000;
             long minutes = seconds / 60;
@@ -832,9 +807,9 @@ public class Spazz extends ListenerAdapter {
             years = years - (centuries * 100);
             long milleniums = centuries / 10;
             centuries = centuries - (milleniums * 10);
-            send("Last I saw of " + defaultColor + dusr2.getNick() + chatColor + " was "
-                    + new SimpleDateFormat("MM/dd/yyyy HH:mm:ss zzz)").format(dusr2.getLastSeenTime()).replace("DT)", "ST").replace(")", "")
-                    + ", " + dusr2.getLastSeen()
+            send("Last I saw of " + defaultColor + ircUser2.getNick() + chatColor + " was "
+                    + new SimpleDateFormat("MM/dd/yyyy HH:mm:ss zzz)").format(ircUser2.getLastSeenTime()).replace("DT)", "ST").replace(")", "")
+                    + ", " + ircUser2.getLastSeen()
                     + chatColor + ". That " + (seconds < -1 ? "is " : "was ")
                     + ((milleniums > 1 || milleniums < -1) ? (Math.abs(milleniums) + " millenia, ") : ((milleniums == 1 || milleniums == -1) ? "1 millenium, " : ""))
                     + ((centuries > 1 || centuries < -1) ? (Math.abs(centuries) + " centuries, ") : ((centuries == 1 || centuries == -1) ? "1 century, " : ""))
@@ -1023,9 +998,9 @@ public class Spazz extends ListenerAdapter {
             }
             else if (args[1].startsWith("u")) {
                 if (args.length > 2) {
-                    if (dUsers.containsKey(args[2])) {
-                        dUser dusr2 = dUsers.get(args[2]);
-                        send(args[2] + ": LastSeen(" + dusr2.getLastSeen() + ")");
+                    if (userManager.hasUser(args[2])) {
+                        IRCUser ircUser2 = userManager.getUser(args[2]);
+                        send(args[2] + ": LastSeen(" + ircUser2.getLastSeen() + ")");
                     }
                 }
             }
@@ -1085,20 +1060,7 @@ public class Spazz extends ListenerAdapter {
                 send("Successfully saved all quotes.");
             }
             else if (args[1].startsWith("u")) {
-                for (dUser dusr2 : dUsers.values()) {
-                    if (debugMode) System.out.println("Saving dUser: " + dusr2.getNick() + "...");
-                    try {
-                        dusr2.saveAll();
-                    } catch (Exception e) {
-                        send(Colors.RED + "ERROR. Failed to save user information: " + defaultColor + dusr2.getNick()
-                                + "... Report this to " + Colors.CYAN + "Morphan1");
-                        if (debugMode) e.printStackTrace();
-                        else
-                            System.out.println("An error has occured while using .save-all for user " + dusr2.getNick()
-                                    + "... Turn on debug for more information.");
-                        return;
-                    }
-                }
+                userManager.saveUserFiles();
                 send("Successfully saved all user information.");
             }
             else if (args[1].startsWith("d")) {
@@ -1127,19 +1089,7 @@ public class Spazz extends ListenerAdapter {
                 send("Successfully loaded all quotes.");
             }
             else if (args[1].startsWith("u")) {
-                for (dUser dusr2 : dUsers.values()) {
-                    if (debugMode) System.out.println("Loading dUser information: " + dusr2.getNick() + "...");
-                    try {
-                        dusr2.loadAll();
-                    } catch (Exception e) {
-                        send(Colors.RED + "ERROR. Failed to load user information: " + defaultColor + dusr2.getNick()
-                                + "... Report this to " + Colors.CYAN + "Morphan1");
-                        if (debugMode) e.printStackTrace();
-                        else
-                            System.out.println("An error has occured while using .load for user " + dusr2.getNick() + "... Turn on debug for more information.");
-                        return;
-                    }
-                }
+                userManager.loadUserFiles();
                 send("Successfully loaded all user information.");
             }
             else if (args[1].startsWith("d")) {
@@ -1250,8 +1200,8 @@ public class Spazz extends ListenerAdapter {
                 return;
             }
             if (!args[1].contains(".") && !args[1].toLowerCase().contains("localhost")) {
-                if (dUsers.containsKey(args[1].toLowerCase())) {
-                    String s = dUsers.get(args[1].toLowerCase()).getServerAddress();
+                if (userManager.hasUser(args[1])) {
+                    String s = userManager.getUser(args[1]).getServerAddress();
                     if (s.equals("")) {
                         send("Sorry, I don't know that user's server IP.");
                         return;
@@ -1338,12 +1288,29 @@ public class Spazz extends ListenerAdapter {
                 send("That command is used like: .myip <your_server>");
                 return;
             }
-            dusr.setServerAddress(args[1]);
-            send("Your server has been set, and can now be accessed by other users via '.mcping " + dusr.getNick() + "'");
+            userManager.setUserServer(senderNick, args[1]);
+            send("Your server has been set, and can now be accessed by other users via '.mcping " + senderNick + "'");
+        }
+
+        address = senderNick;
+
+        List<IRCMessage> messages = ircUser.getMessages();
+        if (!messages.isEmpty()) {
+            address = senderNick;
+            Spazz.send("You have messages!");
+            String lastNick = null;
+            for (IRCMessage message : messages) {
+                String user = message.getUser();
+                if (!user.equals(lastNick)) {
+                    lastNick = user;
+                    Spazz.sendNotice(senderNick, lastNick + Spazz.chatColor + ":");
+                }
+                Spazz.sendNotice(senderNick, "  " + message.getMessage());
+            }
+            ircUser.clearMessages();
         }
 
         address = "";
-        dusr.checkMessages();
 
     }
 
@@ -1352,10 +1319,6 @@ public class Spazz extends ListenerAdapter {
         if (!debugMode)
             debugMode = debug;
         debugMode = original;
-    }
-
-    private static ArrayList<String> findUserFiles() {
-        return Utilities.findFileNamesByExtension(usersFolder.getPath(), ".yml");
     }
 
     private boolean hasVoice(User chatter, Channel channel) {
@@ -1487,7 +1450,7 @@ public class Spazz extends ListenerAdapter {
                     break;
 
                 case "msg":
-                    if (dUsers.containsKey(channel.toLowerCase()))
+                    if (bot.userExists(channel))
                         bot.sendMessage(channel, chatColor + commandArgs);
                     else if (bot.channelExists(channel))
                         System.out.println("You can't use /msg for channels! Instead, use \"<channel> <message>\"!");
@@ -1750,249 +1713,6 @@ public class Spazz extends ListenerAdapter {
             result.append(NEW_LINE);
         }
         return result.toString();
-    }
-
-    public static class dUser {
-
-        private String lastSeen;
-        private Date lastSeenTime;
-        private String nick;
-        private MessageList messages;
-        private String serverAddress;
-
-        private File userFile = null;
-
-        public dUser(String nick) {
-            if (nick == null || nick.equals("")) return;
-            this.nick = nick;
-            this.messages = new MessageList();
-            setLastSeen("Existing");
-            serverAddress = "";
-            userFile = new File(System.getProperty("user.dir") + "/users/" + nick.toLowerCase().replace('|', '_') + ".yml");
-            if (!userFile.exists() || userFile.isDirectory()) {
-                try {
-                    if (userFile.isDirectory())
-                        userFile.delete();
-                    userFile.createNewFile();
-                    saveAll();
-                } catch (Exception e) {
-                    if (debugMode) e.printStackTrace();
-                    else
-                        System.out.println("An error has occured while saving new user " + getNick() + "... Turn on debug for more information.");
-                }
-            }
-            else {
-                try {
-                    loadAll();
-                } catch (Exception e) {
-                    if (debugMode) e.printStackTrace();
-                    else
-                        System.out.println("An error has occured while loading existing user " + getNick() + "... Turn on debug for more information.");
-                }
-            }
-
-        }
-
-        void setServerAddress(String serverAddress) {
-            this.serverAddress = serverAddress;
-        }
-
-        void setLastSeen(String lastSeen) {
-            this.lastSeenTime = Calendar.getInstance().getTime();
-            this.lastSeen = Utilities.uncapitalize(lastSeen);
-        }
-
-        void setLastSeenRaw(String lastSeen) {
-            this.lastSeen = lastSeen;
-        }
-
-        void addMessage(Message msg) {
-            this.messages.add(msg);
-        }
-
-        void saveAll() throws Exception {
-            DumperOptions options = new DumperOptions();
-            options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-            Yaml yaml = new Yaml(options);
-
-            Map<String, Object> data = new HashMap<String, Object>();
-            data.put("name", getNick());
-            data.put("lastseen", getLastSeen().getBytes());
-            Calendar seenTime = Calendar.getInstance();
-            seenTime.setTime(getLastSeenTime());
-            data.put("lasttime", new SimpleDateFormat((seenTime.getTimeInMillis() < 0 ? "-yyyy" : "yyyy") + "-MM-dd HH:mm:ss.SSS zzz").format(getLastSeenTime()));
-            data.put("messages", getMessages().getMessages());
-            data.put("server_address", getServerAddress());
-            if (getNick().equals("spazzmatic")) {
-                data.put("password", System.getProperty("spazz.password"));
-                data.put("bitly", System.getProperty("spazz.bitly"));
-                data.put("bitly-backup", System.getProperty("spazz.bitly-backup"));
-                data.put("dev-mode", devMode);
-                data.put("wolfram", queryHandler.getKey());
-                data.put("github", System.getProperty("spazz.github"));
-                data.put("message-delay", messageDelay);
-            }
-
-            FileWriter writer = new FileWriter(userFile);
-            writer.write(yaml.dump(data));
-            writer.close();
-        }
-
-        void loadAll() throws Exception {
-            Yaml yaml = new Yaml();
-            InputStream is = userFile.toURI().toURL().openStream();
-            LinkedHashMap map = (LinkedHashMap) yaml.load(is);
-
-            // loadLastSeen()
-            if (map.get("lastseen") instanceof byte[]) {
-                this.lastSeen = new String((byte[]) map.get("lastseen"));
-                this.lastSeenTime = dateFormat.parse((String) map.get("lasttime"));
-            }
-            // Keep string checker so we can edit a YAML file from a program and have Spazz translate it later
-            else if (map.get("lastseen") instanceof String) {
-                this.lastSeen = ((String) map.get("lastseen")).replace("`````", "#").replace("````", "|");
-                this.lastSeenTime = dateFormat.parse((String) map.get("lasttime"));
-            }
-            else
-                setLastSeen("Existing");
-
-            // loadMessages()
-            if (map.get("messages") instanceof HashMap<?, ?>) {
-                for (Object msgObj : ((HashMap<Integer, Object>) map.get("messages")).values()) {
-                    String msg;
-                    if (msgObj instanceof byte[])
-                        msg = new String((byte[]) msgObj);
-                    else
-                        msg = (String) msgObj;
-                    String[] split = msg.split("_", 2);
-                    addMessage(new Message(split[0], split[1], false));
-                }
-            }
-
-            // loadServerAddress()
-            if (map.get("server_address") instanceof String) {
-                this.serverAddress = ((String) map.get("server_address"));
-            }
-
-            // Close the InputStream
-            is.close();
-        }
-
-        public String getLastSeen() {
-            return this.lastSeen;
-        }
-
-        public Date getLastSeenTime() {
-            return this.lastSeenTime;
-        }
-
-        public String getNick() {
-            return this.nick;
-        }
-
-        public String getServerAddress() { return this.serverAddress; }
-
-        public void checkMessages() {
-            if (this.messages.isEmpty()) return;
-            send(Colors.NORMAL + getNick() + ": " + chatColor + "You have messages waiting for you...");
-            String lastNick = null;
-            for (String msg : this.messages.getMessages().values()) {
-                String[] split = msg.split("_", 2);
-                if (!split[0].equals(lastNick)) {
-                    lastNick = split[0];
-                    sendNotice(getNick(), defaultColor + lastNick + chatColor + ":");
-                }
-                sendNotice(getNick(), "  " + split[1]);
-            }
-            this.messages.clear();
-            try {
-                saveAll();
-            } catch (Exception e) {
-                if (debugMode) e.printStackTrace();
-                else
-                    System.out.println("An error has occured while using checkMessages() for user " + getNick() + "... Turn on debug for more information.");
-            }
-        }
-
-        public MessageList getMessages() {
-            if (this.messages == null) {
-                try {
-                    loadAll();
-                } catch (Exception e) {
-                    if (debugMode) e.printStackTrace();
-                    else
-                        System.out.print("An error has occured while using getMessages() for user " + getNick() + "... Turn on debug for more information.");
-                }
-            }
-            return this.messages;
-        }
-
-    }
-
-    public static class MessageList {
-
-        HashMap<Integer, String> messages;
-
-        public MessageList(ArrayList<Message> messages) {
-            this.messages = new HashMap<Integer, String>();
-            for (Message message : messages) {
-                this.messages.put(messages.size(), message.getUser() + "_" + message.getMessage());
-            }
-        }
-
-        public MessageList() {
-            this.messages = new HashMap<Integer, String>();
-        }
-
-        public boolean isEmpty() {
-            return this.messages.isEmpty();
-        }
-
-        public void clear() {
-            this.messages.clear();
-        }
-
-        public HashMap<Integer, String> getMessages() {
-            return messages;
-        }
-
-        public MessageList add(Message msg) {
-            messages.put(messages.size(), msg.getUser() + "_" + msg.getMessage());
-            return this;
-        }
-
-    }
-
-    public static class Message {
-
-        private String user;
-        private String message;
-        private boolean action;
-
-        public Message(String user, String message, boolean action) {
-            this.user = user;
-            this.message = message;
-            this.action = action;
-        }
-
-        public String getUser() {
-            return this.user;
-        }
-
-        public String getMessage() { return this.message; }
-
-        public boolean matches(String s) {
-            return message.matches(String.format(".*(%s).*", s));
-        }
-
-        public String replaceAll(String target, String replacement) {
-            String ret = "";
-            if (action) ret += "* " + user;
-            else ret += "<" + user + ">";
-            message = message.replaceAll(target, replacement);
-            return ret + " " + message;
-        }
-
     }
 
 }

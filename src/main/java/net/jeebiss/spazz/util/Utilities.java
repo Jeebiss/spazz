@@ -288,15 +288,12 @@ public class Utilities {
         }
         final StringBuilder buf = new StringBuilder();
         if (first != null) {
-            buf.append(first);
+            buf.append(first).append(", ");
         }
         int i = 0;
         while (iterator.hasNext()) {
             final String string = iterator.next();
             if (!iterator.hasNext()) {
-                if (i == 0) {
-                    buf.append(" ");
-                }
                 buf.append("and ").append(string);
             }
             else {

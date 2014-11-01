@@ -38,9 +38,28 @@ public class CommitHandler {
         for (Commit commit : waiting_commits) {
             String author = commit.getAuthor().getName();
             if (!users.contains(author)) users.add(author);
-            String message = commit.getMessage().replace("<", "<LT>")
-                    .replaceAll("\n+", " - ");
-            messages.add("<D>  " + author + "<C>: " + message + " -- " + commit.getShortUrl());
+            String[] messageSplit = commit.getMessage().replace("<", "<LT>").split("\n+");
+            StringBuilder message = new StringBuilder("<D>  ").append(author).append("<C>: ");
+            int m = 0; // Just a cheaty way to make sure only 3 lines are in each message
+            for (int i = 0; i < messageSplit.length; i++) {
+                if (m < 3) {
+                    m++;
+                    if (i + 1 == messageSplit.length) {
+                        message.append(messageSplit[i]).append(" -- ").append(commit.getShortUrl());
+                        messages.add(message.toString());
+                    }
+                    else
+                        message.append(messageSplit[i]).append(" ");
+                }
+                else {
+                    m = 1;
+                    messages.add(message.substring(0, message.length() - 1));
+                    if (i + 1 == messageSplit.length)
+                        messages.add(messageSplit[i] + " -- " + commit.getShortUrl());
+                    else
+                        message = new StringBuilder(messageSplit[i]).append(" ");
+                }
+            }
             commits.add(commit);
         }
         Spazz.sendToAllChannels("[<O>" + repo.getFullName() + "<C>] <D>" + Utilities.formattedList(users.iterator())

@@ -4,21 +4,23 @@ import net.jeebiss.spazz.github.*;
 import net.jeebiss.spazz.irc.IRCMessage;
 import net.jeebiss.spazz.irc.IRCUser;
 import net.jeebiss.spazz.irc.IRCUserManager;
-import net.jeebiss.spazz.util.javaluator.DoubleEvaluator;
-import net.jeebiss.spazz.urban.*;
+import net.jeebiss.spazz.urban.Definition;
+import net.jeebiss.spazz.urban.Response;
+import net.jeebiss.spazz.urban.UrbanDictionary;
 import net.jeebiss.spazz.util.MinecraftServer;
 import net.jeebiss.spazz.util.Utilities;
+import net.jeebiss.spazz.util.javaluator.DoubleEvaluator;
 import net.jeebiss.spazz.wolfram.QueryHandler;
 import net.jeebiss.spazz.wolfram.QueryResult;
-import org.pircbotx.*;
+import org.pircbotx.Channel;
+import org.pircbotx.Colors;
+import org.pircbotx.PircBotX;
 import org.pircbotx.User;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.*;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
-import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
@@ -79,7 +81,7 @@ public class Spazz extends ListenerAdapter {
         try {
             userManager = new IRCUserManager();
 
-            LinkedHashMap map = userManager.getUser("spazzmatic").getRawData();
+            LinkedHashMap map = userManager.getSpazzData();
             if (map.get("password") instanceof String) {
                 System.setProperty("spazz.password", (String) map.get("password"));
             }
@@ -792,7 +794,7 @@ public class Spazz extends ListenerAdapter {
             Calendar now = Calendar.getInstance();
             long currentTime = now.getTimeInMillis();
             Calendar seen = Calendar.getInstance();
-            seen.setTime(ircUser2.getLastSeenTime());
+            seen.setTime(ircUser2.getParsedLastSeenTime());
             long seenTime = seen.getTimeInMillis();
             long seconds = (currentTime - seenTime) / 1000;
             long minutes = seconds / 60;
@@ -808,8 +810,8 @@ public class Spazz extends ListenerAdapter {
             long milleniums = centuries / 10;
             centuries = centuries - (milleniums * 10);
             send("Last I saw of " + defaultColor + ircUser2.getNick() + chatColor + " was "
-                    + new SimpleDateFormat("MM/dd/yyyy HH:mm:ss zzz)").format(ircUser2.getLastSeenTime()).replace("DT)", "ST").replace(")", "")
-                    + ", " + ircUser2.getLastSeen()
+                    + new SimpleDateFormat("MM/dd/yyyy HH:mm:ss zzz)").format(ircUser2.getParsedLastSeenTime()).replace("DT)", "ST").replace(")", "")
+                    + ", " + new String(ircUser2.getLastSeen())
                     + chatColor + ". That " + (seconds < -1 ? "is " : "was ")
                     + ((milleniums > 1 || milleniums < -1) ? (Math.abs(milleniums) + " millenia, ") : ((milleniums == 1 || milleniums == -1) ? "1 millenium, " : ""))
                     + ((centuries > 1 || centuries < -1) ? (Math.abs(centuries) + " centuries, ") : ((centuries == 1 || centuries == -1) ? "1 century, " : ""))
@@ -1000,7 +1002,7 @@ public class Spazz extends ListenerAdapter {
                 if (args.length > 2) {
                     if (userManager.hasUser(args[2])) {
                         IRCUser ircUser2 = userManager.getUser(args[2]);
-                        send(args[2] + ": LastSeen(" + ircUser2.getLastSeen() + ")");
+                        send(args[2] + ": LastSeen(" + new String(ircUser2.getLastSeen()) + ")");
                     }
                 }
             }

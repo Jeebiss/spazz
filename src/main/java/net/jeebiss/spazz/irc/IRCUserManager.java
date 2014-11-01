@@ -1,22 +1,25 @@
 package net.jeebiss.spazz.irc;
 
+import net.jeebiss.spazz.Spazz;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class IRCUserManager {
 
-    private static final File userDirectory = new File(System.getProperty("user.dir") + "/users");
-    private static final FilenameFilter yamlFilter = new FilenameFilter(){@Override public boolean accept(File dir, String name){name = name.toLowerCase();return name.endsWith(".yml")||name.endsWith(".yaml");}};
+    private static final File usersFile = new File(System.getProperty("user.dir") + "/storage/users.yml");
     private static final DumperOptions yamlOptions = new DumperOptions(); static{yamlOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);}
     private final Map<String, IRCUser> ircUsers = new HashMap<String, IRCUser>();
+
+    private static final File spazzFile = new File(System.getProperty("user.dir") + "/storage/spazzmatic.yml");
+    private LinkedHashMap spazzData = null;
 
     public IRCUserManager() {
         loadUserFiles();
@@ -35,7 +38,8 @@ public class IRCUserManager {
     }
 
     public void setLastSeen(String nick, String doing) {
-        getUser(nick).setLastSeen(doing);
+        getUser(nick).setLastSeen(doing.getBytes());
+        getUser(nick).setLastSeenTime(Spazz.dateFormat.format(Calendar.getInstance().getTime()));
     }
 
     public void sendMessage(String nick, IRCMessage message) {
@@ -48,44 +52,39 @@ public class IRCUserManager {
 
     public void loadUserFiles() {
         ircUsers.clear();
-        if ((userDirectory.exists() && userDirectory.isDirectory()) || !userDirectory.mkdirs()) {
-            FileInputStream is = null;
+        FileInputStream is = null;
+        Yaml yaml = new Yaml();
+        try {
+            is = new FileInputStream(usersFile);
+            LinkedHashMap users = (LinkedHashMap) yaml.load(is);
+            ircUsers.putAll(users);
+            is = new FileInputStream(spazzFile);
+            spazzData = (LinkedHashMap) yaml.load(is);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
             try {
-                for (File user : userDirectory.listFiles(yamlFilter)) {
-                    if (user.isDirectory()) {
-                        user.delete();
-                        continue;
-                    }
-                    is = new FileInputStream(user);
-                    IRCUser ircUser = new IRCUser((LinkedHashMap) new Yaml().load(is));
-                    ircUsers.put(ircUser.getNick().toLowerCase(), ircUser);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    is.close();
-                } catch (Exception e) {}
-            }
-        }
-        else {
-            System.out.println("Directory '/users' not found and could not be created. IRCUserManager will not function.");
+                is.close();
+            } catch (Exception e) {}
         }
     }
 
     public void saveUserFiles() {
-        for (String nick : ircUsers.keySet()) {
-            saveUserFile(nick);
-        }
-    }
-
-    private void saveUserFile(String nick) {
-        IRCUser user = ircUsers.get(nick);
         Yaml yaml = new Yaml(yamlOptions);
         FileWriter writer = null;
         try {
-            writer = new FileWriter(userDirectory + "/" + user.getNick().toLowerCase().replace('|', '_') + ".yml");
-            writer.write(yaml.dump(user.getData()));
+            writer = new FileWriter(usersFile);
+            writer.write(yaml.dump(ircUsers));
+
+            writer = new FileWriter(spazzFile);
+            spazzData.put("password", System.getProperty("spazz.password"));
+            spazzData.put("bitly", System.getProperty("spazz.bitly"));
+            spazzData.put("bitly-backup", System.getProperty("spazz.bitly-backup"));
+            spazzData.put("dev-mode", Spazz.devMode);
+            spazzData.put("wolfram", Spazz.queryHandler.getKey());
+            spazzData.put("github", System.getProperty("spazz.github"));
+            spazzData.put("message-delay", Spazz.messageDelay);
+            writer.write(yaml.dump(spazzData));
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -93,6 +92,10 @@ public class IRCUserManager {
                 writer.close();
             } catch (Exception e) {}
         }
+    }
+
+    public LinkedHashMap getSpazzData() {
+        return spazzData;
     }
 
 }

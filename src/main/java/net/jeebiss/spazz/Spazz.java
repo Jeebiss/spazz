@@ -1357,7 +1357,7 @@ public class Spazz extends ListenerAdapter {
         System.out.println("Available commands:");
         System.out.println("/me <action>             Performs an action in the current chat channel.");
         System.out.println("/msg <user> <msg>        Sends a private message to a user.");
-        System.out.println("/plain <msg>             Sends a non-colored message to the current chat channel.");
+        System.out.println("/plain <msg>             Sends a no-color message to the current chat channel.");
         System.out.println("/join <channel>          Joins a channel.");
         System.out.println("/leave <channel> <msg>   Leaves a channel with an optional message.");
         System.out.println("/raw <protocol>          Sends a raw IRC protocol to the server.");

@@ -39,9 +39,10 @@ public class CommitHandler {
             String author = commit.getAuthor().getName();
             if (!users.contains(author)) users.add(author);
             String[] messageSplit = commit.getMessage().replace("<", "<LT>").split("\n+");
-            StringBuilder message = new StringBuilder("<D>  ").append(author).append("<C>: ");
-            int m = 0; // Just a cheaty way to make sure only 3 lines are in each message
-            for (int i = 0; i < messageSplit.length; i++) {
+            StringBuilder message = new StringBuilder("<D>  ").append(author).append("<C>: ")
+                    .append(messageSplit[0]);
+            int m = 1; // Just a cheaty way to make sure only 3 lines are in each message
+            for (int i = 1; i < messageSplit.length; i++) {
                 if (m < 3) {
                     m++;
                     if (i + 1 == messageSplit.length) {

@@ -1,6 +1,7 @@
 package net.jeebiss.spazz;
 
 import net.jeebiss.spazz.github.*;
+import net.jeebiss.spazz.google.WebSearch;
 import net.jeebiss.spazz.irc.IRCMessage;
 import net.jeebiss.spazz.irc.IRCUser;
 import net.jeebiss.spazz.irc.IRCUserManager;
@@ -72,6 +73,8 @@ public class Spazz extends ListenerAdapter {
 
     public static QueryHandler queryHandler = null;
 
+    public static WebSearch google = null;
+
     public static void main(String[] args) {
 
         bot.setEncoding(Charset.forName("UTF-8"));
@@ -112,6 +115,8 @@ public class Spazz extends ListenerAdapter {
 
         github = GitHub.connect(System.getProperty("spazz.github"));
         repoManager = new RepositoryManager(github);
+
+        google = new WebSearch();
 
         Utilities.loadQuotes();
         reloadSites(debugMode);
@@ -1192,6 +1197,24 @@ public class Spazz extends ListenerAdapter {
                 Definition definition = definitions.get(Utilities.getRandomNumber(definitions.size()));
                 send(definition.getWord() + ": " + definition.getDefinition());
                 send("Example: " + definition.getExample());
+            }
+        }
+
+        else if (msgLwr.startsWith(".google")) {
+            String input = msg.substring(7).replaceAll("\\s+", " ").trim();
+            WebSearch.Response response = google.search(input);
+            if (response == null) {
+                send(Colors.RED + "Error! Response not found!");
+            }
+            else if (response.getResponseStatus() != 200) {
+                send("Query failed: " + response.getResponseDetails());
+            }
+            else {
+                WebSearch.Data data = response.getResponseData();
+                WebSearch.Result result = data.getMainResult();
+                String content = result.getContent().replace("\n", "")
+                        .replace("<b>", Colors.BOLD).replace("</b>", Colors.NORMAL + chatColor);
+                send("[Result found in " + data.getSearchResultTime() + "] " + content + " -- " + result.getUrl());
             }
         }
 

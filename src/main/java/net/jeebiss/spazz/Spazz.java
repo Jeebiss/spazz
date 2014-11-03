@@ -1,5 +1,6 @@
 package net.jeebiss.spazz;
 
+import com.google.gson.Gson;
 import net.jeebiss.spazz.github.*;
 import net.jeebiss.spazz.google.WebSearch;
 import net.jeebiss.spazz.irc.IRCMessage;
@@ -22,7 +23,9 @@ import org.pircbotx.hooks.events.*;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -241,14 +244,7 @@ public class Spazz extends ListenerAdapter {
 
     @Override
     public void onDisconnect(DisconnectEvent event) {
-        if (shuttingDown) {
-            repoManager.shutdown();
-            Utilities.saveQuotes();
-            queryHandler.saveDefinitions();
-            userManager.saveUserFiles();
-            System.exit(0);
-        }
-        else {
+        if (!shuttingDown) {
             identify();
         }
     }
@@ -997,7 +993,8 @@ public class Spazz extends ListenerAdapter {
                         Repository repo = repoManager.getRepository(args[2]);
                         send(repo.getFullName() + ": Delay("
                                 + repo.getUpdateDelay() + ") Issues(" + repo.hasIssues() + ") Comments("
-                                + repo.hasComments() + ") Pulls(" + repo.hasPulls() + ")");
+                                + repo.hasComments() + ") Pulls(" + repo.hasPulls() + ") AverageRequests("
+                                + repo.averageStats() + ")");
                     }
                 }
                 else
@@ -1385,6 +1382,7 @@ public class Spazz extends ListenerAdapter {
         System.out.println("/leave <channel> <msg>   Leaves a channel with an optional message.");
         System.out.println("/raw <protocol>          Sends a raw IRC protocol to the server.");
         System.out.println("/disconnect              Saves user info and disconnects from the server.");
+        System.out.println("/quit                    Saves and shuts down the bot.");
         System.out.println("/chat <channel>          Set the current chat channel.");
         System.out.println("/test <command>          Test Spazzmatic IRC commands (Ex: /test .botsnack)");
         System.out.println("/debug                   Turns console debug on or off.");
@@ -1431,12 +1429,26 @@ public class Spazz extends ListenerAdapter {
                         repoManager.shutdown();
                     Utilities.saveQuotes();
                     queryHandler.saveDefinitions();
+                    userManager.saveUserFiles();
                     bot.quitServer("Command sent by console: /disconnect");
                     System.out.println();
                     System.out.println();
                     System.out.println("Disconnected.");
                     shuttingDown = true;
                     break;
+
+                case "quit":
+                    System.out.println();
+                    System.out.println("Shutting down...");
+                    bot.quitServer("Command sent by console: /quit");
+                    shuttingDown = true;
+                    Utilities.saveQuotes();
+                    queryHandler.saveDefinitions();
+                    userManager.saveUserFiles();
+                    if (repoManager != null)
+                        repoManager.shutdown();
+                    System.exit(0);
+                    break input;
 
                 case "reconnect":
                     try {

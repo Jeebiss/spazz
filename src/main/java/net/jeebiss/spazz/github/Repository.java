@@ -18,7 +18,6 @@ public class Repository {
     private boolean hasComments = false;
     private boolean hasPulls = false;
 
-    private boolean shutdown = false;
     private boolean started = false;
 
     private List<String> events = new ArrayList<String>();
@@ -40,6 +39,12 @@ public class Repository {
     public String parentName = null;
     public boolean weHaveParent = false;
     public StringBuilder lazyCommitsThing = new StringBuilder();
+    
+    private List<Integer> requestsPerHour = new ArrayList<Integer>();
+    private int currentRequests = 0;
+
+    private RepositoryChecker checker;
+    private Thread checkerThread;
 
     public Repository _init(GitHub root, long updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) {
         this.root = root;
@@ -51,7 +56,9 @@ public class Repository {
         this.hasComments = hasComments;
         this.hasPulls = hasPulls;
         if (parent != null) parentName = parent.getFullName();
-        new Thread(new RepositoryChecker()).start();
+        checker = new RepositoryChecker();
+        checkerThread = new Thread(checker);
+        checkerThread.start();
         started = true;
         return this;
     }
@@ -64,7 +71,12 @@ public class Repository {
     }
 
     public void shutdown() {
-        shutdown = true;
+        checker.stop();
+        try {
+            checkerThread.join();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public GitHub getGitHub() {
@@ -73,6 +85,26 @@ public class Repository {
 
     public double getUpdateDelay() {
         return updateDelay / 1000;
+    }
+    
+    public void upStats() {
+        currentRequests++;
+    }
+
+    public void addStat(int stat) {
+        requestsPerHour.add(stat);
+    }
+    
+    public void saveStats() {
+        requestsPerHour.add(currentRequests);
+        currentRequests = 0;
+    }
+    
+    public int averageStats() {
+        int avg = 0;
+        for (int i : requestsPerHour)
+            avg += i;
+        return avg > 0 ? avg/requestsPerHour.size() : 0;
     }
 
     public boolean isFork() { return fork; }
@@ -91,10 +123,12 @@ public class Repository {
 
     public Issue getIssue(int number) {
         String url = has_issues ? issues_url : pulls_url;
+        upStats();
         return root.retrieve().parse(url.replaceAll("\\{.+\\}", "/" + number), Issue.class);
     }
 
     public Commit getCommit(String commitId) {
+        upStats();
         return root.retrieve().parse(commits_url.replaceAll("\\{.+\\}", "/" + commitId), Commit.class);
     }
 
@@ -103,6 +137,7 @@ public class Repository {
             weHaveParent = Spazz.repoManager.hasRepository(parentName);
         }
         JsonArray eventsList = root.retrieve().parseArray(events_url.replaceAll("\\{.+\\}", ""));
+        upStats();
         IssueCommentEvent icEvent = null;
         boolean ic = false;
         for (int i = eventsList.size()-1; i >= 0; i--) {
@@ -169,10 +204,15 @@ public class Repository {
     }
 
     public class RepositoryChecker implements Runnable {
+        private boolean go = true;
+
+        public void stop() {
+            go = false;
+        }
 
         @Override
         public void run() {
-            while (!shutdown) {
+            while (go) {
                 try {
                     Thread.sleep(updateDelay);
                     fireEvents();
@@ -181,7 +221,6 @@ public class Repository {
                 }
             }
         }
-
     }
 
 }

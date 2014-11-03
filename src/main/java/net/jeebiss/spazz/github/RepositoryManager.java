@@ -6,6 +6,7 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,12 +15,16 @@ import java.util.Set;
 public class RepositoryManager {
 
     private final GitHub root;
-
     private Map<String, Repository> repositories = new HashMap<String, Repository>();
+
+    private RateLimitChecker checker;
+    private Thread checkerThread;
 
     public RepositoryManager(GitHub root) {
         this.root = root;
-
+        this.checker = new RateLimitChecker();
+        this.checkerThread = new Thread(checker);
+        checkerThread.start();
         try {
             loadAll();
         } catch (Exception e) {
@@ -48,6 +53,8 @@ public class RepositoryManager {
     public void shutdown() {
         try {
             saveAll();
+            checker.stop();
+            checkerThread.join();
             for (Repository repo : repositories.values()) {
                 repo.shutdown();
             }
@@ -102,6 +109,7 @@ public class RepositoryManager {
             data.get(proj[0]).get(proj[1]).put("has_issues", repo.hasIssues());
             data.get(proj[0]).get(proj[1]).put("has_comments", repo.hasComments());
             data.get(proj[0]).get(proj[1]).put("has_pulls", repo.hasPulls());
+            data.get(proj[0]).get(proj[1]).put("requests_per_hour", repo.averageStats());
         }
 
         File rf = new File(System.getProperty("user.dir") + "/storage/repositories.yml");
@@ -124,6 +132,39 @@ public class RepositoryManager {
                 addRepository(owner.getKey() + "/" + repo.getKey(),
                         (double) repo.getValue().get("delay"), (boolean) repo.getValue().get("has_issues"),
                         (boolean) repo.getValue().get("has_comments"), (boolean) repo.getValue().get("has_pulls"));
+                if (repo.getValue().containsKey("requests_per_hour"))
+                    getRepository(owner.getKey() + "/" + repo.getKey())
+                            .addStat((int) repo.getValue().get("requests_per_hour"));
+            }
+        }
+    }
+
+    public void saveStats() {
+        for (Repository repository : repositories.values()) {
+            repository.saveStats();
+        }
+    }
+
+    public class RateLimitChecker implements Runnable {
+        private final long wait = 360000;
+        private boolean go = true;
+
+        public void stop() {
+            go = false;
+        }
+
+        @Override
+        public void run() {
+            try {
+                final long reset = root.getRateLimit().getRate().getReset() * 1000;
+                Thread.sleep(reset - Calendar.getInstance().getTimeInMillis());
+                saveStats();
+                while(go) {
+                    Thread.sleep(wait);
+                    saveStats();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

@@ -34,7 +34,9 @@ public class GitHub {
     }
 
     public Repository getRepository(String ownerProject) throws Exception {
-        return retrieve().parse(GITHUB_URL + "/repos/" + ownerProject, Repository.class);
+        Repository repository = retrieve().parse(GITHUB_URL + "/repos/" + ownerProject, Repository.class);
+        repository.upStats();
+        return repository;
     }
 
     public Requester retrieve() {

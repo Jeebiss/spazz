@@ -54,6 +54,7 @@ public class RepositoryManager {
         try {
             saveAll();
             checker.stop();
+            checkerThread.interrupt();
             checkerThread.join();
             for (Repository repo : repositories.values()) {
                 repo.shutdown();

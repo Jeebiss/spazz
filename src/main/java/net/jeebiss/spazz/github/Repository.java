@@ -73,6 +73,7 @@ public class Repository {
     public void shutdown() {
         checker.stop();
         try {
+            checkerThread.interrupt();
             checkerThread.join();
         } catch (Exception e) {
             e.printStackTrace();

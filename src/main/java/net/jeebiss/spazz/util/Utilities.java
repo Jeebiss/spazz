@@ -238,7 +238,11 @@ public class Utilities {
         return ret;
     }
 
+    private static Map<String, String> urlCache = new HashMap<String, String>();
+
     public static String getShortUrl(String url) {
+        if (urlCache.containsKey(url))
+            return urlCache.get(url);
         String shortened = null;
         try {
             BitlyResponse response = null;
@@ -251,6 +255,7 @@ public class Utilities {
             }
             if (response != null) {
                 shortened = response.data.url;
+                urlCache.put(url, shortened);
             }
         } catch (Exception e) {
             System.out.println("An exception has occurred while bitly-fying a link: " + e.getMessage());

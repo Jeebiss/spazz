@@ -987,14 +987,14 @@ public class Spazz extends ListenerAdapter {
 
             if (args[1].startsWith("r")) {
                 if (args.length > 2) {
-                    if (!repoManager.hasRepository(args[2]))
-                        send("I am not tracking any projects by that name. (Did you specify the owner?)");
+                    Repository repo = repoManager.searchRepository(msg.trim().substring(7 + args[1].length()));
+                    if (repo == null)
+                        send("I don't recognize that repository. Perhaps be less specific?");
                     else {
-                        Repository repo = repoManager.getRepository(args[2]);
-                        send(repo.getFullName() + ": Delay("
+                        send(repo.getUrl() + " (" + repo.getFullName() + "): Delay("
                                 + repo.getUpdateDelay() + ") Issues(" + repo.hasIssues() + ") Comments("
                                 + repo.hasComments() + ") Pulls(" + repo.hasPulls() + ") AverageRequests("
-                                + repo.averageStats() + ") URL(" + repo.getUrl() + ")");
+                                + repo.averageStats() + ")");
                     }
                 }
                 else
@@ -1304,6 +1304,41 @@ public class Spazz extends ListenerAdapter {
             send("Wumbo mode " + (!wumbo ? "de" : "") + "activated.");
         }
 
+        else if (msgLwr.startsWith(".emoji")) {
+            String input = msgLwr.substring(6).trim().replaceAll("\\s+", "_");
+            Map<String, String> emojis = github.getEmojis();
+            String emoji = null;
+            String link = null;
+            if (emojis.containsKey(input)) {
+                emoji = input;
+                link = emojis.get(input);
+            }
+            else {
+                int highest = 0;
+                char[] chars = input.toCharArray();
+                for (Map.Entry<String, String> entry : github.getEmojis().entrySet()) {
+                    int number = 0;
+                    char[] key = entry.getKey().toCharArray();
+                    for (char chr : chars) {
+                        for (char c : key) {
+                            if (c == chr)
+                                number++;
+                        }
+                    }
+                    if (number > highest) {
+                        emoji = entry.getKey();
+                        link = entry.getValue();
+                    }
+                }
+            }
+            if (emoji == null || link == null) {
+                send("Sorry, I couldn't find that emoji.");
+            }
+            else {
+                send(emoji + ": " + Utilities.getShortUrl(link));
+            }
+        }
+
         else if (msgLwr.startsWith(".myip")) {
             String[] args = msg.split(" ");
             if (args.length < 2 || args[1].isEmpty()) {
@@ -1444,7 +1479,10 @@ public class Spazz extends ListenerAdapter {
                     shuttingDown = true;
                     Utilities.saveQuotes();
                     queryHandler.saveDefinitions();
-                    userManager.saveUserFiles();
+                    boolean block = userManager.saveUserFiles();
+                    if (!block) {
+                        System.out.println("Wut.");
+                    }
                     if (repoManager != null)
                         repoManager.shutdown();
                     System.exit(0);

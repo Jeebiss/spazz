@@ -1,7 +1,10 @@
 package net.jeebiss.spazz.github;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
+import java.util.TimeZone;
 
 public class GitHub {
 
@@ -11,6 +14,8 @@ public class GitHub {
     private static GitHub current;
     private static Requester requester;
 
+    private Map<String, String> emojis;
+
     private GitHub(String oauth) {
         authentication = oauth;
     }
@@ -18,6 +23,7 @@ public class GitHub {
     public static GitHub connect(String oauth) {
         current = new GitHub(oauth);
         requester = new Requester(current);
+        current.emojis = current.retrieve().parseStringMap(GITHUB_URL + "/emojis");
         return current;
     }
 
@@ -37,6 +43,10 @@ public class GitHub {
         Repository repository = retrieve().parse(GITHUB_URL + "/repos/" + ownerProject, Repository.class);
         repository.upStats();
         return repository;
+    }
+
+    public Map<String, String> getEmojis() {
+        return emojis;
     }
 
     public Requester retrieve() {

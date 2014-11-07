@@ -39,6 +39,28 @@ public class RepositoryManager {
         }
     }
 
+    public Repository searchRepository(String input) {
+        input = input.toLowerCase().trim();
+        Repository contains = getRepository(input);
+        if (contains != null) {
+            return contains;
+        }
+        String[] search = input.split("\\s+");
+        int highest = 0;
+        Repository repo = null;
+        for (Map.Entry<String, Repository> entry : repositories.entrySet()) {
+            int number = 0;
+            String key = entry.getKey();
+            for (String s : search) {
+                if (key.contains(s))
+                    number++;
+            }
+            if (number > highest)
+                repo = entry.getValue();
+        }
+        return repo;
+    }
+
     public Repository getRepository(String ownerProject) {
         if (repositories.containsKey(ownerProject.toLowerCase()))
             return repositories.get(ownerProject.toLowerCase());

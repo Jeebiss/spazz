@@ -1,12 +1,15 @@
 package net.jeebiss.spazz.github;
 
 import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import net.jeebiss.spazz.github.deserializers.EventDeserializer;
 import net.jeebiss.spazz.github.events.Event;
 import net.jeebiss.spazz.util.Utilities;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Requester {
 
@@ -49,6 +52,16 @@ public class Requester {
             }
         } catch (Exception e) {}
         return new JsonArray();
+    }
+
+    public Map<String, String> parseStringMap(String url) {
+        try {
+            if (method.equals("GET")) {
+                return gson.fromJson(Utilities.getStringFromStream(setupConnection(url).getInputStream()),
+                        new TypeToken<Map<String, String>>(){}.getType());
+            }
+        } catch (Exception e) {}
+        return new HashMap<String, String>();
     }
 
     public HttpURLConnection githubConnection() throws Exception {

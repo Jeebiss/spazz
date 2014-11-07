@@ -67,7 +67,7 @@ public class CommitHandler {
                 }
             }
             if (messages.isEmpty())
-                messages.add(message.substring(0, message.length()-3));
+                messages.add(message.substring(0, message.length()-3) + " -- " + commit.getShortUrl());
             commits.add(commit);
         }
         Spazz.sendToAllChannels("[<O>" + repo.getFullName() + "<C>] <D>" + Utilities.formattedList(users.iterator())

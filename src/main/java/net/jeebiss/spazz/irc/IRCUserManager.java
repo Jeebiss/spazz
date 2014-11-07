@@ -69,7 +69,7 @@ public class IRCUserManager {
         }
     }
 
-    public void saveUserFiles() {
+    public boolean saveUserFiles() {
         Yaml yaml = new Yaml(yamlOptions);
         FileWriter writer = null;
         try {
@@ -92,6 +92,7 @@ public class IRCUserManager {
                 writer.close();
             } catch (Exception e) {}
         }
+        return true;
     }
 
     public LinkedHashMap getSpazzData() {

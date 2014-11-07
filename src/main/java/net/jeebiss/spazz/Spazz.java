@@ -994,7 +994,7 @@ public class Spazz extends ListenerAdapter {
                         send(repo.getFullName() + ": Delay("
                                 + repo.getUpdateDelay() + ") Issues(" + repo.hasIssues() + ") Comments("
                                 + repo.hasComments() + ") Pulls(" + repo.hasPulls() + ") AverageRequests("
-                                + repo.averageStats() + ")");
+                                + repo.averageStats() + ") URL(" + repo.getUrl() + ")");
                     }
                 }
                 else

@@ -84,6 +84,8 @@ public class Repository {
         return root;
     }
 
+    public String getUrl() { return html_url; }
+
     public double getUpdateDelay() {
         return updateDelay / 1000;
     }

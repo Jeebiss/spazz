@@ -5,6 +5,8 @@ import net.jeebiss.spazz.github.events.PushEvent;
 import net.jeebiss.spazz.util.Utilities;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CommitHandler {
 
@@ -14,6 +16,8 @@ public class CommitHandler {
 
     private PushEvent current_push = null;
     private List<PushEvent> waiting_pushes = new ArrayList<PushEvent>();
+
+    private final static Pattern emojiPattern = Pattern.compile(":([^\\s]+):");
 
     public CommitHandler(final Repository repo) {
         this.repo = repo;
@@ -38,6 +42,13 @@ public class CommitHandler {
         for (Commit commit : waiting_commits) {
             String author = commit.getAuthor().getName();
             if (!users.contains(author)) users.add(author);
+            String cm = commit.getMessage();
+            Matcher ma = emojiPattern.matcher(cm);
+            while (ma.find()) {
+                if (repo.getGitHub().getEmojis().containsKey(ma.group(1).toLowerCase()))
+                    cm = cm.replaceFirst(ma.group(0),
+                            Utilities.getShortUrl(repo.getGitHub().getEmojis().get(ma.group(1).toLowerCase())));
+            }
             String[] messageSplit = commit.getMessage().replace("<", "<LT>").split("\n+");
             StringBuilder message = new StringBuilder("<D>  ").append(author).append("<C>: ")
                     .append(messageSplit[0]).append(" - ");

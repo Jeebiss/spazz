@@ -69,12 +69,14 @@ public class IRCUserManager {
         }
     }
 
-    public boolean saveUserFiles() {
+    public void saveUserFiles() {
         Yaml yaml = new Yaml(yamlOptions);
         FileWriter writer = null;
         try {
             writer = new FileWriter(usersFile);
             writer.write(yaml.dump(ircUsers));
+
+            writer.close();
 
             writer = new FileWriter(spazzFile);
             spazzData.put("password", System.getProperty("spazz.password"));
@@ -92,7 +94,6 @@ public class IRCUserManager {
                 writer.close();
             } catch (Exception e) {}
         }
-        return true;
     }
 
     public LinkedHashMap getSpazzData() {

@@ -55,8 +55,10 @@ public class RepositoryManager {
                 if (key.contains(s))
                     number++;
             }
-            if (number > highest)
+            if (number > highest) {
                 repo = entry.getValue();
+                highest = number;
+            }
         }
         return repo;
     }

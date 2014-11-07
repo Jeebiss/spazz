@@ -1,6 +1,5 @@
 package net.jeebiss.spazz;
 
-import com.google.gson.Gson;
 import net.jeebiss.spazz.github.*;
 import net.jeebiss.spazz.google.WebSearch;
 import net.jeebiss.spazz.irc.IRCMessage;
@@ -23,9 +22,7 @@ import org.pircbotx.hooks.events.*;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
-import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -1328,6 +1325,7 @@ public class Spazz extends ListenerAdapter {
                     if (number > highest) {
                         emoji = entry.getKey();
                         link = entry.getValue();
+                        highest = number;
                     }
                 }
             }
@@ -1479,10 +1477,7 @@ public class Spazz extends ListenerAdapter {
                     shuttingDown = true;
                     Utilities.saveQuotes();
                     queryHandler.saveDefinitions();
-                    boolean block = userManager.saveUserFiles();
-                    if (!block) {
-                        System.out.println("Wut.");
-                    }
+                    userManager.saveUserFiles();
                     if (repoManager != null)
                         repoManager.shutdown();
                     System.exit(0);

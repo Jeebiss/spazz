@@ -1306,7 +1306,11 @@ public class Spazz extends ListenerAdapter {
             Map<String, String> emojis = github.getEmojis();
             String emoji = null;
             String link = null;
-            if (emojis.containsKey(input)) {
+            if (input.isEmpty()) {
+                emoji = (String) emojis.keySet().toArray()[Utilities.getRandomNumber(emojis.size())];
+                link = emojis.get(emoji);
+            }
+            else if(emojis.containsKey(input)) {
                 emoji = input;
                 link = emojis.get(input);
             }
@@ -1317,9 +1321,11 @@ public class Spazz extends ListenerAdapter {
                     int number = 0;
                     char[] key = entry.getKey().toCharArray();
                     for (char chr : chars) {
-                        for (char c : key) {
-                            if (c == chr)
+                        inner: for(char c : key) {
+                            if (c == chr) {
                                 number++;
+                                break inner;
+                            }
                         }
                     }
                     if (number > highest) {

@@ -49,7 +49,7 @@ public class CommitHandler {
                     cm = cm.replaceFirst(ma.group(0),
                             Utilities.getShortUrl(repo.getGitHub().getEmojis().get(ma.group(1).toLowerCase())));
             }
-            String[] messageSplit = commit.getMessage().replace("<", "<LT>").split("\n+");
+            String[] messageSplit = cm.replace("<", "<LT>").split("\n+");
             StringBuilder message = new StringBuilder("<D>  ").append(author).append("<C>: ")
                     .append(messageSplit[0]).append(" - ");
             int m = 1; // Just a cheaty way to make sure only 3 lines are in each message

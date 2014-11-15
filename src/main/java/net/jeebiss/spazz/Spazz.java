@@ -1213,6 +1213,10 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
+        else if (msgLwr.startsWith(".behappy") || msgLwr.startsWith(".bh")) {
+            send("Turn that frown upside-down! :D");
+        }
+
         else if (msgLwr.startsWith(".mcping")) {
             String[] args = msgLwr.split(" ");
             if (args.length < 2) {

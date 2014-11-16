@@ -45,6 +45,7 @@ public class Repository {
 
     private RepositoryChecker checker;
     private Thread checkerThread;
+    private boolean invalid = false;
 
     public Repository _init(GitHub root, long updateDelay, boolean hasIssues, boolean hasComments, boolean hasPulls) {
         this.root = root;
@@ -72,6 +73,7 @@ public class Repository {
 
     public void shutdown() {
         checker.stop();
+        invalid = true;
         try {
             checkerThread.interrupt();
             checkerThread.join();
@@ -136,6 +138,9 @@ public class Repository {
     }
 
     public void fireEvents() {
+        if (invalid) {
+            return;
+        }
         if (!weHaveParent && parentName != null) {
             weHaveParent = Spazz.repoManager.hasRepository(parentName);
         }
@@ -216,6 +221,8 @@ public class Repository {
         @Override
         public void run() {
             while (go) {
+                if (invalid)
+                    return;
                 try {
                     Thread.sleep(updateDelay);
                     fireEvents();

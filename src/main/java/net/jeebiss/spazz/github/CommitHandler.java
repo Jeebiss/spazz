@@ -53,6 +53,7 @@ public class CommitHandler {
             StringBuilder message = new StringBuilder("<D>  ").append(author).append("<C>: ")
                     .append(messageSplit[0]).append(" - ");
             int m = 1; // Just a cheaty way to make sure only 3 lines are in each message
+            boolean addedMsg = false;
             for (int i = 1; i < messageSplit.length; i++) {
                 String msg = messageSplit[i];
                 if (m < 3) {
@@ -62,6 +63,7 @@ public class CommitHandler {
                     else
                         m++;
                     if (i + 1 == messageSplit.length) {
+                        addedMsg = true;
                         message.append(messageSplit[i]).append(" -- ").append(commit.getShortUrl());
                         messages.add(message.toString());
                     }
@@ -71,13 +73,15 @@ public class CommitHandler {
                 else {
                     m = 1;
                     messages.add(message.substring(0, message.length() - 1));
-                    if (i + 1 == messageSplit.length)
+                    if (i + 1 == messageSplit.length) {
                         messages.add(messageSplit[i] + " -- " + commit.getShortUrl());
+                        addedMsg = true;
+                    }
                     else
                         message = new StringBuilder(messageSplit[i]).append(" ");
                 }
             }
-            if (messages.isEmpty())
+            if (!addedMsg)
                 messages.add(message.substring(0, message.length()-3) + " -- " + commit.getShortUrl());
             commits.add(commit);
         }

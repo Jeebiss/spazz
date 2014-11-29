@@ -671,9 +671,11 @@ public class Spazz extends ListenerAdapter {
         else if (msgLwr.startsWith(".tiafo")) {
             send("Try It And Find Out.");
         }
-
         else if (msgLwr.startsWith(".tias")) {
             send("Try It And See.");
+        }
+        else if (msgLwr.startsWith(".lol")) {
+            send("Laugh Out Loud. :D");
         }
         else if (msgLwr.startsWith(".cb") || msgLwr.startsWith(".coolbeans")) {
             send("That's cool beans.");

@@ -94,6 +94,7 @@ public class CommitHandler {
         current_push = null;
         if (!waiting_pushes.isEmpty()) {
             push(waiting_pushes.get(0));
+            fire();
         }
     }
 

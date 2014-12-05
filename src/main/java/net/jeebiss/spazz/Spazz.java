@@ -1209,7 +1209,7 @@ public class Spazz extends ListenerAdapter {
                 WebSearch.Data data = response.getResponseData();
                 WebSearch.Result result = data.getMainResult();
                 String content = result.getContent().replace("\n", "")
-                        .replace("<b>", Colors.BOLD).replace("</b>", Colors.NORMAL + chatColor)
+                        .replace("<b>", Colors.BOLD).replace("</b>", Colors.NORMAL + chatColor).replace("&#39;", "'")
                         .replace("&quot;", "\"").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">");
                 send("[Result found in " + data.getSearchResultTime() + "] " + content + " -- " + result.getUrl());
             }

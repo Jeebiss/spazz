@@ -226,9 +226,7 @@ public class Repository {
                 try {
                     Thread.sleep(updateDelay);
                     fireEvents();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                } catch (Exception e) {}
             }
         }
     }

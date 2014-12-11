@@ -74,15 +74,18 @@ public class RepositoryManager {
         return repositories.keySet();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean restart) {
         try {
-            saveAll();
-            checker.stop();
-            checkerThread.interrupt();
-            checkerThread.join();
+            if (!restart) {
+                saveAll();
+                checker.stop();
+                checkerThread.interrupt();
+                checkerThread.join();
+            }
             for (Repository repo : repositories.values()) {
                 repo.shutdown();
             }
+            repositories.clear();
         } catch (Exception e) {}
     }
 
@@ -147,11 +150,13 @@ public class RepositoryManager {
 
     @SuppressWarnings("unchecked")
     public void loadAll() throws Exception {
+        shutdown(true);
         HashMap<String, HashMap<String, HashMap<String, Object>>> map = null;
         Yaml yaml = new Yaml();
         File f = new File(System.getProperty("user.dir") + "/storage/repositories.yml");
         InputStream is = f.toURI().toURL().openStream();
         map = (HashMap<String, HashMap<String, HashMap<String, Object>>>) yaml.load(is);
+        is.close();
         for (Entry<String, HashMap<String, HashMap<String, Object>>> owner : map.entrySet()) {
             for (Entry<String, HashMap<String, Object>> repo : owner.getValue().entrySet()) {
                 addRepository(owner.getKey() + "/" + repo.getKey(),

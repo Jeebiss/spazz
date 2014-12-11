@@ -61,7 +61,7 @@ public class Spazz extends ListenerAdapter {
     public static String chatChannel = "#denizen-dev";
     public static GitHub github = null;
     public static RepositoryManager repoManager = null;
-    public static Pattern issuesPattern = Pattern.compile("(\\w+/\\w+)\\s*#(\\d+)");
+    public static Pattern issuesPattern = Pattern.compile("([^\\s]+)\\s*#(\\d+)");
     public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "([0-9a-fA-Fl-oL-OrR])");
     public static Pattern minecraftRandom = Pattern.compile("(" + (char) 0xa7 + "k([^" + (char) 0xa7 + "]+))");
 
@@ -339,21 +339,22 @@ public class Spazz extends ListenerAdapter {
 
         }
 
-        if (msg.contains("@")) {
-            String[] addressTest = msg.split(" ");
-            if (addressTest[addressTest.length - 1].contains("@")) {
-                address = addressTest[addressTest.length-1].replace("@", "") + ": ";
-                msg = msg.replaceAll("\\s+" + addressTest[addressTest.length - 1] + "$", "");
-            }
+        String[] args = msg.split(" ");
+        String possibleAddress = args[args.length-1];
+
+        if (possibleAddress.contains("@")) {
+            address = possibleAddress.replace("@", "") + ": ";
+            msg = msg.replace(possibleAddress, "");
         }
 
         String msgLwr = msg.toLowerCase();
+        String[] argsLwr = msgLwr.split(" ");
 
         Matcher m = issuesPattern.matcher(msgLwr);
 
         while (m.find()) {
-            if (repoManager.hasRepository(m.group(1))) {
-                Repository repo = repoManager.getRepository(m.group(1));
+            Repository repo = repoManager.searchRepository(m.group(1));
+            if (repo != null) {
                 Issue issue = repo.getIssue(Integer.valueOf(m.group(2)));
                 if (issue != null) {
                     send("[<O>" + repo.getFullName() + "<C>] <D>" + issue.formatTitle() + "<C> (<D>" + issue.getNumber()
@@ -383,22 +384,25 @@ public class Spazz extends ListenerAdapter {
             cacheMessage(new IRCMessage(senderNick, msg.replace("<", "<LT>"), false), chnl.getName());
         }
 
-        if (msgLwr.startsWith(".hello")) {
+        if (!msgLwr.startsWith("."))
+            return;
+        String cmd = msgLwr.substring(1).split(" ", 2)[0];
+
+        if (cmd.equals("hello")) {
             send("Hello World");
             return;
         }
-        else if (msgLwr.startsWith(".kitty")) {
+        else if (cmd.equals("kitty")) {
             send("Meow.");
             return;
         }
-        else if (msgLwr.startsWith(".color")) {
+        else if (cmd.equals("color")) {
 
             if (!hasOp(usr, chnl) && !hasVoice(usr, chnl)) {
                 send("I'm sorry, but you do not have clearance to alter my photon colorization beam.");
                 return;
             }
 
-            String[] args = msg.split(" ");
             if (args.length > 3) {
                 send("I cannot read minds... yet. Hit me up with a bot-friendly color.");
                 return;
@@ -432,9 +436,7 @@ public class Spazz extends ListenerAdapter {
             send("Photon colorization beam reconfigured " + "[] " + optionalColor + "() " + defaultColor + "{}");
             return;
         }
-        else if (msgLwr.startsWith(".botsnack")) {
-            String args[] = msg.split(" ");
-
+        else if (cmd.equals("botsnack")) {
             if (feeders.toString().contains(usr.toString())) {
                 send("Thanks, but I can't have you controlling too much of my diet.");
                 return;
@@ -462,32 +464,32 @@ public class Spazz extends ListenerAdapter {
 
         }
 
-        else if (msgLwr.startsWith(".repo")) {
+        else if (cmd.equals("repo")) {
             send("Check out scripts made by other users! - http://bit.ly/14o43eF");
         }
-        else if (msgLwr.startsWith(".materials") || msgLwr.startsWith(".mats")) {
+        else if (cmd.equals("materials") || cmd.equals("mats")) {
             send("Here is the list of all valid bukkit materials - http://bit.ly/X5smJK");
             send("All Denizen 'item:' arguments will accept a bukkit material name. Additionally you can add the data value to the name. (i.e. SANDSTONE:1)");
             return;
         }
-        else if (msgLwr.startsWith(".enchantments") || msgLwr.startsWith(".enchants")) {
+        else if (cmd.equals("enchantments") || cmd.equals("enchants")) {
             send("Here is the list of all valid bukkit enchantments - http://bit.ly/YQ25ud");
             send("They do not follow the same naming conventions as they do in game, so be carefull.");
             return;
         }
-        else if (msgLwr.startsWith(".anchors") || msgLwr.startsWith(".anchor")) {
+        else if (cmd.equals("anchors") || cmd.equals("anchor")) {
             send("As of 0.8, locations can be referenced from scripts by using anchors linked to NPCs.");
             send("Check out the documentation on the anchor commands in the handbook.");
             return;
         }
-        else if (msgLwr.startsWith(".assignments") || msgLwr.startsWith(".assignment") || msgLwr.startsWith(".assign")) {
+        else if (cmd.equals("assignments") || cmd.equals("assignment") || cmd.equals("assign")) {
             send("As of Denizen 0.8, the assignments.yml file is " + Colors.BOLD + "not " + Colors.NORMAL + chatColor + "necessary and the /trait command does " + Colors.BOLD + " not work.");
             send("Instead, create the assignment script alongside interact scripts and assign it with:");
             send(Colors.BOLD + "- /npc assign --set 'assignment_script_name'");
             send("Check out an example of this new script's implementation at " + Colors.BLUE + "http://bit.ly/YiQ0hs");
             return;
         }
-        else if (msgLwr.startsWith(".help")) {
+        else if (cmd.equals("help")) {
             send("Greetings. I am an interactive Denizen guide. I am a scripting guru. I am spazz.");
             send("For help with script commands, type " + Colors.BOLD + "!cmd <command_name>");
             send("For help with script requirements, type " + Colors.BOLD + "!req <requirement_name>");
@@ -496,13 +498,13 @@ public class Spazz extends ListenerAdapter {
             send("Refer to !help for more information.");
             return;
         }
-        else if (msgLwr.startsWith(".paste") || msgLwr.startsWith(".pastie") || msgLwr.startsWith(".hastebin") || msgLwr.startsWith(".pastebin")) {
+        else if (cmd.equals("paste") || cmd.equals("pastie") || cmd.equals("hastebin") || cmd.equals("pastebin")) {
             send("Need help with a script issue or server error?");
             send("Help us help you by pasting your script " + Colors.BOLD + "and " + Colors.NORMAL + chatColor + "server log to " + Colors.BLUE + "http://mcmonkey.org/paste");
             send("From there, save the page and paste the link back in this channel.");
             return;
         }
-        else if (msgLwr.startsWith(".update")) {
+        else if (cmd.equals("update")) {
             send("Due to the nature of our project, Denizen is always built against the " + Colors.RED + "development" + chatColor + " builds of Craftbukkit and Citizens.");
             send("Most errors can be fixed by updating all 3.");
             send(Colors.BOLD + "Denizen" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/1aaGB3T");
@@ -514,41 +516,39 @@ public class Spazz extends ListenerAdapter {
             send(Colors.BOLD + "Craftbukkit" + Colors.NORMAL + Colors.BLUE + "- http://bit.ly/A5I50a");
             return;
         }
-        else if (msgLwr.startsWith(".newconfig") || msgLwr.startsWith(".nc")) {
+        else if (cmd.equals("newconfig") || cmd.equals("nc")) {
             send("If you are having issues with triggers not firing, you may be using the old config file.");
             send("You can easily generate a new one by deleting your current config.yml file in the Denizen folder");
             return;
         }
-        else if (msgLwr.startsWith(".wiki")) {
+        else if (cmd.equals("wiki")) {
             send("The Denizen wiki is currently getting a makeover. This means that it doesn't currently have a lot of things.");
             send("Feel free to look at it anyway, though! http://bit.ly/14o3kdq");
             return;
         }
-        else if (msgLwr.startsWith(".tags")) {
+        else if (cmd.equals("tags")) {
             send("Here's every replaceable tag in Denizen! - http://bit.ly/164DlSE");
         }
 
-        else if (msgLwr.startsWith(".effects") || msgLwr.startsWith(".potions")) {
+        else if (cmd.equals("effects") || cmd.equals("potions")) {
             send("A list of Bukkit potion effects is available here " + Colors.BOLD + "- http://bit.ly/13xyXur");
         }
-        else if (msgLwr.startsWith(".debug")) {
+        else if (cmd.equals("debug")) {
             debugMode = !debugMode;
             send("Debug mode set to " + defaultColor + debugMode + chatColor + ".");
             bot.setVerbose(debugMode);
         }
-        else if (msgLwr.startsWith(".tutorials")) {
+        else if (cmd.equals("tutorials")) {
             send("Here's a list of video tutorials on how to use Denizen (Thanks " + optionalColor + "Jeebiss and mcmonkey" + chatColor + "!)");
             send(defaultColor + "All videos are viewable here" + chatColor + " - http://bit.ly/1BTzSqD");
         }
-        else if (msgLwr.startsWith(".shorten")) {
-            String[] args = msg.split(" ");
+        else if (cmd.equals("shorten")) {
             if (args.length > 1) {
                 send(args[1] + " -> " + Utilities.getShortUrl(args[1]));
             }
         }
 
-        else if (msgLwr.startsWith(".msg") || msgLwr.startsWith(".message")) {
-            String[] args = msg.trim().split(" ");
+        else if (cmd.equals("msg") || cmd.equals("message")) {
             if (args.length < 3) {
                 send("Check your argument count. Command format: .msg <user> <message>");
                 return;
@@ -562,9 +562,8 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".yaml") || msgLwr.startsWith(".yml")) {
+        else if (cmd.equals("yaml") || cmd.equals("yml")) {
 
-            String[] args = msg.split(" ");
             if (args.length < 2) {
                 send("Check your argument count. Command format: .yml <link>");
                 return;
@@ -616,8 +615,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".quote") || msgLwr.startsWith(".q")) {
-            String[] args = msg.split(" ");
+        else if (cmd.equals("quote") || cmd.equals("q")) {
             int number;
             if (args.length > 1 && Integer.valueOf(args[1]) != null) {
                 number = Integer.valueOf(args[1]);
@@ -640,7 +638,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".party") || msgLwr.startsWith(".celebrate")) {
+        else if (cmd.equals("p") || cmd.equals("party") || cmd.equals("celebrate")) {
             if (msgLwr.contains("reason: ")) {
                 String[] split = msg.split("reason:", 2);
                 String reason = split[1].replace(" me ", senderNick + " ");
@@ -650,8 +648,7 @@ public class Spazz extends ListenerAdapter {
             send("Woo! It's party time! Come on, celebrate with me!");
             return;
         }
-        else if (msgLwr.startsWith(".blame")) {
-            String[] args = msg.split(" ");
+        else if (cmd.equals("blame")) {
             if (args.length < 3) {
                 send("Check your argument count. Command format: .blame <user> <reason>");
                 return;
@@ -661,33 +658,33 @@ public class Spazz extends ListenerAdapter {
             String reason = args[1];
             send(senderNick + " blames " + blamed + " for" + reason + "!");
         }
-        else if (msgLwr.startsWith(".yaii")) {
+        else if (cmd.equals("yaii")) {
             send("Your argument is invalid.");
             return;
         }
-        else if (msgLwr.startsWith(".thmf")) {
+        else if (cmd.equals("thmf")) {
             send("That hurt even my feelings. And I'm a robot.");
         }
-        else if (msgLwr.startsWith(".tiafo")) {
+        else if (cmd.equals("tiafo")) {
             send("Try It And Find Out.");
         }
-        else if (msgLwr.startsWith(".tias")) {
+        else if (cmd.equals("tias")) {
             send("Try It And See.");
         }
-        else if (msgLwr.startsWith(".lol")) {
+        else if (cmd.equals("lol")) {
             send("Laugh Out Loud. :D");
         }
-        else if (msgLwr.startsWith(".cb") || msgLwr.startsWith(".coolbeans")) {
+        else if (cmd.equals("cb") || cmd.equals("coolbeans")) {
             send("That's cool beans.");
         }
         else if (msgLwr.equals(".sound") || msgLwr.equals(".sounds")) {
             send("Here is the list of all valid bukkit sounds - " + Colors.BLUE + "http://bit.ly/14NYbvi");
         }
-        else if (msgLwr.startsWith(".hb") || msgLwr.startsWith(".handbook")) {
+        else if (cmd.equals("hb") || cmd.equals("handbook")) {
             send("Current Documentation - " + Colors.BLUE + "http://bit.ly/XaWBLN");
             send("PDF download (always current) - " + Colors.BLUE + "http://bit.ly/159JBgM");
         }
-        else if (msgLwr.startsWith(".getstarted") || msgLwr.startsWith(".gs")) {
+        else if (cmd.equals("getstarted") || cmd.equals("gs")) {
             send("So, you're trying to use 0.9 for the first time?");
             send("It's recommended that you read the current documentation.");
             send(Colors.BOLD + "Denizen Handbook " + Colors.NORMAL + chatColor + "- http://bit.ly/XaWBLN");
@@ -695,9 +692,8 @@ public class Spazz extends ListenerAdapter {
             send(Colors.BOLD + "Beginner's Guide" + Colors.NORMAL + chatColor + "- http://bit.ly/1bHkByR");
             send("Please keep in mind that documentation is a work in progress. You will likely not find everything.");
         }
-        else if (msgLwr.startsWith(".fire")) {
+        else if (cmd.equals("fire")) {
             if (hasOp(usr, chnl) || hasVoice(usr, chnl)) {
-                String args[] = msg.split(" ");
                 if (!charging) {
                     send("Erm... was I supposed to be charging? D:");
                     return;
@@ -736,7 +732,7 @@ public class Spazz extends ListenerAdapter {
             return;
 
         }
-        else if (msgLwr.startsWith(".lzrbms") || msgLwr.startsWith(".lzrbmz")) {
+        else if (cmd.equals("lzrbms") || cmd.equals("lzrbmz")) {
             if (hasOp(usr, chnl) || hasVoice(usr, chnl)) {
                 if (botsnack < 3) {
                     send(": Botsnack levels too low. Can't charge lazers...");
@@ -765,7 +761,7 @@ public class Spazz extends ListenerAdapter {
                 send("Ahaha, you can never kill me, " + senderNick + "!");
             }
             else {
-                repoManager.shutdown();
+                repoManager.shutdown(false);
                 Utilities.saveQuotes();
                 queryHandler.saveDefinitions();
                 userManager.saveUserFiles();
@@ -778,8 +774,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".seen")) {
-            String[] args = msg.split(" ");
+        else if (cmd.equals("seen")) {
             String user = null;
             IRCUser ircUser2;
             if (args.length > 1)
@@ -827,7 +822,7 @@ public class Spazz extends ListenerAdapter {
         //    return;
         //}
 
-        else if (msgLwr.startsWith(".rate")) {
+        else if (cmd.equals("rate")) {
             RateLimit.Data rateLimit = github.getRateLimit().getRate();
             sendNotice(senderNick, "Max rate limit: " + rateLimit.getLimit());
             sendNotice(senderNick, "Remaining rate limit: " + rateLimit.getRemaining());
@@ -842,9 +837,8 @@ public class Spazz extends ListenerAdapter {
                     + (seconds > 0 ? seconds > 1 ? seconds + " seconds" : "1 second" : minutes > 0 ? "0 seconds" : "Now."));
         }
 
-        else if (msgLwr.startsWith(".add")) {
+        else if (cmd.equals("add")) {
 
-            String[] args = msgLwr.trim().split(" ");
             if (args.length < 2)
                 send("That command is written as: .add [<object>]");
 
@@ -924,9 +918,7 @@ public class Spazz extends ListenerAdapter {
                 send("That command is written as: .add [<object>]");
         }
 
-        else if (msgLwr.startsWith(".remove")) {
-
-            String[] args = msgLwr.trim().split(" ");
+        else if (cmd.equals("remove") || cmd.equals("r")) {
 
             if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
                 send("Sorry, " + senderNick + ", that's only for the Dev Team.");
@@ -981,9 +973,7 @@ public class Spazz extends ListenerAdapter {
                 send("That command is written as: .remove [<object>]");
         }
 
-        else if (msgLwr.startsWith(".info")) {
-            String[] args = msgLwr.trim().split(" ");
-
+        else if (cmd.equals("info") || cmd.equals("i")) {
             if (args[1].startsWith("r")) {
                 if (args.length > 2) {
                     Repository repo = repoManager.searchRepository(msg.trim().substring(7 + args[1].length()));
@@ -1028,8 +1018,7 @@ public class Spazz extends ListenerAdapter {
                 send("That command is written as: .info [<object>]");
         }
 
-        else if (msgLwr.startsWith(".list") || msgLwr.startsWith(".count")) {
-            String[] args = msgLwr.trim().split(" ");
+        else if (cmd.equals("list") || cmd.equals("count")) {
             if (args.length < 2)
                 send("That command is written as: .list [<object>]");
 
@@ -1045,8 +1034,7 @@ public class Spazz extends ListenerAdapter {
                 send("That command is written as: .list [<object>]");
         }
 
-        else if (msgLwr.startsWith(".save")) {
-            String[] args = msgLwr.trim().split(" ");
+        else if (cmd.equals("save")) {
             if (args.length < 2)
                 send("That command is written as: .save [<object>]");
 
@@ -1074,8 +1062,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".load")) {
-            String[] args = msgLwr.trim().split(" ");
+        else if (cmd.equals("load") || cmd.equals("l")) {
             if (args.length < 2)
                 send("That command is written as: .load [<object>]");
 
@@ -1103,11 +1090,10 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".edit")) {
+        else if (cmd.equals("edit")) {
             if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
                 send("Sorry, " + senderNick + ", that's only for the Dev Team.");
             else {
-                String[] args = msgLwr.trim().split(" ");
                 if (args.length < 2)
                     send("That command is written as: .edit [<object>](:<key>) [<value>]");
 
@@ -1156,17 +1142,18 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".math ")) {
-            try {
-                Double eval = new DoubleEvaluator().evaluate(msgLwr.substring(6));
-                send(defaultColor + "<math:" + msgLwr.substring(6).replace(" ", "") + ">" + chatColor + " = " + eval);
-            } catch (Exception e) {
-                send("Invalid math statement. Denizen will not parse that correctly.");
-            }
-        }
+//        else if (cmd.equals("math") || cmd.equals("m")) {
+//            try {
+//                Double eval = new DoubleEvaluator().evaluate(msgLwr.substring(cmd.length()+1));
+//                send(defaultColor + "<math:" + msgLwr.substring(cmd.length()+1).replace(" ", "") + ">" + chatColor + " = " + eval);
+//            } catch (Exception e) {
+//                send("Invalid math statement. Denizen will not parse that correctly.");
+//            }
+//        }
 
-        else if (msgLwr.matches("\\.(realmath|define|wolfram|parse) .+")) {
-            String input = msg.substring(msg.split("\\s+")[0].length() + 1);
+        else if (cmd.equals("math") || cmd.equals("m") || cmd.equals("define") || cmd.equals("d") || cmd.equals("wolfram")
+                || cmd.equals("parse")) {
+            String input = msg.substring(cmd.length() + 1).trim();
             QueryResult output = queryHandler.parse(input, Utilities.getIPAddress(usr.getHostmask()));
             String result = output.getResult();
 
@@ -1182,8 +1169,8 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".urban")) {
-            String input = msg.substring(6).replaceAll("\\s+", " ").trim();
+        else if (cmd.equals("urban") || cmd.equals("u")) {
+            String input = msg.substring(cmd.length()+1).replaceAll("\\s+", " ").trim();
             Response response = UrbanDictionary.getDefinition(input);
             if (response.getResultType() == Response.Result.NONE) {
                 send("No definition found.");
@@ -1196,8 +1183,8 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".google")) {
-            String input = msg.substring(7).replaceAll("\\s+", " ").trim();
+        else if (cmd.equals("google") || cmd.equals("g")) {
+            String input = msg.substring(cmd.length()+1).replaceAll("\\s+", " ").trim();
             WebSearch.Response response = google.search(input);
             if (response == null) {
                 send(Colors.RED + "Error! Response not found!");
@@ -1215,12 +1202,11 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".behappy") || msgLwr.startsWith(".bh")) {
+        else if (cmd.equals("behappy") || cmd.equals("bh")) {
             send("Turn that frown upside-down! :D");
         }
 
-        else if (msgLwr.startsWith(".mcping")) {
-            String[] args = msgLwr.split(" ");
+        else if (cmd.equals("mcping")) {
             if (args.length < 2) {
                 send("Invalid server specified.");
                 return;
@@ -1308,8 +1294,8 @@ public class Spazz extends ListenerAdapter {
             send("Wumbo mode " + (!wumbo ? "de" : "") + "activated.");
         }
 
-        else if (msgLwr.startsWith(".emoji")) {
-            String input = msgLwr.substring(6).trim().replaceAll("\\s+", "_");
+        else if (cmd.equals("emoji")) {
+            String input = msgLwr.substring(cmd.length()+1).trim().replaceAll("\\s+", "_");
             Map<String, String> emojis = github.getEmojis();
             String emoji = null;
             String link = null;
@@ -1350,8 +1336,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.startsWith(".myip")) {
-            String[] args = msg.split(" ");
+        else if (cmd.equals("myip")) {
             if (args.length < 2 || args[1].isEmpty()) {
                 send("That command is used like: .myip <your_server>");
                 return;
@@ -1472,7 +1457,7 @@ public class Spazz extends ListenerAdapter {
 
                 case "disconnect":
                     if (repoManager != null)
-                        repoManager.shutdown();
+                        repoManager.shutdown(false);
                     Utilities.saveQuotes();
                     queryHandler.saveDefinitions();
                     userManager.saveUserFiles();
@@ -1492,7 +1477,7 @@ public class Spazz extends ListenerAdapter {
                     queryHandler.saveDefinitions();
                     userManager.saveUserFiles();
                     if (repoManager != null)
-                        repoManager.shutdown();
+                        repoManager.shutdown(false);
                     System.exit(0);
                     break input;
 

@@ -344,7 +344,8 @@ public class Spazz extends ListenerAdapter {
 
         if (possibleAddress.contains("@")) {
             address = possibleAddress.replace("@", "") + ": ";
-            msg = msg.replace(possibleAddress, "");
+            msg = msg.replace(possibleAddress, "").trim();
+            args = msg.split(" ");
         }
 
         String msgLwr = msg.toLowerCase();
@@ -352,7 +353,7 @@ public class Spazz extends ListenerAdapter {
 
         Matcher m = issuesPattern.matcher(msgLwr);
 
-        while (m.find()) {
+        while (m.find() && m.group(1).contains("/")) {
             Repository repo = repoManager.searchRepository(m.group(1));
             if (repo != null) {
                 Issue issue = repo.getIssue(Integer.valueOf(m.group(2)));
@@ -392,7 +393,7 @@ public class Spazz extends ListenerAdapter {
             send("Hello World");
             return;
         }
-        else if (cmd.equals("kitty")) {
+        else if (cmd.equals("kitty") || cmd.equals("cat") || cmd.equals("kitteh")) {
             send("Meow.");
             return;
         }
@@ -436,7 +437,7 @@ public class Spazz extends ListenerAdapter {
             send("Photon colorization beam reconfigured " + "[] " + optionalColor + "() " + defaultColor + "{}");
             return;
         }
-        else if (cmd.equals("botsnack")) {
+        else if (cmd.equals("botsnack") || cmd.equals("bs") || cmd.equals("bsnack")) {
             if (feeders.toString().contains(usr.toString())) {
                 send("Thanks, but I can't have you controlling too much of my diet.");
                 return;
@@ -533,7 +534,7 @@ public class Spazz extends ListenerAdapter {
         else if (cmd.equals("effects") || cmd.equals("potions")) {
             send("A list of Bukkit potion effects is available here " + Colors.BOLD + "- http://bit.ly/13xyXur");
         }
-        else if (cmd.equals("debug")) {
+        else if (cmd.equals("debug") || cmd.equals("db")) {
             debugMode = !debugMode;
             send("Debug mode set to " + defaultColor + debugMode + chatColor + ".");
             bot.setVerbose(debugMode);
@@ -677,7 +678,7 @@ public class Spazz extends ListenerAdapter {
         else if (cmd.equals("cb") || cmd.equals("coolbeans")) {
             send("That's cool beans.");
         }
-        else if (msgLwr.equals(".sound") || msgLwr.equals(".sounds")) {
+        else if (msgLwr.equals("sound") || msgLwr.equals("sounds")) {
             send("Here is the list of all valid bukkit sounds - " + Colors.BLUE + "http://bit.ly/14NYbvi");
         }
         else if (cmd.equals("hb") || cmd.equals("handbook")) {
@@ -837,7 +838,7 @@ public class Spazz extends ListenerAdapter {
                     + (seconds > 0 ? seconds > 1 ? seconds + " seconds" : "1 second" : minutes > 0 ? "0 seconds" : "Now."));
         }
 
-        else if (cmd.equals("add")) {
+        else if (cmd.equals("add") || cmd.equals("a")) {
 
             if (args.length < 2)
                 send("That command is written as: .add [<object>]");
@@ -847,28 +848,34 @@ public class Spazz extends ListenerAdapter {
                     send("Sorry, " + senderNick + ", that's only for the Dev Team.");
                 else if (args.length > 2 && args[2].contains("/")) {
                     String ownerProject = args[2];
-                    boolean i = true;
-                    boolean c = true;
-                    boolean p = true;
-                    double updateDelay = 60;
-                    for (String arg : args) {
-                        if (arg.startsWith("delay:") && Double.valueOf(arg.split(":")[1]) != null)
-                            updateDelay = Double.valueOf(arg.split(":")[1]);
-                        else if (arg.equals("no_issues")) i = false;
-                        else if (arg.equals("no_comments")) c = false;
-                        else if (arg.equals("no_pulls")) p = false;
+                    if (repoManager.hasRepository(ownerProject)) {
+                        send("I am already tracking " + ownerProject + "!");
                     }
-                    if (repoManager.addRepository(ownerProject, updateDelay, i, c, p)) {
-                        send("I am now tracking " + ownerProject + " with a delay of " + updateDelay
-                                + (!i ? !c || !p ? ", no issues" : " and no issues" : "")
-                                + (!c ? !p ? ", no comments" : (!i ? "," : "") + " and no comments" : "")
-                                + (!p ? (!i || !c ? "," : "") + " and no pulls" : "") + ".");
-                        try {
-                            repoManager.saveAll();
-                        } catch (Exception ignored) {}
+                    else {
+                        boolean i = true;
+                        boolean c = true;
+                        boolean p = true;
+                        double updateDelay = 60;
+                        for (String arg : args) {
+                            if (arg.startsWith("delay:") && Double.valueOf(arg.split(":")[1]) != null)
+                                updateDelay = Double.valueOf(arg.split(":")[1]);
+                            else if (arg.equals("no_issues")) i = false;
+                            else if (arg.equals("no_comments")) c = false;
+                            else if (arg.equals("no_pulls")) p = false;
+                        }
+                        if (repoManager.addRepository(ownerProject, updateDelay, i, c, p)) {
+                            send("I am now tracking " + ownerProject + " with a delay of " + updateDelay
+                                    + (!i ? !c || !p ? ", no issues" : " and no issues" : "")
+                                    + (!c ? !p ? ", no comments" : (!i ? "," : "") + " and no comments" : "")
+                                    + (!p ? (!i || !c ? "," : "") + " and no pulls" : "") + ".");
+                            try {
+                                repoManager.saveAll();
+                            } catch (Exception ignored) {
+                            }
+                        }
+                        else
+                            send("Error while adding repository " + args[2] + ": are you sure a repo by that name exists?");
                     }
-                    else
-                        send("Error while adding repository " + args[2] + ": are you sure a repo by that name exists?");
                 }
                 else
                     send("That command is written as: .add repo [<owner>/<project>] (no_issues) (no_comments) (no_pulls) (delay:<#.#>)");
@@ -1062,7 +1069,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (cmd.equals("load") || cmd.equals("l")) {
+        else if (cmd.equals("load")) {
             if (args.length < 2)
                 send("That command is written as: .load [<object>]");
 
@@ -1206,7 +1213,7 @@ public class Spazz extends ListenerAdapter {
             send("Turn that frown upside-down! :D");
         }
 
-        else if (cmd.equals("mcping")) {
+        else if (cmd.equals("mcping") || cmd.equals("ping")) {
             if (args.length < 2) {
                 send("Invalid server specified.");
                 return;
@@ -1259,7 +1266,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.equals(".dev")) {
+        else if (msgLwr.equals("dev")) {
             if (hasOp(usr, bot.getChannel("#denizen-devs")) || hasVoice(usr, bot.getChannel("#denizen-devs"))) {
                 if (!devMode) {
                     devMode = true;
@@ -1289,7 +1296,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.equals(".wumbo")) {
+        else if (msgLwr.equals("wumbo")) {
             wumbo = !wumbo == false ? !!!!!wumbo : !wumbo == true ? true : !!false;
             send("Wumbo mode " + (!wumbo ? "de" : "") + "activated.");
         }

@@ -52,7 +52,7 @@ public class CommitHandler {
             String[] messageSplit = cm.replace("<", "<LT>").split("\n+");
             StringBuilder message = new StringBuilder("<D>  ").append(author).append("<C>: ")
                     .append(messageSplit[0]).append(" - ");
-            int m = 1; // Just a cheaty way to make sure only 3 lines are in each message
+            int m = 0;
             boolean addedMsg = false;
             for (int i = 1; i < messageSplit.length; i++) {
                 String msg = messageSplit[i];
@@ -87,7 +87,7 @@ public class CommitHandler {
         }
         Spazz.sendToAllChannels("[<O>" + repo.getFullName() + "<C>] <D>" + Utilities.formattedList(users.iterator())
                 + "<C> pushed " + waiting_commits.size() + " commit" + (waiting_commits.size() == 1 ? "" : "s")
-                + " to '" + current_push.getPayload().getBranch() + "' branch");
+                + " to '<O>" + current_push.getPayload().getBranch() + "<C>' branch");
         for (String message : messages)
             Spazz.sendToAllChannels(message);
         waiting_commits.clear();

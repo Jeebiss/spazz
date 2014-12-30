@@ -23,6 +23,18 @@ public class Repository {
     private List<String> events = new ArrayList<String>();
     private CommitHandler commitHandler;
 
+    private CommitHandler.CommitList recentCommits = new CommitHandler.CommitList(this) {
+        @Override
+        public boolean add(Commit e) {
+            String id = e.getCommitId();
+            if (!ids.contains(id)) {
+                ids.add(id);
+                super.add(0, e);
+            }
+            return true;
+        }
+    };
+
     private String name;
     private String full_name;
     private User owner;
@@ -193,10 +205,26 @@ public class Repository {
                     }
                 }
             }
+            if (event instanceof PushEvent) {
+                recentCommits.addAll(((PushEvent) event).getPayload().getCommits());
+            }
             events.add(event.getId());
         }
         if (icEvent != null) icEvent.fire();
         commitHandler.fire();
+    }
+
+    public CommitHandler.CommitList getRecentCommits(int start, int end) {
+        CommitHandler.CommitList commitList = new CommitHandler.CommitList(this);
+        if (start < recentCommits.size()) {
+            if (end >= recentCommits.size())
+                end = recentCommits.size()-1;
+            if (end > start + 10)
+                end = start + 10;
+            for (int i = start; i <= end; i++)
+                commitList.add(recentCommits.get(i));
+        }
+        return commitList;
     }
 
     public User getOwner() {

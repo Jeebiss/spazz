@@ -202,7 +202,7 @@ public class Spazz extends ListenerAdapter {
         if (destination.equals("spazzmatic"))
             System.out.println("-spazzmatic- " + Colors.removeFormattingAndColors(message));
         else
-            bot.sendNotice(destination, chatColor + message);
+            bot.sendNotice(destination, chatColor + formatChat(message, false)[0]);
     }
 
     public static void sendAction(String action) {
@@ -1039,6 +1039,44 @@ public class Spazz extends ListenerAdapter {
             }
             else
                 send("That command is written as: .list [<object>]");
+        }
+
+        else if (cmd.equals("recent")) {
+            if (args.length < 3) {
+                send("That command is written as: .recent [<type>] [<repository>] ((<#>-)<#>)");
+            }
+            if (args[1].startsWith("c")) {
+                Repository repo = repoManager.searchRepository(args[2]);
+                if (repo == null)
+                    send("I don't recognize that repository. Perhaps be less specific?");
+                else {
+                    int start = 1;
+                    int end = 10;
+                    if (args.length > 3) {
+                        if (args[3].matches("(\\d+\\-)?\\d+")) {
+                            String[] split = args[3].split("-", 2);
+                            if (split.length == 2) {
+                                start = Integer.valueOf(split[0]);
+                                end = Integer.valueOf(split[1]);
+                            }
+                            else {
+                                end = Integer.valueOf(split[0]);
+                            }
+                        }
+                    }
+                    if (start < 1)
+                        start = 1;
+                    if (end < 1)
+                        end = start;
+                    else if (end > start + 9)
+                        end = start + 9;
+                    send("[<O>" + repo.getFullName() + "<C>] Listing recent commits " + start + "-" + end + "...");
+                    for (Commit commit : repo.getRecentCommits(start-1, end-1)) {
+                        sendNotice(ircUser.getNick(), "<D>" + commit.getAuthor().getName() + "<C>: "
+                                + commit.getMessage().split("\n")[0] + " -- " + commit.getShortUrl());
+                    }
+                }
+            }
         }
 
         else if (cmd.equals("save")) {

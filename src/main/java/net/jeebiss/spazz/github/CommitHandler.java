@@ -11,8 +11,8 @@ import java.util.regex.Pattern;
 public class CommitHandler {
 
     private Repository repo;
-    private CommitList commits = new CommitList();
-    private CommitList waiting_commits = new CommitList();
+    private CommitList commits;
+    private CommitList waiting_commits;
 
     private PushEvent current_push = null;
     private List<PushEvent> waiting_pushes = new ArrayList<PushEvent>();
@@ -21,6 +21,8 @@ public class CommitHandler {
 
     public CommitHandler(final Repository repo) {
         this.repo = repo;
+        this.commits = new CommitList(repo);
+        this.waiting_commits = new CommitList(repo);
     }
 
     public void push(PushEvent event) {
@@ -98,8 +100,13 @@ public class CommitHandler {
         }
     }
 
-    private class CommitList extends ArrayList<Commit> {
-        private ArrayList<String> ids = new ArrayList<String>();
+    public static class CommitList extends ArrayList<Commit> {
+        protected ArrayList<String> ids = new ArrayList<String>();
+        protected final Repository repo;
+
+        public CommitList(Repository repository) {
+            this.repo = repository;
+        }
 
         @Override
         public boolean add(Commit e) {

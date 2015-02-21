@@ -6,6 +6,7 @@ import net.jeebiss.spazz.github.deserializers.EventDeserializer;
 import net.jeebiss.spazz.github.events.Event;
 import net.jeebiss.spazz.util.Utilities;
 
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
@@ -37,30 +38,57 @@ public class Requester {
     }
 
     public <T> T parse(String url, Class<T> type) {
+        InputStream conn = null;
         try {
             if (method.equals("GET")) {
-                return gson.fromJson(Utilities.getStringFromStream(setupConnection(url).getInputStream()), type);
+                conn = setupConnection(url).getInputStream();
+                T object = gson.fromJson(Utilities.getStringFromStream(conn), type);
+                conn.close();
+                return object;
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {} finally {
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (Exception e) {}
+        }
         return null;
     }
 
     public JsonArray parseArray(String url) {
+        InputStream conn = null;
         try {
             if (method.equals("GET")) {
-                return jsonParser.parse(Utilities.getStringFromStream(setupConnection(url).getInputStream())).getAsJsonArray();
+                conn = setupConnection(url).getInputStream();
+                JsonArray array = jsonParser.parse(Utilities.getStringFromStream(conn)).getAsJsonArray();
+                conn.close();
+                return array;
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {} finally {
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (Exception e) {}
+        }
         return new JsonArray();
     }
 
     public Map<String, String> parseStringMap(String url) {
+        InputStream conn = null;
         try {
             if (method.equals("GET")) {
-                return gson.fromJson(Utilities.getStringFromStream(setupConnection(url).getInputStream()),
+                conn = setupConnection(url).getInputStream();
+                Map<String, String> map = gson.fromJson(Utilities.getStringFromStream(conn),
                         new TypeToken<Map<String, String>>(){}.getType());
+                conn.close();
+                return map;
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {} finally {
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (Exception e) {}
+        }
         return new HashMap<String, String>();
     }
 

@@ -1021,6 +1021,9 @@ public class Spazz extends ListenerAdapter {
                     }
                 }
             }
+            else if (args[1].startsWith("m")) {
+                send("Current message delay: " + bot.getMessageDelay() + "ms");
+            }
             else
                 send("That command is written as: .info [<object>]");
         }
@@ -1032,7 +1035,7 @@ public class Spazz extends ListenerAdapter {
             if (args[1].startsWith("r")) {
                 Set<String> repos = repoManager.getRepositories();
                 send("I'm currently watching " + repos.size() + " repositories...");
-                send(repos.toString());
+                send(repos.toString(), true);
             }
             else if (args[1].startsWith("q")) {
                 send("I currently have " + Utilities.getQuoteCount() + " quotes listed.");
@@ -1072,8 +1075,9 @@ public class Spazz extends ListenerAdapter {
                         end = start + 9;
                     send("[<O>" + repo.getFullName() + "<C>] Listing recent commits " + start + "-" + end + "...");
                     for (Commit commit : repo.getRecentCommits(start-1, end-1)) {
-                        sendNotice(ircUser.getNick(), "<D>" + commit.getAuthor().getName() + "<C>: "
-                                + commit.getMessage().split("\n")[0] + " -- " + commit.getShortUrl());
+                        for (String string : commit.format()) {
+                            send(string);
+                        }
                     }
                 }
             }

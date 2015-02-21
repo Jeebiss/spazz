@@ -17,8 +17,6 @@ public class CommitHandler {
     private PushEvent current_push = null;
     private List<PushEvent> waiting_pushes = new ArrayList<PushEvent>();
 
-    private final static Pattern emojiPattern = Pattern.compile(":([^\\s]+):");
-
     public CommitHandler(final Repository repo) {
         this.repo = repo;
         this.commits = new CommitList(repo);
@@ -43,48 +41,9 @@ public class CommitHandler {
         List<String> messages = new ArrayList<String>();
         for (Commit commit : waiting_commits) {
             String author = commit.getAuthor().getName();
-            if (!users.contains(author)) users.add(author);
-            String cm = commit.getMessage();
-            Matcher ma = emojiPattern.matcher(cm);
-            while (ma.find()) {
-                if (repo.getGitHub().getEmojis().containsKey(ma.group(1).toLowerCase()))
-                    cm = cm.replaceFirst(ma.group(0),
-                            Utilities.getShortUrl(repo.getGitHub().getEmojis().get(ma.group(1).toLowerCase())));
-            }
-            String[] messageSplit = cm.replace("<", "<LT>").split("\n+");
-            StringBuilder message = new StringBuilder("<D>  ").append(author).append("<C>: ")
-                    .append(messageSplit[0]).append(" - ");
-            int m = 0;
-            boolean addedMsg = false;
-            for (int i = 1; i < messageSplit.length; i++) {
-                String msg = messageSplit[i];
-                if (m < 3) {
-                    char last = msg.charAt(msg.length() - 1);
-                    if (last == '.' || last == '?' || last == '!')
-                        m = 3;
-                    else
-                        m++;
-                    if (i + 1 == messageSplit.length) {
-                        addedMsg = true;
-                        message.append(messageSplit[i]).append(" -- ").append(commit.getShortUrl());
-                        messages.add(message.toString());
-                    }
-                    else
-                        message.append(messageSplit[i]).append(" ");
-                }
-                else {
-                    m = 1;
-                    messages.add(message.substring(0, message.length() - 1));
-                    if (i + 1 == messageSplit.length) {
-                        messages.add(messageSplit[i] + " -- " + commit.getShortUrl());
-                        addedMsg = true;
-                    }
-                    else
-                        message = new StringBuilder(messageSplit[i]).append(" ");
-                }
-            }
-            if (!addedMsg)
-                messages.add(message.substring(0, message.length()-3) + " -- " + commit.getShortUrl());
+            if (!users.contains(author))
+                users.add(author);
+            messages.addAll(commit.format());
             commits.add(commit);
         }
         Spazz.sendToAllChannels("[<O>" + repo.getFullName() + "<C>] <D>" + Utilities.formattedList(users.iterator())

@@ -151,9 +151,13 @@ public class Spazz extends ListenerAdapter {
         }, 3000);
     }
 
+    private static final List<String> announceChannels = Arrays.asList("#denizen-dev", "#denizen-devs");
+
     public static void sendToAllChannels(String message) {
-        for (Channel chnl : bot.getChannels())
-            bot.sendMessage(chnl, chatColor + formatChat(message, false)[0]);
+        for (Channel chnl : bot.getChannels()) {
+            if (announceChannels.contains(chnl.getName()))
+                bot.sendMessage(chnl, chatColor + formatChat(message, false)[0]);
+        }
     }
 
     private static String send = "";
@@ -274,6 +278,7 @@ public class Spazz extends ListenerAdapter {
                 event.getMessage().equals("You are now identified for \u0002" + bot.getNick() + "\u0002.")) {
             if (!devMode) {
                 bot.joinChannel("#denizen-dev");
+                bot.joinChannel("#denizen-server-project");
             }
             else {
                 String op = chatColor;

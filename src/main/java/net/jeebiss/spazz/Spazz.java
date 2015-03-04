@@ -279,6 +279,7 @@ public class Spazz extends ListenerAdapter {
             if (!devMode) {
                 bot.joinChannel("#denizen-dev");
                 bot.joinChannel("#denizen-server-project");
+                bot.joinChannel("#denizenserver");
             }
             else {
                 String op = chatColor;

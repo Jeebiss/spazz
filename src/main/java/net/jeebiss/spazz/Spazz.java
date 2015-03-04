@@ -1349,6 +1349,27 @@ public class Spazz extends ListenerAdapter {
             send("Wumbo mode " + (!wumbo ? "de" : "") + "activated.");
         }
 
+        else if (cmd.equals("roll")) {
+            String dice = argsLwr[1];
+            if (dice.matches("\\d+d\\d+")) {
+                String[] split = dice.split("d");
+                int die = Integer.valueOf(split[0]);
+                int sides = Integer.valueOf(split[1]);
+                int total = 0;
+                StringBuilder message = new StringBuilder("You rolled: ");
+                for (int i = 0; i < die; i++) {
+                    int roll = Utilities.getRandomNumber(sides-1) + 1;
+                    message.append(roll).append(", ");
+                    total += roll;
+                }
+                send(message.substring(0, message.length()-2));
+                send("Total roll: " + total);
+            }
+            else {
+                send("That command is written as: .roll <number of die>d<sides on die> (Example: .roll 1d6)");
+            }
+        }
+
         else if (cmd.equals("emoji")) {
             String input = msgLwr.substring(cmd.length()+1).trim().replaceAll("\\s+", "_");
             Map<String, String> emojis = github.getEmojis();

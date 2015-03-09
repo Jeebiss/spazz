@@ -10,7 +10,6 @@ import net.jeebiss.spazz.urban.Response;
 import net.jeebiss.spazz.urban.UrbanDictionary;
 import net.jeebiss.spazz.util.MinecraftServer;
 import net.jeebiss.spazz.util.Utilities;
-import net.jeebiss.spazz.util.javaluator.DoubleEvaluator;
 import net.jeebiss.spazz.wolfram.QueryHandler;
 import net.jeebiss.spazz.wolfram.QueryResult;
 import org.pircbotx.Channel;
@@ -1280,16 +1279,28 @@ public class Spazz extends ListenerAdapter {
                     return;
                 }
             }
-            int port = 25565;
+            int port = 0;
             if (args[1].contains(":")) {
                 try {
                     port = Integer.valueOf(args[1].split(":")[1].replace("/", ""));
                 } catch (Exception ignored) {}
             }
-            MinecraftServer server = new MinecraftServer(args[1].contains(":") ? args[1].split(":")[0] : args[1], port);
-            if (server.getAddress().isUnresolved())
-                send("Invalid server specified.");
-            else try {
+            MinecraftServer server;
+            try {
+                server = new MinecraftServer(args[1].contains(":") ? args[1].split(":")[0] : args[1], port);
+            } catch (Exception e) {
+                server = null;
+            }
+            if (server == null || server.getAddress().isUnresolved()) {
+                port = 25565;
+                try {
+                    server = new MinecraftServer(args[1].contains(":") ? args[1].split(":")[0] : args[1], port);
+                } catch (Exception e) {
+                    send("Error contacting that server. (" + e.getMessage() + ")");
+                    return;
+                }
+            }
+            try {
                 MinecraftServer.StatusResponse response = server.ping();
                 MinecraftServer.Players players = response.getPlayers();
                 InetSocketAddress address = server.getAddress();
@@ -1355,15 +1366,20 @@ public class Spazz extends ListenerAdapter {
                 String[] split = dice.split("d");
                 int die = Integer.valueOf(split[0]);
                 int sides = Integer.valueOf(split[1]);
-                int total = 0;
-                StringBuilder message = new StringBuilder("You rolled: ");
-                for (int i = 0; i < die; i++) {
-                    int roll = Utilities.getRandomNumber(sides-1) + 1;
-                    message.append(roll).append(", ");
-                    total += roll;
+                if (die > 100 || sides > 100) {
+                    send("Maximum roll is 100d100.");
                 }
-                send(message.substring(0, message.length()-2));
-                send("Total roll: " + total);
+                else {
+                    int total = 0;
+                    StringBuilder message = new StringBuilder("You rolled: ");
+                    for (int i = 0; i < die; i++) {
+                        int roll = (int) (Utilities.getRandomDouble() * sides) + 1;
+                        message.append(roll).append(", ");
+                        total += roll;
+                    }
+                    send(message.substring(0, message.length() - 2));
+                    send("Total roll: " + total);
+                }
             }
             else {
                 send("That command is written as: .roll <number of die>d<sides on die> (Example: .roll 1d6)");

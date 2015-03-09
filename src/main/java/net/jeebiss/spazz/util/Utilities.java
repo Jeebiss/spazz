@@ -116,6 +116,10 @@ public class Utilities {
         return random.nextInt(limit);
     }
 
+    public static double getRandomDouble() {
+        return random.nextDouble();
+    }
+
     public static int getQuoteCount() {
         return quotes.size();
     }

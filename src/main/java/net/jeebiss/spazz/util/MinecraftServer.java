@@ -2,9 +2,15 @@ package net.jeebiss.spazz.util;
 
 import com.google.gson.Gson;
 
+import javax.naming.Context;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.InitialDirContext;
 import java.io.*;
 import java.net.*;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Scanner;
 
 /**
  * @author zh32 <zh32 at zh32.de>
@@ -16,8 +22,31 @@ public class MinecraftServer {
     private int pingTries = 0;
     private Gson gson = new Gson();
 
-    public MinecraftServer(String host, int port) {
-        this.host = new InetSocketAddress(host, port);
+    public MinecraftServer(String host, int port) throws Exception {
+        if (port == 0) {
+            final Hashtable<String, String> env = new Hashtable<String, String>();
+            env.put(Context.INITIAL_CONTEXT_FACTORY,
+                    "com.sun.jndi.dns.DnsContextFactory");
+            env.put("com.sun.jndi.dns.timeout.initial", "2000");
+            env.put("com.sun.jndi.dns.timeout.retries", "3");
+            InitialDirContext initialDirContext = new InitialDirContext(env);
+            Attributes attributes = initialDirContext.getAttributes("_minecraft._tcp." + host, new String[]{"SRV"});
+            Attribute srv = attributes.get("SRV");
+            Object obj = srv.get(0);
+            String objString = obj.toString();
+            Scanner scanner = new Scanner(objString);
+            scanner.nextInt();
+            scanner.nextInt();
+            port = scanner.nextInt();
+            String address = scanner.next();
+            if (address.endsWith(".")) {
+                address = address.substring(0, address.length() - 1);
+            }
+            this.host = new InetSocketAddress(address, port);
+        }
+        else {
+            this.host = new InetSocketAddress(host, port);
+        }
     }
 
     public InetSocketAddress getAddress() {

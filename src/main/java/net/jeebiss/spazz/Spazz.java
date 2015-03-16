@@ -330,6 +330,24 @@ public class Spazz extends ListenerAdapter {
             userManager.setLastSeen(senderNick, "Saying \"" + msg + chatColor + "\" in " + send);
         }
 
+        address = senderNick;
+
+        List<IRCMessage> messages = ircUser.getMessages();
+        if (!messages.isEmpty()) {
+            address = senderNick + ": ";
+            Spazz.send("You have messages!");
+            String lastNick = null;
+            for (IRCMessage message : messages) {
+                String user = message.getUser();
+                if (!user.equals(lastNick)) {
+                    lastNick = user;
+                    Spazz.sendNotice(senderNick, lastNick + Spazz.chatColor + ":");
+                }
+                Spazz.sendNotice(senderNick, "  " + message.getMessage());
+            }
+            ircUser.clearMessages();
+        }
+
         address = "";
 
         if (charging) {
@@ -1435,24 +1453,6 @@ public class Spazz extends ListenerAdapter {
             }
             userManager.setUserServer(senderNick, args[1]);
             send("Your server has been set, and can now be accessed by other users via '.mcping " + senderNick + "'");
-        }
-
-        address = senderNick;
-
-        List<IRCMessage> messages = ircUser.getMessages();
-        if (!messages.isEmpty()) {
-            address = senderNick + ": ";
-            Spazz.send("You have messages!");
-            String lastNick = null;
-            for (IRCMessage message : messages) {
-                String user = message.getUser();
-                if (!user.equals(lastNick)) {
-                    lastNick = user;
-                    Spazz.sendNotice(senderNick, lastNick + Spazz.chatColor + ":");
-                }
-                Spazz.sendNotice(senderNick, "  " + message.getMessage());
-            }
-            ircUser.clearMessages();
         }
 
         address = "";

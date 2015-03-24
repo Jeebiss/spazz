@@ -139,6 +139,7 @@ public class Utilities {
     public static InputStream getStreamFromUrl(String url) throws IOException {
         InputStream is;
         HttpURLConnection httpConn = (HttpURLConnection) new URL(url).openConnection();
+        httpConn.setRequestProperty("User-Agent", "Mozilla/5.0");
         if (httpConn.getResponseCode() >= 400) {
             is = httpConn.getErrorStream();
         }

@@ -1,6 +1,7 @@
 package net.jeebiss.spazz;
 
 import net.jeebiss.spazz.github.*;
+import net.jeebiss.spazz.google.Translator;
 import net.jeebiss.spazz.google.WebSearch;
 import net.jeebiss.spazz.irc.IRCMessage;
 import net.jeebiss.spazz.irc.IRCUser;
@@ -1271,6 +1272,22 @@ public class Spazz extends ListenerAdapter {
                         .replace("<b>", Colors.BOLD).replace("</b>", Colors.NORMAL + chatColor).replace("&#39;", "'")
                         .replace("&quot;", "\"").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">");
                 send("[Result found in " + data.getSearchResultTime() + "] " + content + " -- " + result.getUrl());
+            }
+        }
+
+        else if (cmd.equals("translate") || cmd.equals("tr")) {
+            String input = msg.substring(cmd.length()+1).replaceAll("\\s+", " ").trim();
+            Translator.Translation translation = Translator.translate(input);
+            if (translation == null) {
+                send(Colors.RED + "Error! No translation found!");
+            }
+            else {
+                StringBuilder b = new StringBuilder("[Translated from ").append(translation.getSourceLanguage())
+                        .append(" to en] ");
+                for (Translator.Translation.Sentence sentence : translation.getSentences()) {
+                    b.append(sentence.getTranslation());
+                }
+                send(b.toString());
             }
         }
 

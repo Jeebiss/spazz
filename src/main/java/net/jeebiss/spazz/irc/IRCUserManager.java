@@ -85,6 +85,7 @@ public class IRCUserManager {
             spazzData.put("dev-mode", Spazz.devMode);
             spazzData.put("wolfram", Spazz.queryHandler.getKey());
             spazzData.put("github", System.getProperty("spazz.github"));
+            spazzData.put("uclassify", Spazz.uClassify.apiKey);
             spazzData.put("message-delay", Spazz.messageDelay);
             writer.write(yaml.dump(spazzData));
         } catch (Exception e) {

@@ -6,6 +6,8 @@ import net.jeebiss.spazz.google.WebSearch;
 import net.jeebiss.spazz.irc.IRCMessage;
 import net.jeebiss.spazz.irc.IRCUser;
 import net.jeebiss.spazz.irc.IRCUserManager;
+import net.jeebiss.spazz.uclassify.UClassify;
+import net.jeebiss.spazz.uclassify.results.GenderResult;
 import net.jeebiss.spazz.urban.Definition;
 import net.jeebiss.spazz.urban.Response;
 import net.jeebiss.spazz.urban.UrbanDictionary;
@@ -74,6 +76,7 @@ public class Spazz extends ListenerAdapter {
     public static QueryHandler queryHandler = null;
 
     public static WebSearch google = null;
+    public static UClassify uClassify = null;
 
     public static void main(String[] args) {
 
@@ -105,6 +108,9 @@ public class Spazz extends ListenerAdapter {
             }
             if (map.get("github") instanceof String) {
                 System.setProperty("spazz.github", (String) map.get("github"));
+            }
+            if (map.get("uclassify") instanceof String) {
+                uClassify = new UClassify((String) map.get("uclassify"));
             }
             if (map.get("message-delay") instanceof Integer) {
                 messageDelay = (long) ((int) map.get("message-delay"));
@@ -1293,6 +1299,37 @@ public class Spazz extends ListenerAdapter {
 
         else if (cmd.equals("behappy") || cmd.equals("bh")) {
             send("Turn that frown upside-down! :D");
+        }
+
+        else if (cmd.equals("gender")) {
+            if (args.length < 2) {
+                send("Must specify a user nick.");
+                return;
+            }
+            else if (!userManager.hasUser(args[1])) {
+                send("I don't know who that is.");
+                return;
+            }
+            StringBuilder s = new StringBuilder();
+            // Use as much data as possible (all channels)
+            for (List<IRCMessage> messageList : cachedMessages.values()) {
+                for (IRCMessage message : messageList) {
+                    if (message.getUser().equalsIgnoreCase(args[1]))
+                        s.append(message.getMessage()).append("\n");
+                }
+            }
+            GenderResult genderResult = uClassify.classifyGender(s.toString());
+            double female = genderResult.getFemale();
+            double male = genderResult.getMale();
+            if (male > female) {
+                send("That user is most likely a male.");
+            }
+            else if (female > male) {
+                send("That user is most likely a female.");
+            }
+            else {
+                send("I could not determine that user's gender from recent messages.");
+            }
         }
 
         else if (cmd.equals("mcping") || cmd.equals("ping")) {

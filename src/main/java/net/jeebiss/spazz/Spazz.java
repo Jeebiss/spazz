@@ -1434,9 +1434,15 @@ public class Spazz extends ListenerAdapter {
 
         else if (cmd.equals("roll")) {
             String dice = argsLwr[1];
-            if (dice.matches("\\d+d\\d+")) {
+            if (dice.matches("\\d+?d\\d+")) {
                 String[] split = dice.split("d");
-                int die = Integer.valueOf(split[0]);
+                int die;
+                if (split[0] != null && !split[0].isEmpty()) {
+                    die = Integer.valueOf(split[0]);
+                }
+                else {
+                    die = 1;
+                }
                 int sides = Integer.valueOf(split[1]);
                 if (die > 100 || sides > 100) {
                     send("Maximum roll is 100d100.");

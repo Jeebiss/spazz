@@ -1434,7 +1434,7 @@ public class Spazz extends ListenerAdapter {
 
         else if (cmd.equals("roll")) {
             String dice = argsLwr[1];
-            if (dice.matches("\\d+?d\\d+")) {
+            if (dice.matches("\\d*d\\d+")) {
                 String[] split = dice.split("d");
                 int die;
                 if (split[0] != null && !split[0].isEmpty()) {

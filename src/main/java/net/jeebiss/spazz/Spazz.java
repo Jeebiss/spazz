@@ -429,7 +429,7 @@ public class Spazz extends ListenerAdapter {
             send("Hello World");
             return;
         }
-        else if (cmd.equals("kitty") || cmd.equals("cat") || cmd.equals("kitteh")) {
+        else if (cmd.equals("kitty") || cmd.equals("cat") || cmd.equals("kitteh") || cmd.equals("meow")) {
             send("Meow.");
             return;
         }

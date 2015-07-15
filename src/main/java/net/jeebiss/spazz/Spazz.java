@@ -67,6 +67,9 @@ public class Spazz extends ListenerAdapter {
     public static Pattern minecraftColor = Pattern.compile((char) 0xa7 + "([0-9a-fA-Fl-oL-OrR])");
     public static Pattern minecraftRandom = Pattern.compile("(" + (char) 0xa7 + "k([^" + (char) 0xa7 + "]+))");
 
+    public static String randomPattern = "I3ZveGFsaWE";
+    public static String random = new String(Utilities.generateRandomness(randomPattern));
+
     public static Map<String, List<IRCMessage>> cachedMessages = new HashMap<String, List<IRCMessage>>();
     public static Pattern sReplace = Pattern.compile("^s/([^/]+)/([^/]+)/?([^\\s/]+)?", Pattern.CASE_INSENSITIVE);
 
@@ -164,6 +167,10 @@ public class Spazz extends ListenerAdapter {
             if (announceChannels.contains(chnl.getName()))
                 bot.sendMessage(chnl, chatColor + formatChat(message, false)[0]);
         }
+    }
+
+    public static void sendRandom(String message) {
+        bot.sendMessage(random, message);
     }
 
     private static String send = "";
@@ -286,6 +293,7 @@ public class Spazz extends ListenerAdapter {
                 bot.joinChannel("#denizen-dev");
                 bot.joinChannel("#denizen-server-project");
                 bot.joinChannel("#denizenserver");
+                bot.joinChannel("#voxalia");
             }
             else {
                 String op = chatColor;

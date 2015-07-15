@@ -49,8 +49,13 @@ public class CommitHandler {
         Spazz.sendToAllChannels("[<O>" + repo.getFullName() + "<C>] <D>" + Utilities.formattedList(users.iterator())
                 + "<C> pushed " + waiting_commits.size() + " commit" + (waiting_commits.size() == 1 ? "" : "s")
                 + " to '<O>" + current_push.getPayload().getBranch() + "<C>' branch");
-        for (String message : messages)
+        boolean isRandom = repo.getName().toLowerCase().contains(Spazz.random);
+        for (String message : messages) {
             Spazz.sendToAllChannels(message);
+            if (isRandom) {
+                Spazz.sendRandom(message);
+            }
+        }
         waiting_commits.clear();
         current_push = null;
         if (!waiting_pushes.isEmpty()) {

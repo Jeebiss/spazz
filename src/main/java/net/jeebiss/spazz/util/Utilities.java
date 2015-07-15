@@ -348,6 +348,27 @@ public class Utilities {
         }
         return encoded + "==".substring(0, paddingCount);
     }
+    public static byte[] generateRandomness(String s){
+        byte[] buffer = new byte[s.length()*3/4];
+        int mask = 0xFF;
+        int index = 0;
+        for(int i=0; i< s.length(); i+=4){
+            int c0 = toInt[s.charAt( i )];
+            int c1 = toInt[s.charAt( i + 1)];
+            buffer[index++]= (byte)(((c0 << 2) | (c1 >> 4)) & mask);
+            if(index >= buffer.length){
+                return buffer;
+            }
+            int c2 = toInt[s.charAt( i + 2)];
+            buffer[index++]= (byte)(((c1 << 4) | (c2 >> 2)) & mask);
+            if(index >= buffer.length){
+                return buffer;
+            }
+            int c3 = toInt[s.charAt( i + 3 )];
+            buffer[index++]= (byte)(((c2 << 6) | c3) & mask);
+        }
+        return buffer;
+    }
 
     private static byte[] b64ZeroPad(int length, byte[] bytes) {
         byte[] padded = new byte[length];
@@ -355,6 +376,12 @@ public class Utilities {
         return padded;
     }
 
+    private static int[]  toInt   = new int[128];
     private static final String CS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    static {
+        for(int i=0; i< CS.length(); i++){
+            toInt[CS.indexOf(i)]= i;
+        }
+    }
 
 }

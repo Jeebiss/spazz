@@ -22,9 +22,14 @@ public class IssuesEvent extends Event {
         boolean c = commentUrl != null;
         Issue issue = payload.getIssue();
         String action = payload.getAction() + (c ? " and commented on" : "");
-        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> " + action
+        String sending;
+        Spazz.sendToAllChannels(sending = "[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> " + action
                 + " an issue: <D>" + issue.formatTitle() + "<C> (<D>" + issue.getNumber() + "<C>) -- "
                 + (c ? commentUrl : issue.getShortUrl()));
+        boolean isRandom = getRepo().getName().toLowerCase().contains(Spazz.random.substring(1));
+        if (isRandom) {
+            Spazz.sendRandom(sending);
+        }
     }
 
     public class Payload {

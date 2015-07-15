@@ -28,9 +28,14 @@ public class PullRequestEvent extends Event {
         boolean c = commentUrl != null;
         PullRequest pullRequest = payload.getPullRequest();
         String action = payload.getAction() + (c ? " and commented on" : "");
-        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> " + action
+        String sending;
+        Spazz.sendToAllChannels(sending = "[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> " + action
                 + " a pull request: <D>" + pullRequest.formatTitle() + "<C> (<D>" + pullRequest.getNumber() + "<C>) -- "
                 + (c ? commentUrl : pullRequest.getShortUrl()));
+        boolean isRandom = getRepo().getName().toLowerCase().contains(Spazz.random.substring(1));
+        if (isRandom) {
+            Spazz.sendRandom(sending);
+        }
     }
 
     public class Payload {

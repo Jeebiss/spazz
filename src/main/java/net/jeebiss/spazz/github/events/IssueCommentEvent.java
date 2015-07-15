@@ -23,8 +23,13 @@ public class IssueCommentEvent extends Event implements CommentEvent {
         IssueComment comment = getPayload().getComment();
         Issue issue = payload.getIssue();
         String type = (issue.isPullRequest() ? "a pull request" : "an issue") + ": <D>";
-        Spazz.sendToAllChannels("[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> commented on "
+        String sending;
+        Spazz.sendToAllChannels(sending = "[<O>" + getRepo().getName() + "<C>] <D>" + getActor().getLogin() + "<C> commented on "
                 + type + issue.formatTitle() + "<C> (<D>" + issue.getNumber() + "<C>) -- " + comment.getShortUrl());
+        boolean isRandom = getRepo().getName().toLowerCase().contains(Spazz.random.substring(1));
+        if (isRandom) {
+            Spazz.sendRandom(sending);
+        }
     }
 
     public class Payload {

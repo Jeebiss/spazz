@@ -168,7 +168,8 @@ public class Spazz extends ListenerAdapter {
     }
 
     public static void sendRandom(String message) {
-        bot.sendMessage(random, message);
+        Channel chnl = bot.getChannel(random);
+        bot.sendMessage(chnl, Colors.removeFormattingAndColors(formatChat(message, false)[0]));
     }
 
     private static String send = "";

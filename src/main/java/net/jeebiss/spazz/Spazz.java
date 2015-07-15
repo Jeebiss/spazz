@@ -426,7 +426,7 @@ public class Spazz extends ListenerAdapter {
         String cmd = msgLwr.substring(1).split(" ", 2)[0];
 
         if (cmd.equals("hello")) {
-            send("Hello World");
+            send("Hello World!");
             return;
         }
         else if (cmd.equals("kitty") || cmd.equals("cat") || cmd.equals("kitteh") || cmd.equals("meow")) {

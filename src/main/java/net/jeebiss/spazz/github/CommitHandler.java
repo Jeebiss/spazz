@@ -51,7 +51,9 @@ public class CommitHandler {
                 + " to '<O>" + current_push.getPayload().getBranch() + "<C>' branch";
         Spazz.sendToAllChannels(sending);
         boolean isRandom = repo.getName().toLowerCase().contains(Spazz.random.substring(1));
-        Spazz.sendRandom(sending);
+        if (isRandom) {
+            Spazz.sendRandom(sending);
+        }
         for (String message : messages) {
             Spazz.sendToAllChannels(message);
             if (isRandom) {

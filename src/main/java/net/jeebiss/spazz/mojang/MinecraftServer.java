@@ -1,4 +1,4 @@
-package net.jeebiss.spazz.util;
+package net.jeebiss.spazz.mojang;
 
 import com.google.gson.Gson;
 

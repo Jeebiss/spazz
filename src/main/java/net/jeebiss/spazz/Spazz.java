@@ -6,12 +6,13 @@ import net.jeebiss.spazz.google.WebSearch;
 import net.jeebiss.spazz.irc.IRCMessage;
 import net.jeebiss.spazz.irc.IRCUser;
 import net.jeebiss.spazz.irc.IRCUserManager;
+import net.jeebiss.spazz.mojang.MojangStatus;
 import net.jeebiss.spazz.uclassify.UClassify;
 import net.jeebiss.spazz.uclassify.results.GenderResult;
 import net.jeebiss.spazz.urban.Definition;
 import net.jeebiss.spazz.urban.Response;
 import net.jeebiss.spazz.urban.UrbanDictionary;
-import net.jeebiss.spazz.util.MinecraftServer;
+import net.jeebiss.spazz.mojang.MinecraftServer;
 import net.jeebiss.spazz.util.Utilities;
 import net.jeebiss.spazz.wolfram.QueryHandler;
 import net.jeebiss.spazz.wolfram.QueryResult;
@@ -301,6 +302,7 @@ public class Spazz extends ListenerAdapter {
                 optionalColor = op;
             }
             bot.joinChannel("#denizen-devs");
+            bot.joinChannel("#livinglikelarry");
         }
     }
 
@@ -1402,6 +1404,10 @@ public class Spazz extends ListenerAdapter {
             } catch (Exception e) {
                 send("Error contacting that server. (" + e.getMessage() + ")");
             }
+        }
+
+        else if (cmd.equals("mojang")) {
+            send(MojangStatus.getFormattedStatus());
         }
 
         else if (msgLwr.equals("dev")) {

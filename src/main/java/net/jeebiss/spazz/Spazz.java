@@ -717,7 +717,7 @@ public class Spazz extends ListenerAdapter {
         else if (cmd.equals("cb") || cmd.equals("coolbeans")) {
             send("That's cool beans.");
         }
-        else if (msgLwr.equals("sound") || msgLwr.equals("sounds")) {
+        else if (cmd.equals("sound") || cmd.equals("sounds")) {
             send("Here is the list of all valid bukkit sounds - " + Colors.BLUE + "http://bit.ly/14NYbvi");
         }
         else if (cmd.equals("hb") || cmd.equals("handbook")) {
@@ -1410,7 +1410,7 @@ public class Spazz extends ListenerAdapter {
             send(MojangStatus.getFormattedStatus());
         }
 
-        else if (msgLwr.equals("dev")) {
+        else if (cmd.equals("dev")) {
             if (hasOp(usr, bot.getChannel("#denizen-devs")) || hasVoice(usr, bot.getChannel("#denizen-devs"))) {
                 if (!devMode) {
                     devMode = true;
@@ -1440,7 +1440,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (msgLwr.equals("wumbo")) {
+        else if (cmd.equals("wumbo")) {
             wumbo = !wumbo == false ? !!!!!wumbo : !wumbo == true ? true : !!false;
             send("Wumbo mode " + (!wumbo ? "de" : "") + "activated.");
         }

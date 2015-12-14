@@ -121,8 +121,8 @@ public class Spazz extends ListenerAdapter {
             e.printStackTrace();
         }
 
-        github = GitHub.connect(System.getProperty("spazz.github"));
-        repoManager = new RepositoryManager(github);
+        //github = GitHub.connect(System.getProperty("spazz.github"));
+        //repoManager = new RepositoryManager(github);
 
         google = new WebSearch();
 
@@ -392,6 +392,7 @@ public class Spazz extends ListenerAdapter {
 
         Matcher m = issuesPattern.matcher(msgLwr);
 
+        /*
         while (m.find() && m.group(1).contains("/")) {
             Repository repo = repoManager.searchRepository(m.group(1));
             if (repo != null) {
@@ -405,6 +406,7 @@ public class Spazz extends ListenerAdapter {
                 }
             }
         }
+        */
 
         m = sReplace.matcher(msg);
 
@@ -862,7 +864,7 @@ public class Spazz extends ListenerAdapter {
         //    return;
         //}
 
-        else if (cmd.equals("rate")) {
+        /*else if (cmd.equals("rate")) {
             RateLimit.Data rateLimit = github.getRateLimit().getRate();
             sendNotice(senderNick, "Max rate limit: " + rateLimit.getLimit());
             sendNotice(senderNick, "Remaining rate limit: " + rateLimit.getRemaining());
@@ -875,13 +877,14 @@ public class Spazz extends ListenerAdapter {
             sendNotice(senderNick, "Next reset: "
                     + (minutes > 0 ? minutes > 1 ? minutes + " minutes, " : "1 minute, " : "")
                     + (seconds > 0 ? seconds > 1 ? seconds + " seconds" : "1 second" : minutes > 0 ? "0 seconds" : "Now."));
-        }
+        }*/
 
         else if (cmd.equals("add") || cmd.equals("a")) {
 
             if (args.length < 2)
                 send("That command is written as: .add [<object>]");
 
+            /*
             if (args[1].startsWith("r")) {
                 if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
                     send("Sorry, " + senderNick + ", that's only for the Dev Team.");
@@ -919,6 +922,7 @@ public class Spazz extends ListenerAdapter {
                 else
                     send("That command is written as: .add repo [<owner>/<project>] (no_issues) (no_comments) (no_pulls) (delay:<#.#>)");
             }
+            */
             else if (args[1].startsWith("q")) {
                 if (args.length > 2) {
                     String quoteMsg = msg.substring(args[0].length() + args[1].length() + 2);
@@ -968,6 +972,7 @@ public class Spazz extends ListenerAdapter {
 
             if (!hasOp(usr, chnl) && !hasVoice(usr, chnl))
                 send("Sorry, " + senderNick + ", that's only for the Dev Team.");
+            /*
             else if (args[1].startsWith("r")) {
                 if (args.length > 2) {
                     if (!repoManager.hasRepository(args[2]))
@@ -983,6 +988,7 @@ public class Spazz extends ListenerAdapter {
                 else
                     send("That command is written as: .remove repo [<owner>/<project>]");
             }
+            */
             else if (args[1].startsWith("q")) {
                 if (args.length > 2) {
                     try {
@@ -1020,6 +1026,7 @@ public class Spazz extends ListenerAdapter {
         }
 
         else if (cmd.equals("info") || cmd.equals("i")) {
+            /*
             if (args[1].startsWith("r")) {
                 if (args.length > 2) {
                     Repository repo = repoManager.searchRepository(msg.trim().substring(7 + args[1].length()));
@@ -1035,7 +1042,7 @@ public class Spazz extends ListenerAdapter {
                 else
                     send("That command is written as: .info repo [<owner>/<project>]");
             }
-            else if (args[1].startsWith("u")) {
+            else*/ if (args[1].startsWith("u")) {
                 if (args.length > 2) {
                     if (userManager.hasUser(args[2])) {
                         IRCUser ircUser2 = userManager.getUser(args[2]);
@@ -1071,18 +1078,20 @@ public class Spazz extends ListenerAdapter {
             if (args.length < 2)
                 send("That command is written as: .list [<object>]");
 
+            /*
             if (args[1].startsWith("r")) {
                 Set<String> repos = repoManager.getRepositories();
                 send("I'm currently watching " + repos.size() + " repositories...");
                 send(repos.toString(), true);
             }
-            else if (args[1].startsWith("q")) {
+            else*/ if (args[1].startsWith("q")) {
                 send("I currently have " + Utilities.getQuoteCount() + " quotes listed.");
             }
             else
                 send("That command is written as: .list [<object>]");
         }
 
+        /*
         else if (cmd.equals("recent")) {
             if (args.length < 3) {
                 send("That command is written as: .recent [<type>] [<repository>] ((<#>-)<#>)");
@@ -1120,12 +1129,13 @@ public class Spazz extends ListenerAdapter {
                     }
                 }
             }
-        }
+        }*/
 
         else if (cmd.equals("save")) {
             if (args.length < 2)
                 send("That command is written as: .save [<object>]");
 
+            /*
             if (args[1].startsWith("r")) {
                 try {
                     repoManager.saveAll();
@@ -1134,7 +1144,7 @@ public class Spazz extends ListenerAdapter {
                     send("Error while saving repository information... Report this to " + Colors.CYAN + "Morphan1");
                 }
             }
-            else if (args[1].startsWith("q")) {
+            else*/ if (args[1].startsWith("q")) {
                 Utilities.saveQuotes();
                 send("Successfully saved all quotes.");
             }
@@ -1154,6 +1164,7 @@ public class Spazz extends ListenerAdapter {
             if (args.length < 2)
                 send("That command is written as: .load [<object>]");
 
+            /*
             if (args[1].startsWith("r")) {
                 try {
                     repoManager.loadAll();
@@ -1162,7 +1173,7 @@ public class Spazz extends ListenerAdapter {
                     send("Error while loading repository information... Report this to " + Colors.CYAN + "Morphan1");
                 }
             }
-            else if (args[1].startsWith("q")) {
+            else*/ if (args[1].startsWith("q")) {
                 Utilities.loadQuotes();
                 send("Successfully loaded all quotes.");
             }
@@ -1195,7 +1206,7 @@ public class Spazz extends ListenerAdapter {
                         send("That command is written as: .edit message-delay [<#.#>]");
                     }
                 }
-                else if (args[1].startsWith("r")) {
+                /*else if (args[1].startsWith("r")) {
                     if (args.length > 3) {
                         if (!repoManager.hasRepository(args[2]))
                             send("I am not tracking any projects by that name. (Did you specify the owner?)");
@@ -1226,7 +1237,7 @@ public class Spazz extends ListenerAdapter {
                     }
                     else
                         send("That command is written as: .edit repo [<owner>/<project>] (delay:<#.#>) (issues:true/false) (comments:true/false) (pulls:true/false)");
-                }
+                }*/
             }
         }
 
@@ -1477,7 +1488,7 @@ public class Spazz extends ListenerAdapter {
             }
         }
 
-        else if (cmd.equals("emoji")) {
+        /*else if (cmd.equals("emoji")) {
             String input = msgLwr.substring(cmd.length()+1).trim().replaceAll("\\s+", "_");
             Map<String, String> emojis = github.getEmojis();
             String emoji = null;
@@ -1517,7 +1528,7 @@ public class Spazz extends ListenerAdapter {
             else {
                 send(emoji + ": " + Utilities.getShortUrl(link));
             }
-        }
+        }*/
 
         else if (cmd.equals("myip")) {
             if (args.length < 2 || args[1].isEmpty()) {
